@@ -323,9 +323,9 @@ static struct msm_platform_core_capability core_data_niobe[] = {
 	{NON_FATAL_FAULTS, 1},
 	{ENC_AUTO_FRAMERATE, 1},
 	{DEVICE_CAPS, V4L2_CAP_VIDEO_M2M_MPLANE | V4L2_CAP_META_CAPTURE | V4L2_CAP_STREAMING},
-	{SUPPORTS_SYNX_V2_FENCE, 1},
+	{SUPPORTS_SYNX_V2_FENCE, 0},
 	{SUPPORTS_REQUESTS, 0},
-	{SUPPORTS_REMOTE_PROC, 1},
+	{SUPPORTS_REMOTE_PROC, 0},
 };
 
 static struct msm_platform_inst_capability instance_cap_data_niobe[] = {
@@ -2963,11 +2963,9 @@ int msm_vidc_niobe_check_ddr_type(void)
 static int msm_vidc_get_rproc_handle(struct msm_vidc_core *core)
 {
 	struct device *dev = &core->pdev->dev;
+	struct rproc *rproc = NULL;
 	phandle soccp_ph;
 	int rc = 0;
-
-	if (!core->capabilities[SUPPORTS_REMOTE_PROC].value)
-		return 0;
 
 	rc = of_property_read_u32(dev->of_node, "qcom,vidc,soccp-controller", &soccp_ph);
 	if (rc) {
@@ -2976,13 +2974,23 @@ static int msm_vidc_get_rproc_handle(struct msm_vidc_core *core)
 		goto error;
 	}
 
-	core->rproc = rproc_get_by_phandle(soccp_ph);
-	if (!core->rproc) {
+	rproc = rproc_get_by_phandle(soccp_ph);
+	if (!rproc) {
 		d_vpr_e("%s: rproc get failed %u\n", __func__, soccp_ph);
 		rc = -EINVAL;
 		goto error;
 	}
 
+	/* ensure rproc fw is up, if not, defer video-driver probe */
+	if (rproc->state != RPROC_RUNNING) {
+		d_vpr_e("%s: rproc %s is not up(%d), retry again\n",
+			__func__, rproc->name, rproc->state);
+		rc = -EAGAIN;
+		goto error;
+	}
+	core->rproc = rproc;
+
+	d_vpr_h("%s: rproc %s is up and ready\n", __func__, rproc->name);
 	return rc;
 error:
 	d_vpr_e("%s failed. Disable rproc support\n", __func__);
@@ -2990,16 +2998,20 @@ error:
 
 	return rc;
 }
-static int msm_vidc_init_data(struct msm_vidc_core *core)
+
+int msm_vidc_get_platform_data_niobe(struct msm_vidc_core *core)
 {
-	struct device *dev = NULL;
+	d_vpr_h("%s: initialize niobe data\n", __func__);
+	core->platform->data = niobe_data;
+
+	return 0;
+}
+
+int msm_vidc_init_platform_niobe(struct msm_vidc_core *core)
+{
 	int rc = 0;
 
-	dev = &core->pdev->dev;
-
-	d_vpr_h("%s: initialize niobe data\n", __func__);
-
-	core->platform->data = niobe_data;
+	d_vpr_h("%s: initialize niobe ops\n", __func__);
 	core->mem_ops = get_mem_ops_ext();
 	if (!core->mem_ops) {
 		d_vpr_e("%s: invalid memory ext ops\n", __func__);
@@ -3010,29 +3022,22 @@ static int msm_vidc_init_data(struct msm_vidc_core *core)
 		d_vpr_e("%s: invalid resource ext ops\n", __func__);
 		return -EINVAL;
 	}
-	core->fence_ops = get_synx_fence_ops();
-	if (!core->fence_ops) {
-		d_vpr_e("%s: invalid synx fence ops\n", __func__);
-		return -EINVAL;
+	if (core->capabilities[SUPPORTS_SYNX_V2_FENCE].value) {
+		core->fence_ops = get_synx_fence_ops();
+		if (!core->fence_ops) {
+			core->capabilities[SUPPORTS_SYNX_V2_FENCE].value = 0;
+			d_vpr_e("%s: invalid synx fence ops\n", __func__);
+			return -EINVAL;
+		}
+	}
+	if (core->capabilities[SUPPORTS_REMOTE_PROC].value) {
+		rc = msm_vidc_get_rproc_handle(core);
+		if (rc)
+			return rc;
 	}
 	rc = msm_vidc_niobe_check_ddr_type();
 	if (rc)
 		return rc;
 
-	rc = msm_vidc_get_rproc_handle(core);
-	if (rc)
-		return rc;
-
 	return rc;
-}
-
-int msm_vidc_init_platform_niobe(struct msm_vidc_core *core)
-{
-	int rc = 0;
-
-	rc = msm_vidc_init_data(core);
-	if (rc)
-		return rc;
-
-	return 0;
 }
