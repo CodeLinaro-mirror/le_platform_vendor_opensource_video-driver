@@ -50,6 +50,7 @@ static inline bool is_video_device(struct device *dev)
 		of_device_is_compatible(dev->of_node, "qcom,volcano-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,sm8750-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,sm8750-vidc-v2") ||
+		of_device_is_compatible(dev->of_node, "qcom,canoe-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,niobe-vidc"));
 }
 
@@ -130,6 +131,7 @@ static const struct of_device_id msm_vidc_dt_match[] = {
 	{.compatible = "qcom,sm8650-vidc-v2"},
 	{.compatible = "qcom,sm8750-vidc"},
 	{.compatible = "qcom,sm8750-vidc-v2"},
+	{.compatible = "qcom,canoe-vidc"},
 	{.compatible = "qcom,cliffs-vidc"},
 	{.compatible = "qcom,volcano-vidc"},
 	{.compatible = "qcom,niobe-vidc"},
@@ -644,6 +646,12 @@ static void msm_vidc_component_master_unbind(struct device *dev)
 	d_vpr_h("%s(): %s\n", __func__, dev_name(dev));
 
 	msm_vidc_core_deinit(core, true);
+	/**
+	 * Sometimes reverse(irq) thread will be running at this point,
+	 * So wait for irq thread completion to avoid use-after-free
+	 * crash issues with core.
+	 */
+	synchronize_irq(core->resource->irq);
 	venus_hfi_queue_deinit(core);
 	msm_vidc_deinitialize_media(core);
 	component_unbind_all(dev, core);
