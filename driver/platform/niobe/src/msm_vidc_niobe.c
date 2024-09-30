@@ -14,6 +14,7 @@
 #include <media/v4l2_vidc_extensions.h>
 
 #include "msm_vidc_niobe.h"
+#include "msm_vidc_inst.h"
 #include "msm_vidc_platform.h"
 #include "msm_vidc_debug.h"
 #include "msm_vidc_internal.h"
@@ -326,6 +327,7 @@ static struct msm_platform_core_capability core_data_niobe[] = {
 	{SUPPORTS_SYNX_V2_FENCE, 1},
 	{SUPPORTS_REQUESTS, 0},
 	{SUPPORTS_REMOTE_PROC, 1},
+	{SUPPORTS_FREEZE, 1},
 };
 
 static struct msm_platform_inst_capability instance_cap_data_niobe[] = {

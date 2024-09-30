@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
+
+#include <media/videobuf2-core.h>
 
 #include "msm_vidc_control.h"
 #include "msm_vidc_driver.h"
@@ -1007,8 +1009,9 @@ static int msm_vidc_output_streaming_state(struct msm_vidc_inst *inst,
 		if (is_encode_session(inst)) {
 			/* check dynamic allowed if master port is streaming */
 			if (!(inst->capabilities[cap_id].flags & CAP_FLAG_DYNAMIC_ALLOWED)) {
-				i_vpr_e(inst, "%s: cap_id %#x not allowed in state %s\n",
-					__func__, cap_id, state_name(inst->state));
+				i_vpr_e(inst, "%s: cap_id %#x %s not allowed in state %s\n",
+					__func__, cap_id, cap_name(cap_id),
+					state_name(inst->state));
 				return -EINVAL;
 			}
 		}
@@ -1156,8 +1159,9 @@ static int msm_vidc_streaming_state(struct msm_vidc_inst *inst,
 
 		/* disallow */
 		if (!(inst->capabilities[cap_id].flags & CAP_FLAG_DYNAMIC_ALLOWED)) {
-			i_vpr_e(inst, "%s: cap_id %#x not allowed in state %s\n",
-				__func__, cap_id, state_name(inst->state));
+			i_vpr_e(inst, "%s: cap_id %#x %s not allowed in state %s\n",
+				__func__, cap_id, cap_name(cap_id),
+				state_name(inst->state));
 			return -EINVAL;
 		}
 

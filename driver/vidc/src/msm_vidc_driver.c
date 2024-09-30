@@ -4,10 +4,15 @@
  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <linux/delay.h>
 #include <linux/iommu.h>
 #include <linux/workqueue.h>
-#include "msm_media_info.h"
+#include <linux/dma-buf.h>
+#include <media/videobuf2-core.h>
+#include <media/v4l2-mem2mem.h>
+#include <media/v4l2-event.h>
 
+#include "msm_media_info.h"
 #include "msm_vidc_driver.h"
 #include "msm_vidc_platform.h"
 #include "msm_vidc_internal.h"
@@ -21,8 +26,10 @@
 #include "msm_venc.h"
 #include "msm_vidc_fence.h"
 #include "venus_hfi.h"
+#include "hfi_command.h"
 #include "venus_hfi_response.h"
 #include "hfi_packet.h"
+#include "resources.h"
 #include "msm_vidc_events.h"
 
 extern struct msm_vidc_core *g_core;
@@ -4746,8 +4753,9 @@ void msm_vidc_destroy_buffers(struct msm_vidc_inst *inst)
 			continue;
 		list_for_each_entry_safe(buf, dummy, &buffers->list, list) {
 			i_vpr_h(inst,
-				"destroying internal buffer: type %d idx %d fd %d addr %#llx size %d\n",
-				buf->type, buf->index, buf->fd, buf->device_addr, buf->buffer_size);
+				"destroying internal buffer: %s: idx %d fd %d addr %#llx size %d\n",
+				buf_name(buf->type), buf->index, buf->fd,
+				buf->device_addr, buf->buffer_size);
 			msm_vidc_destroy_internal_buffer(inst, buf);
 		}
 	}

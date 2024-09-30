@@ -4,22 +4,18 @@
  * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/workqueue.h>
-#include <linux/module.h>
-#include <linux/io.h>
-#include <linux/of.h>
 #include <linux/of_platform.h>
 #include <linux/component.h>
-#include <linux/interrupt.h>
+#include <linux/debugfs.h>
 #include <linux/iommu.h>
 #include <linux/version.h>
-#include <linux/stringify.h>
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 16, 0))
 #include <linux/dma-iommu.h>
 #endif
 #ifdef CONFIG_MSM_MMRM
 #include <linux/soc/qcom/msm_mmrm.h>
 #endif
+#include <media/v4l2-mem2mem.h>
 
 #include "msm_vidc_internal.h"
 #include "msm_vidc_driver.h"
@@ -30,6 +26,7 @@
 #include "msm_vidc_memory.h"
 #include "msm_vidc_fence.h"
 #include "venus_hfi.h"
+#include "resources.h"
 
 #define BASE_DEVICE_NUMBER 32
 
@@ -626,7 +623,7 @@ static int msm_vidc_component_master_bind(struct device *dev)
 
 	pr_info("boot_kpi: video driver ready\n");
 
-	d_vpr_h("%s(): succssful\n", __func__);
+	d_vpr_h("%s(): successful\n", __func__);
 
 	return 0;
 
@@ -656,7 +653,7 @@ static void msm_vidc_component_master_unbind(struct device *dev)
 	msm_vidc_deinitialize_media(core);
 	component_unbind_all(dev, core);
 
-	d_vpr_h("%s(): succssful\n", __func__);
+	d_vpr_h("%s(): successful\n", __func__);
 }
 
 static const struct component_ops msm_vidc_component_ops = {
@@ -702,7 +699,7 @@ static int msm_vidc_remove_video_device(struct platform_device *pdev)
 
 	dev_set_drvdata(&pdev->dev, NULL);
 	g_core = NULL;
-	d_vpr_h("%s(): succssful\n", __func__);
+	d_vpr_h("%s(): successful\n", __func__);
 
 	return 0;
 }
@@ -846,7 +843,7 @@ static int msm_vidc_probe_video_device(struct platform_device *pdev)
 		goto master_add_failed;
 	}
 
-	d_vpr_h("%s(): succssful\n", __func__);
+	d_vpr_h("%s(): successful\n", __func__);
 
 	return rc;
 
@@ -975,8 +972,76 @@ static int msm_vidc_pm_resume(struct device *dev)
 	return 0;
 }
 
+static int msm_vidc_pm_freeze(struct device *dev)
+{
+	int rc = 0;
+	struct msm_vidc_core *core;
+
+	/*
+	 * Bail out if
+	 * - driver possibly not probed yet
+	 * - not the main device. We don't support power management on
+	 *   subdevices (e.g. context banks)
+	 */
+	if (!dev || !dev->driver || !is_video_device(dev))
+		return 0;
+
+	core = dev_get_drvdata(dev);
+	if (!core) {
+		d_vpr_e("%s: invalid core\n", __func__);
+		return -EINVAL;
+	}
+
+	/* check if chipset supports freeze */
+	if (!core->capabilities[SUPPORTS_FREEZE].value)
+		return -EOPNOTSUPP;
+
+	core_lock(core, __func__);
+	if (!list_empty(&core->instances)) {
+		d_vpr_e("%s: video session running. skip freeze\n", __func__);
+		rc = -ECANCELED;
+		goto unlock;
+	}
+
+	d_vpr_h("%s: deiniting the core\n", __func__);
+	rc = msm_vidc_core_deinit_locked(core, true);
+	if (rc)
+		d_vpr_e("%s: failed to deinit core\n", __func__);
+
+unlock:
+	core_unlock(core, __func__);
+	return rc;
+}
+
+static int msm_vidc_pm_restore(struct device *dev)
+{
+	struct msm_vidc_core *core;
+
+	if (!dev || !dev->driver || !is_video_device(dev))
+		return 0;
+
+	core = dev_get_drvdata(dev);
+	if (!core) {
+		d_vpr_e("%s: invalid core\n", __func__);
+		return -EINVAL;
+	}
+
+	/* check if chipset supports freeze */
+	if (!core->capabilities[SUPPORTS_FREEZE].value)
+		return -EOPNOTSUPP;
+
+	d_vpr_h("%s: successful\n", __func__);
+	/*
+	 * core_init will be anyways called as part of next session_open,
+	 * so return pm_restore from here.
+	 */
+	return 0;
+}
+
 static const struct dev_pm_ops msm_vidc_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(msm_vidc_pm_suspend, msm_vidc_pm_resume)
+	.freeze = msm_vidc_pm_freeze,
+	.restore = msm_vidc_pm_restore,
 };
 
 struct platform_driver msm_vidc_driver = {
@@ -1001,7 +1066,7 @@ static int __init msm_vidc_init(void)
 		d_vpr_e("Failed to register platform driver\n");
 		return rc;
 	}
-	d_vpr_h("%s(): succssful\n", __func__);
+	d_vpr_h("%s(): successful\n", __func__);
 
 	return 0;
 }
@@ -1011,7 +1076,7 @@ static void __exit msm_vidc_exit(void)
 	d_vpr_h("%s()\n", __func__);
 
 	platform_driver_unregister(&msm_vidc_driver);
-	d_vpr_h("%s(): succssful\n", __func__);
+	d_vpr_h("%s(): successful\n", __func__);
 }
 
 module_init(msm_vidc_init);
