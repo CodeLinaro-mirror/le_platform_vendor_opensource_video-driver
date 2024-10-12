@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2020-2022, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <dt-bindings/clock/qcom,gcc-sun.h>
-#include <dt-bindings/clock/qcom,videocc-sun.h>
+#include <dt-bindings/clock/qcom,gcc-seraph.h>
+#include <dt-bindings/clock/qcom,videocc-seraph.h>
 
 #include <linux/soc/qcom/llcc-qcom.h>
 #include <soc/qcom/of_common.h>
 
 #include <media/v4l2_vidc_extensions.h>
-#include "msm_vidc_sun.h"
+#include "msm_vidc_seraph.h"
 #include "msm_vidc_inst.h"
 #include "msm_vidc_platform.h"
 #include "msm_vidc_debug.h"
@@ -20,7 +19,7 @@
 #include "msm_vidc_memory_ext.h"
 #include "msm_vidc_synx.h"
 #include "resources_ext.h"
-#include "msm_vidc_iris35.h"
+#include "msm_vidc_iris4.h"
 #include "hfi_property.h"
 #include "hfi_command.h"
 #include "venus_hfi.h"
@@ -54,7 +53,7 @@
 #define CODECS_ALL     (H264 | HEVC | VP9 | HEIC | AV1)
 #define MAXIMUM_OVERRIDE_VP9_FPS 200
 
-static struct codec_info codec_data_sun[] = {
+static struct codec_info codec_data_seraph[] = {
 	{
 		.v4l2_codec  = V4L2_PIX_FMT_H264,
 		.vidc_codec  = MSM_VIDC_H264,
@@ -82,7 +81,7 @@ static struct codec_info codec_data_sun[] = {
 	},
 };
 
-static struct color_format_info color_format_data_sun[] = {
+static struct color_format_info color_format_data_seraph[] = {
 	{
 		.v4l2_color_format = V4L2_PIX_FMT_NV12,
 		.vidc_color_format = MSM_VIDC_FMT_NV12,
@@ -114,13 +113,23 @@ static struct color_format_info color_format_data_sun[] = {
 		.pixfmt_name       = "P010",
 	},
 	{
+		.v4l2_color_format = V4L2_PIX_FMT_VIDC_P210,
+		.vidc_color_format = MSM_VIDC_FMT_P210,
+		.pixfmt_name       = "P210",
+	},
+	{
+		.v4l2_color_format = V4L2_PIX_FMT_VIDC_P210C,
+		.vidc_color_format = MSM_VIDC_FMT_P210C,
+		.pixfmt_name       = "P210C",
+	},
+	{
 		.v4l2_color_format = V4L2_META_FMT_VIDC,
 		.vidc_color_format = MSM_VIDC_FMT_META,
 		.pixfmt_name       = "META",
 	},
 };
 
-static struct color_primaries_info color_primaries_data_sun[] = {
+static struct color_primaries_info color_primaries_data_seraph[] = {
 	{
 		.v4l2_color_primaries  = V4L2_COLORSPACE_DEFAULT,
 		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_RESERVED,
@@ -171,7 +180,7 @@ static struct color_primaries_info color_primaries_data_sun[] = {
 	},
 };
 
-static struct transfer_char_info transfer_char_data_sun[] = {
+static struct transfer_char_info transfer_char_data_seraph[] = {
 	{
 		.v4l2_transfer_char  = V4L2_XFER_FUNC_DEFAULT,
 		.vidc_transfer_char  = MSM_VIDC_TRANSFER_RESERVED,
@@ -238,7 +247,7 @@ static struct transfer_char_info transfer_char_data_sun[] = {
 	},
 };
 
-static struct matrix_coeff_info matrix_coeff_data_sun[] = {
+static struct matrix_coeff_info matrix_coeff_data_seraph[] = {
 	{
 		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_DEFAULT,
 		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_RESERVED,
@@ -285,7 +294,7 @@ static struct matrix_coeff_info matrix_coeff_data_sun[] = {
 	},
 };
 
-static const struct msm_platform_core_capability core_data_sun[] = {
+static const struct msm_platform_core_capability core_data_seraph[] = {
 	/* {type, value} */
 	{ENC_CODECS, H264 | HEVC | HEIC},
 	{DEC_CODECS, H264 | HEVC | VP9 | AV1 | HEIC},
@@ -310,7 +319,7 @@ static const struct msm_platform_core_capability core_data_sun[] = {
 	{MAX_MBPS_B_FRAME, 1958400}, /* 3840x2176/256 MBs@60fps */
 	{MAX_MBPS_ALL_INTRA, 1044480}, /* 4096x2176/256 MBs@30fps */
 	{MAX_ENH_LAYER_COUNT, 5},
-	{NUM_VPP_PIPE, 4},
+	{NUM_VPP_PIPE, 2},
 	{SW_PC, 1},
 	{FW_UNLOAD, 0},
 	{HW_RESPONSE_TIMEOUT, HW_RESPONSE_TIMEOUT_VALUE}, /* 1000 ms */
@@ -329,7 +338,7 @@ static const struct msm_platform_core_capability core_data_sun[] = {
 	{SUPPORTS_REQUESTS, 0},
 };
 
-static int msm_vidc_set_ring_buffer_count_sun(void *instance,
+static int msm_vidc_set_ring_buffer_count_seraph(void *instance,
 	enum msm_vidc_inst_capability_type cap_id)
 {
 	int rc = 0;
@@ -393,7 +402,7 @@ static int msm_vidc_set_ring_buffer_count_sun(void *instance,
 	return rc;
 }
 
-static struct msm_platform_inst_capability instance_cap_data_sun[] = {
+static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 	/* {cap, domain, codec,
 	 *      min, max, step_or_mask, value,
 	 *      v4l2_id,
@@ -603,7 +612,7 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 
 	/*
 	 * Client will enable V4L2_CID_MPEG_VIDC_METADATA_OUTBUF_FENCE
-	 * to get output fence_id in input metadata buffer done.
+	 * to get fence_id in input metadata buffer done.
 	 */
 	{META_OUTBUF_FENCE, DEC, H264 | HEVC | VP9 | AV1,
 		MSM_VIDC_META_DISABLE,
@@ -739,7 +748,7 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		HFI_PROP_EARLY_NOTIFY_FENCE_COUNT,
 		CAP_FLAG_INPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
 
-	{HEADER_MODE, ENC, CODECS_ALL,
+	{HEADER_MODE, ENC, H264 | HEVC | HEIC,
 		V4L2_MPEG_VIDEO_HEADER_MODE_SEPARATE,
 		V4L2_MPEG_VIDEO_HEADER_MODE_JOINED_WITH_1ST_FRAME,
 		BIT(V4L2_MPEG_VIDEO_HEADER_MODE_SEPARATE) |
@@ -749,11 +758,11 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		HFI_PROP_SEQ_HEADER_MODE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
-	{PREPEND_SPSPPS_TO_IDR, ENC, CODECS_ALL,
+	{PREPEND_SPSPPS_TO_IDR, ENC, H264 | HEVC | HEIC,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDEO_PREPEND_SPSPPS_TO_IDR},
 
-	{VUI_TIMING_INFO, ENC, CODECS_ALL,
+	{VUI_TIMING_INFO, ENC, H264 | HEVC | HEIC,
 		V4L2_MPEG_MSM_VIDC_DISABLE,
 		V4L2_MPEG_MSM_VIDC_ENABLE,
 		1, V4L2_MPEG_MSM_VIDC_DISABLE,
@@ -761,7 +770,7 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		HFI_PROP_DISABLE_VUI_TIMING_INFO,
 		CAP_FLAG_OUTPUT_PORT},
 
-	{WITHOUT_STARTCODE, ENC, CODECS_ALL,
+	{WITHOUT_STARTCODE, ENC, H264 | HEVC | HEIC,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDEO_HEVC_WITHOUT_STARTCODE,
 		HFI_PROP_NAL_LENGTH_FIELD,
@@ -773,7 +782,7 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		HFI_PROP_NAL_LENGTH_FIELD,
 		CAP_FLAG_INPUT_PORT},
 
-	{NAL_LENGTH_FIELD, ENC, CODECS_ALL,
+	{NAL_LENGTH_FIELD, ENC, H264 | HEVC | HEIC,
 		V4L2_MPEG_VIDEO_HEVC_SIZE_0,
 		V4L2_MPEG_VIDEO_HEVC_SIZE_4,
 		BIT(V4L2_MPEG_VIDEO_HEVC_SIZE_0) |
@@ -880,7 +889,7 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
 			CAP_FLAG_DYNAMIC_ALLOWED},
 
-	{GOP_SIZE, ENC, CODECS_ALL,
+	{GOP_SIZE, ENC, H264 | HEVC,
 		0, INT_MAX, 1, 2 * DEFAULT_FPS - 1,
 		V4L2_CID_MPEG_VIDEO_GOP_SIZE,
 		HFI_PROP_MAX_GOP_FRAMES,
@@ -932,13 +941,13 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
 		CAP_FLAG_DYNAMIC_ALLOWED},
 
-	{CSC, ENC, CODECS_ALL,
+	{CSC, ENC, H264 | HEVC | HEIC,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_CSC,
 		HFI_PROP_CSC,
 		CAP_FLAG_OUTPUT_PORT},
 
-	{CSC_CUSTOM_MATRIX, ENC, CODECS_ALL,
+	{CSC_CUSTOM_MATRIX, ENC, H264 | HEVC | HEIC,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_CSC_CUSTOM_MATRIX,
 		HFI_PROP_CSC_MATRIX,
@@ -1341,26 +1350,13 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		HFI_PROP_PROFILE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
-	{PROFILE, ENC | DEC, HEIC,
+	{PROFILE, ENC | DEC, HEVC | HEIC,
 		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
 		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE,
 		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN) |
 		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE) |
 		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10) |
 		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE),
-		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
-		V4L2_CID_MPEG_VIDEO_HEVC_PROFILE,
-		HFI_PROP_PROFILE,
-		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
-
-	{PROFILE, ENC | DEC, HEVC,
-		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
-		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_MULTIVIEW,
-		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN) |
-		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE) |
-		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10) |
-		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE) |
-		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_MULTIVIEW),
 		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
 		V4L2_CID_MPEG_VIDEO_HEVC_PROFILE,
 		HFI_PROP_PROFILE,
@@ -1690,17 +1686,17 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		HFI_PROP_CONCEAL_COLOR_10BIT,
 		CAP_FLAG_INPUT_PORT},
 
-	{STAGE, DEC|ENC, CODECS_ALL,
+	{STAGE, DEC|ENC, H264 | HEVC | VP9 | HEIC | AV1,
 		MSM_VIDC_STAGE_1,
 		MSM_VIDC_STAGE_2, 1,
 		MSM_VIDC_STAGE_2,
 		0,
 		HFI_PROP_STAGE},
 
-	{PIPE, DEC|ENC, CODECS_ALL,
+	{PIPE, DEC|ENC, H264 | HEVC | VP9 | HEIC | AV1,
 		MSM_VIDC_PIPE_1,
-		MSM_VIDC_PIPE_4, 1,
-		MSM_VIDC_PIPE_4,
+		MSM_VIDC_PIPE_2, 1,
+		MSM_VIDC_PIPE_2,
 		0,
 		HFI_PROP_PIPE},
 
@@ -1848,7 +1844,7 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		HFI_PROP_LTR_MARK_USE_DETAILS,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
-	{META_SEQ_HDR_NAL, ENC, CODECS_ALL,
+	{META_SEQ_HDR_NAL, ENC, H264 | HEVC | HEIC,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_OUTPUT,
 		0, MSM_VIDC_META_DISABLE,
@@ -1934,14 +1930,6 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		0, MSM_VIDC_META_DISABLE,
 		V4L2_CID_MPEG_VIDC_METADATA_TRANSCODE_STAT_INFO,
 		HFI_PROP_TRANSCODING_STAT_INFO,
-		CAP_FLAG_BITMASK | CAP_FLAG_META},
-
-	{META_VIEW_ID, ENC, HEVC,
-		MSM_VIDC_META_DISABLE,
-		MSM_VIDC_META_ENABLE | MSM_VIDC_META_TX_INPUT,
-		0, MSM_VIDC_META_DISABLE,
-		V4L2_CID_MPEG_VIDC_METADATA_VIEW_ID,
-		HFI_PROP_VIEW_ID,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
 	{META_PICTURE_TYPE, DEC, CODECS_ALL,
@@ -2055,7 +2043,7 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		HFI_PROP_BUFFER_TAG,
 		CAP_FLAG_BITMASK | CAP_FLAG_META | CAP_FLAG_DYNAMIC_ALLOWED},
 
-	{META_DPB_TAG_LIST, DEC, CODECS_ALL,
+	{META_DPB_TAG_LIST, DEC, H264 | HEVC | HEIC | VP9 | AV1,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_INPUT,
 		0, MSM_VIDC_META_DISABLE,
@@ -2071,7 +2059,7 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		HFI_PROP_SUBFRAME_OUTPUT,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
-	{META_SUBFRAME_OUTPUT, DEC, CODECS_ALL,
+	{META_SUBFRAME_OUTPUT, DEC, H264 | HEVC | HEIC | VP9 | AV1,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_OUTPUT,
 		0, MSM_VIDC_META_DISABLE,
@@ -2139,7 +2127,7 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		HFI_PROP_ENABLE_SLICE_DELIVERY,
 		CAP_FLAG_OUTPUT_PORT},
 
-	{SIGNAL_COLOR_INFO, ENC, CODECS_ALL,
+	{SIGNAL_COLOR_INFO, ENC, H264 | HEVC | HEIC,
 		0, INT_MAX, 1, 0,
 		V4L2_CID_MPEG_VIDC_SIGNAL_COLOR_INFO,
 		HFI_PROP_SIGNAL_COLOR_INFO,
@@ -2152,9 +2140,8 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		CAP_FLAG_NONE},
 };
 
-static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sun[] = {
+static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_seraph[] = {
 	/* {cap, domain, codec,
-	 *      parents,
 	 *      children,
 	 *      adjust, set}
 	 */
@@ -2189,7 +2176,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sun[
 	{ENC_RING_BUFFER_COUNT, ENC, H264,
 		{0},
 		NULL,
-		msm_vidc_set_ring_buffer_count_sun},
+		msm_vidc_set_ring_buffer_count_seraph},
 
 	{SECURE_MODE, ENC | DEC, H264 | HEVC | VP9 | AV1,
 		{0},
@@ -2272,12 +2259,12 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sun[
 		msm_vidc_adjust_early_notify_fence_count,
 		msm_vidc_set_u32},
 
-	{HEADER_MODE, ENC, CODECS_ALL,
+	{HEADER_MODE, ENC, H264 | HEVC | HEIC,
 		{0},
 		NULL,
 		msm_vidc_set_header_mode},
 
-	{WITHOUT_STARTCODE, ENC, CODECS_ALL,
+	{WITHOUT_STARTCODE, ENC, H264 | HEVC | HEIC,
 		{0},
 		NULL,
 		msm_vidc_set_nal_length},
@@ -2331,7 +2318,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sun[
 		NULL,
 		msm_vidc_set_constant_quality},
 
-	{GOP_SIZE, ENC, CODECS_ALL,
+	{GOP_SIZE, ENC, H264 | HEVC | HEIC,
 		{ALL_INTRA},
 		msm_vidc_adjust_gop_size,
 		msm_vidc_set_gop_size},
@@ -2366,12 +2353,12 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sun[
 		msm_vidc_adjust_blur_resolution,
 		msm_vidc_set_blur_resolution},
 
-	{CSC, ENC, CODECS_ALL,
+	{CSC, ENC, H264 | HEVC | HEIC,
 		{CSC_CUSTOM_MATRIX},
 		msm_vidc_adjust_csc,
 		msm_vidc_set_u32},
 
-	{CSC_CUSTOM_MATRIX, ENC, CODECS_ALL,
+	{CSC_CUSTOM_MATRIX, ENC, H264 | HEVC | HEIC,
 		{0},
 		msm_vidc_adjust_csc_custom_matrix,
 		msm_vidc_set_csc_custom_matrix},
@@ -2438,12 +2425,12 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sun[
 
 	{BITRATE_BOOST, ENC, H264 | HEVC,
 		{LEVEL},
-		msm_vidc_adjust_bitrate_boost_iris35,
+		msm_vidc_adjust_bitrate_boost_iris4,
 		msm_vidc_set_vbr_related_properties},
 
 	{MIN_QUALITY, ENC, H264 | HEVC,
 		{BLUR_TYPES},
-		msm_vidc_adjust_min_quality_iris35,
+		msm_vidc_adjust_min_quality,
 		msm_vidc_set_u32},
 
 	{VBV_DELAY, ENC, H264 | HEVC,
@@ -2767,7 +2754,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sun[
 		NULL},
 
 	{META_ROI_INFO, ENC, H264 | HEVC,
-		{IR_PERIOD, BLUR_TYPES},
+		{MIN_QUALITY, IR_PERIOD, BLUR_TYPES},
 		msm_vidc_adjust_roi_info,
 		NULL},
 
@@ -2781,12 +2768,12 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sun[
 		msm_vidc_adjust_delivery_mode,
 		msm_vidc_set_u32},
 
-	{VUI_TIMING_INFO, ENC, CODECS_ALL,
+	{VUI_TIMING_INFO, ENC, H264 | HEVC | HEIC,
 		{0},
 		NULL,
 		msm_vidc_set_vui_timing_info},
 
-	{SIGNAL_COLOR_INFO, ENC, CODECS_ALL,
+	{SIGNAL_COLOR_INFO, ENC, H264 | HEVC | HEIC,
 		{0},
 		NULL,
 		msm_vidc_set_signal_color_info},
@@ -2823,49 +2810,58 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sun[
 };
 
 /* Default UBWC config for LPDDR5 */
-static struct msm_vidc_ubwc_config_data ubwc_config_sun[] = {
+static struct msm_vidc_ubwc_config_data ubwc_config_seraph[] = {
 	UBWC_CONFIG(8, 32, 16, 0, 1, 1, 1),
 };
 
-static struct msm_vidc_format_capability format_data_sun = {
-	.codec_info = codec_data_sun,
-	.codec_info_size = ARRAY_SIZE(codec_data_sun),
-	.color_format_info = color_format_data_sun,
-	.color_format_info_size = ARRAY_SIZE(color_format_data_sun),
-	.color_prim_info = color_primaries_data_sun,
-	.color_prim_info_size = ARRAY_SIZE(color_primaries_data_sun),
-	.transfer_char_info = transfer_char_data_sun,
-	.transfer_char_info_size = ARRAY_SIZE(transfer_char_data_sun),
-	.matrix_coeff_info = matrix_coeff_data_sun,
-	.matrix_coeff_info_size = ARRAY_SIZE(matrix_coeff_data_sun),
+static struct msm_vidc_format_capability format_data_seraph = {
+	.codec_info = codec_data_seraph,
+	.codec_info_size = ARRAY_SIZE(codec_data_seraph),
+	.color_format_info = color_format_data_seraph,
+	.color_format_info_size = ARRAY_SIZE(color_format_data_seraph),
+	.color_prim_info = color_primaries_data_seraph,
+	.color_prim_info_size = ARRAY_SIZE(color_primaries_data_seraph),
+	.transfer_char_info = transfer_char_data_seraph,
+	.transfer_char_info_size = ARRAY_SIZE(transfer_char_data_seraph),
+	.matrix_coeff_info = matrix_coeff_data_seraph,
+	.matrix_coeff_info_size = ARRAY_SIZE(matrix_coeff_data_seraph),
 };
 
 /* name, min_kbps, max_kbps */
-static const struct bw_table sun_bw_table[] = {
+static const struct bw_table seraph_bw_table[] = {
 	{ "venus-cnoc",  1000, 1000     },
 	{ "venus-ddr",   1000, 15000000 },
 	{ "venus-llcc",  1000, 15000000 },
 };
 
 /* name */
-static const struct pd_table sun_pd_table[] = {
+static const struct pd_table seraph_pd_table[] = {
 	{ "iris-ctl" },
 	{ "vcodec"   },
+	{ "vpp0"     },
+	{ "vpp1"     },
 };
 
 /* name, clock id, scaling */
-static const struct clk_table sun_clk_table[] = {
-	{ "gcc_video_axi1_clk",        GCC_VIDEO_AXI1_CLK,         0 },
-	{ "gcc_video_axi0_clk",        GCC_VIDEO_AXI0_CLK,         0 },
-	{"video_cc_mvs0c_freerun_clk", VIDEO_CC_MVS0C_FREERUN_CLK, 0 },
-	{"video_cc_mvs0_freerun_clk",  VIDEO_CC_MVS0_FREERUN_CLK,  0 },
-	{ "video_cc_mvs0c_clk",        VIDEO_CC_MVS0C_CLK,         0 },
-	{ "video_cc_mvs0_clk",         VIDEO_CC_MVS0_CLK,          0 },
-	{ "video_cc_mvs0_clk_src",     VIDEO_CC_MVS0_CLK_SRC,      1 },
+static const struct clk_table seraph_clk_table[] = {
+	{ "gcc_video_axi1_clk",         GCC_VIDEO_AXI1_CLK,         0 },
+	{ "gcc_video_axi0_clk",         GCC_VIDEO_AXI0_CLK,         0 },
+	{ "video_cc_mvs0c_freerun_clk", VIDEO_CC_MVS0C_FREERUN_CLK, 0 },
+	{ "video_cc_mvs0_freerun_clk",  VIDEO_CC_MVS0_FREERUN_CLK,  0 },
+	{ "video_cc_mvs0_clk",          VIDEO_CC_MVS0_CLK,          0 },
+	{ "video_cc_mvs0a_clk",         VIDEO_CC_MVS0A_CLK,         0 },
+	{ "video_cc_mvs0b_clk",         VIDEO_CC_MVS0B_CLK,         0 },
+	{ "video_cc_mvs0c_clk",         VIDEO_CC_MVS0C_CLK,         0 },
+	{ "video_cc_mvs0_vpp0_clk",     VIDEO_CC_MVS0_VPP0_CLK,     0 },
+	{ "video_cc_mvs0_vpp1_clk",     VIDEO_CC_MVS0_VPP1_CLK,     0 },
+	{ "video_cc_mvs0_clk_src",      VIDEO_CC_MVS0_CLK_SRC,      1 },
+	{ "video_cc_mvs0a_clk_src",     VIDEO_CC_MVS0A_CLK_SRC,     1 },
+	{ "video_cc_mvs0b_clk_src",     VIDEO_CC_MVS0B_CLK_SRC,     1 },
+	{ "video_cc_mvs0c_clk_src",     VIDEO_CC_MVS0C_CLK_SRC,     1 },
 };
 
 /* name, exclusive_release */
-static const struct clk_rst_table sun_clk_reset_table[] = {
+static const struct clk_rst_table seraph_clk_reset_table[] = {
 	{ "video_axi1_reset",                   0  },
 	{ "video_axi0_reset",                   0  },
 	{ "video_mvs0c_freerun_reset",          0  },
@@ -2873,31 +2869,27 @@ static const struct clk_rst_table sun_clk_reset_table[] = {
 };
 
 /* name, llcc_id */
-static const struct subcache_table sun_subcache_table[] = {
+static const struct subcache_table seraph_subcache_table[] = {
 	{ "vidsc0",     LLCC_VIDSC0 },
 	{ "vidvsp",     LLCC_VIDVSP },
 };
 
 /* name, start, size, secure, dma_coherant, region, dma_mask */
-const struct context_bank_table sun_context_bank_table[] = {
-	{"qcom,vidc,cb-ns",             0x25800000, 0xba800000, 0, 1, MSM_VIDC_NON_SECURE,       0 },
-	{"qcom,vidc,cb-ns-pxl",         0x00100000, 0xdff00000, 0, 1, MSM_VIDC_NON_SECURE_PIXEL, 0 },
-	{"qcom,vidc,cb-sec-pxl",        0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_PIXEL,     0 },
-	{"qcom,vidc,cb-sec-non-pxl",    0x01000000, 0x24800000, 1, 0, MSM_VIDC_SECURE_NONPIXEL,  0 },
-	{"qcom,vidc,cb-sec-bitstream",  0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_BITSTREAM, 0 },
+const struct context_bank_table seraph_context_bank_table[] = {
+	{"qcom,vidc,cb-ns",            0x25800000, 0xba800000, 0, 1, MSM_VIDC_NON_SECURE,       0 },
+	{"qcom,vidc,cb-ns-pxl",        0x00100000, 0xdff00000, 0, 1, MSM_VIDC_NON_SECURE_PIXEL, 0 },
+	{"qcom,vidc,cb-sec-pxl",       0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_PIXEL,     0 },
+	{"qcom,vidc,cb-sec-non-pxl",   0x01000000, 0x24800000, 1, 0, MSM_VIDC_SECURE_NONPIXEL,  0 },
+	{"qcom,vidc,cb-sec-bitstream", 0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_BITSTREAM, 0 },
 };
 
 /* freq */
-static struct freq_table sun_freq_table[] = {
-	{570000000}, {533333333}, {444000000}, {420000000}, {338000000}, {240000000}
-};
-
-static struct freq_table sun_freq_table_v2[] = {
-	{570000000}, {533333333}, {444000000}, {420000000}, {338000000}, {240000000}
+static struct freq_table seraph_freq_table[] = {
+	{800000000}, {630000000}, {533000000}, {444000000}, {420000000}, {338000000}, {240000000}
 };
 
 /* register, value, mask */
-static const struct reg_preset_table sun_reg_preset_table[] = {
+static const struct reg_preset_table seraph_reg_preset_table[] = {
 	{ 0xB0088, 0x0,        0xFFFFFFFF},
 	{ 0x13030, 0x33332211, 0xFFFFFFFF},
 	{ 0x13034, 0x44444444, 0xFFFFFFFF},
@@ -2912,22 +2904,8 @@ static const struct reg_preset_table sun_reg_preset_table[] = {
 	{ 0xA013C, 0x99,       0xFFFFFFFF},
 };
 
-/* name, phys_addr, size, device_addr, device region type */
-static const struct device_region_table sun_device_region_table[] = {
-	{
-		"ipc_protocol4_client8_version-registers",
-		0x00508000, 0x1000, 0xFFADF000,
-		MSM_VIDC_PROTOCOL_FENCE_CLIENT_VPU
-	},
-	{
-		"qtimer_f0v1_qtmr_v1_cntpct_lo",
-		0x17421000, 0x1000, 0xFFADE000,
-		MSM_VIDC_QTIMER
-	},
-};
-
 /* decoder properties */
-static const u32 sun_vdec_psc_avc[] = {
+static const u32 seraph_vdec_psc_avc[] = {
 	HFI_PROP_BITSTREAM_RESOLUTION,
 	HFI_PROP_CROP_OFFSETS,
 	HFI_PROP_CODED_FRAMES,
@@ -2939,7 +2917,7 @@ static const u32 sun_vdec_psc_avc[] = {
 	HFI_PROP_MAX_NUM_REORDER_FRAMES,
 };
 
-static const u32 sun_vdec_psc_hevc[] = {
+static const u32 seraph_vdec_psc_hevc[] = {
 	HFI_PROP_BITSTREAM_RESOLUTION,
 	HFI_PROP_CROP_OFFSETS,
 	HFI_PROP_LUMA_CHROMA_BIT_DEPTH,
@@ -2951,7 +2929,7 @@ static const u32 sun_vdec_psc_hevc[] = {
 	HFI_PROP_MAX_NUM_REORDER_FRAMES,
 };
 
-static const u32 sun_vdec_psc_vp9[] = {
+static const u32 seraph_vdec_psc_vp9[] = {
 	HFI_PROP_BITSTREAM_RESOLUTION,
 	HFI_PROP_CROP_OFFSETS,
 	HFI_PROP_LUMA_CHROMA_BIT_DEPTH,
@@ -2960,7 +2938,7 @@ static const u32 sun_vdec_psc_vp9[] = {
 	HFI_PROP_LEVEL,
 };
 
-static const u32 sun_vdec_psc_av1[] = {
+static const u32 seraph_vdec_psc_av1[] = {
 	HFI_PROP_BITSTREAM_RESOLUTION,
 	HFI_PROP_CROP_OFFSETS,
 	HFI_PROP_LUMA_CHROMA_BIT_DEPTH,
@@ -2973,25 +2951,25 @@ static const u32 sun_vdec_psc_av1[] = {
 	HFI_PROP_SIGNAL_COLOR_INFO,
 };
 
-static const u32 sun_vdec_input_properties_avc[] = {
+static const u32 seraph_vdec_input_properties_avc[] = {
 	HFI_PROP_NO_OUTPUT,
 	HFI_PROP_SUBFRAME_INPUT,
 	HFI_PROP_DPB_LIST,
 };
 
-static const u32 sun_vdec_input_properties_hevc[] = {
+static const u32 seraph_vdec_input_properties_hevc[] = {
 	HFI_PROP_NO_OUTPUT,
 	HFI_PROP_SUBFRAME_INPUT,
 	HFI_PROP_DPB_LIST,
 };
 
-static const u32 sun_vdec_input_properties_vp9[] = {
+static const u32 seraph_vdec_input_properties_vp9[] = {
 	HFI_PROP_NO_OUTPUT,
 	HFI_PROP_SUBFRAME_INPUT,
 	HFI_PROP_DPB_LIST,
 };
 
-static const u32 sun_vdec_input_properties_av1[] = {
+static const u32 seraph_vdec_input_properties_av1[] = {
 	HFI_PROP_NO_OUTPUT,
 	HFI_PROP_SUBFRAME_INPUT,
 	HFI_PROP_DPB_LIST,
@@ -2999,7 +2977,7 @@ static const u32 sun_vdec_input_properties_av1[] = {
 	HFI_PROP_AV1_UNIFORM_TILE_SPACING,
 };
 
-static const u32 sun_vdec_output_properties_avc[] = {
+static const u32 seraph_vdec_output_properties_avc[] = {
 	HFI_PROP_WORST_COMPRESSION_RATIO,
 	HFI_PROP_WORST_COMPLEXITY_FACTOR,
 	HFI_PROP_PICTURE_TYPE,
@@ -3007,103 +2985,101 @@ static const u32 sun_vdec_output_properties_avc[] = {
 	HFI_PROP_FENCE_OUTPUT,
 };
 
-static const u32 sun_vdec_output_properties_hevc[] = {
+static const u32 seraph_vdec_output_properties_hevc[] = {
 	HFI_PROP_WORST_COMPRESSION_RATIO,
 	HFI_PROP_WORST_COMPLEXITY_FACTOR,
 	HFI_PROP_PICTURE_TYPE,
 	HFI_PROP_FENCE_OUTPUT,
 };
 
-static const u32 sun_vdec_output_properties_vp9[] = {
+static const u32 seraph_vdec_output_properties_vp9[] = {
 	HFI_PROP_WORST_COMPRESSION_RATIO,
 	HFI_PROP_WORST_COMPLEXITY_FACTOR,
 	HFI_PROP_PICTURE_TYPE,
 	HFI_PROP_FENCE_OUTPUT,
 };
 
-static const u32 sun_vdec_output_properties_av1[] = {
+static const u32 seraph_vdec_output_properties_av1[] = {
 	HFI_PROP_WORST_COMPRESSION_RATIO,
 	HFI_PROP_WORST_COMPLEXITY_FACTOR,
 	HFI_PROP_PICTURE_TYPE,
 	HFI_PROP_FENCE_OUTPUT,
 };
 
-static const u32 sun_msm_vidc_ssr_type[] = {
+static const u32 seraph_msm_vidc_ssr_type[] = {
 	HFI_SSR_TYPE_SW_ERR_FATAL,
 };
 
-static const struct msm_vidc_platform_data sun_data = {
+static const struct msm_vidc_platform_data seraph_data = {
 	/* resources dependent on other module */
-	.bw_tbl = sun_bw_table,
-	.bw_tbl_size = ARRAY_SIZE(sun_bw_table),
-	.pd_tbl = sun_pd_table,
-	.pd_tbl_size = ARRAY_SIZE(sun_pd_table),
-	.clk_tbl = sun_clk_table,
-	.clk_tbl_size = ARRAY_SIZE(sun_clk_table),
-	.clk_rst_tbl = sun_clk_reset_table,
-	.clk_rst_tbl_size = ARRAY_SIZE(sun_clk_reset_table),
-	.subcache_tbl = sun_subcache_table,
-	.subcache_tbl_size = ARRAY_SIZE(sun_subcache_table),
+	.bw_tbl = seraph_bw_table,
+	.bw_tbl_size = ARRAY_SIZE(seraph_bw_table),
+	.pd_tbl = seraph_pd_table,
+	.pd_tbl_size = ARRAY_SIZE(seraph_pd_table),
+	.clk_tbl = seraph_clk_table,
+	.clk_tbl_size = ARRAY_SIZE(seraph_clk_table),
+	.clk_rst_tbl = seraph_clk_reset_table,
+	.clk_rst_tbl_size = ARRAY_SIZE(seraph_clk_reset_table),
+	.subcache_tbl = seraph_subcache_table,
+	.subcache_tbl_size = ARRAY_SIZE(seraph_subcache_table),
 
 	/* populate context bank */
-	.context_bank_tbl = sun_context_bank_table,
-	.context_bank_tbl_size = ARRAY_SIZE(sun_context_bank_table),
+	.context_bank_tbl = seraph_context_bank_table,
+	.context_bank_tbl_size = ARRAY_SIZE(seraph_context_bank_table),
 
 	/* platform specific resources */
-	.freq_tbl = sun_freq_table,
-	.freq_tbl_size = ARRAY_SIZE(sun_freq_table),
-	.reg_prst_tbl = sun_reg_preset_table,
-	.reg_prst_tbl_size = ARRAY_SIZE(sun_reg_preset_table),
-	.dev_reg_tbl = sun_device_region_table,
-	.dev_reg_tbl_size = ARRAY_SIZE(sun_device_region_table),
-	.fwname = "vpu35_4v",
+	.freq_tbl = seraph_freq_table,
+	.freq_tbl_size = ARRAY_SIZE(seraph_freq_table),
+	.reg_prst_tbl = seraph_reg_preset_table,
+	.reg_prst_tbl_size = ARRAY_SIZE(seraph_reg_preset_table),
+	.fwname = "vpu40_2v",
 	.pas_id = 9,
 	.supports_mmrm = 1,
 
 	/* caps related resorces */
-	.core_data = core_data_sun,
-	.core_data_size = ARRAY_SIZE(core_data_sun),
-	.inst_cap_data = instance_cap_data_sun,
-	.inst_cap_data_size = ARRAY_SIZE(instance_cap_data_sun),
-	.inst_cap_dependency_data = instance_cap_dependency_data_sun,
-	.inst_cap_dependency_data_size = ARRAY_SIZE(instance_cap_dependency_data_sun),
+	.core_data = core_data_seraph,
+	.core_data_size = ARRAY_SIZE(core_data_seraph),
+	.inst_cap_data = instance_cap_data_seraph,
+	.inst_cap_data_size = ARRAY_SIZE(instance_cap_data_seraph),
+	.inst_cap_dependency_data = instance_cap_dependency_data_seraph,
+	.inst_cap_dependency_data_size = ARRAY_SIZE(instance_cap_dependency_data_seraph),
 	.csc_data.vpe_csc_custom_bias_coeff = vpe_csc_custom_bias_coeff,
 	.csc_data.vpe_csc_custom_matrix_coeff = vpe_csc_custom_matrix_coeff,
 	.csc_data.vpe_csc_custom_limit_coeff = vpe_csc_custom_limit_coeff,
-	.ubwc_config = ubwc_config_sun,
-	.format_data = &format_data_sun,
+	.ubwc_config = ubwc_config_seraph,
+	.format_data = &format_data_seraph,
 
 	/* decoder properties related*/
-	.psc_avc_tbl = sun_vdec_psc_avc,
-	.psc_avc_tbl_size = ARRAY_SIZE(sun_vdec_psc_avc),
-	.psc_hevc_tbl = sun_vdec_psc_hevc,
-	.psc_hevc_tbl_size = ARRAY_SIZE(sun_vdec_psc_hevc),
-	.psc_vp9_tbl = sun_vdec_psc_vp9,
-	.psc_vp9_tbl_size = ARRAY_SIZE(sun_vdec_psc_vp9),
-	.psc_av1_tbl = sun_vdec_psc_av1,
-	.psc_av1_tbl_size = ARRAY_SIZE(sun_vdec_psc_av1),
-	.dec_input_prop_avc = sun_vdec_input_properties_avc,
-	.dec_input_prop_hevc = sun_vdec_input_properties_hevc,
-	.dec_input_prop_vp9 = sun_vdec_input_properties_vp9,
-	.dec_input_prop_av1 = sun_vdec_input_properties_av1,
-	.dec_input_prop_size_avc = ARRAY_SIZE(sun_vdec_input_properties_avc),
-	.dec_input_prop_size_hevc = ARRAY_SIZE(sun_vdec_input_properties_hevc),
-	.dec_input_prop_size_vp9 = ARRAY_SIZE(sun_vdec_input_properties_vp9),
-	.dec_input_prop_size_av1 = ARRAY_SIZE(sun_vdec_input_properties_av1),
-	.dec_output_prop_avc = sun_vdec_output_properties_avc,
-	.dec_output_prop_hevc = sun_vdec_output_properties_hevc,
-	.dec_output_prop_vp9 = sun_vdec_output_properties_vp9,
-	.dec_output_prop_av1 = sun_vdec_output_properties_av1,
-	.dec_output_prop_size_avc = ARRAY_SIZE(sun_vdec_output_properties_avc),
-	.dec_output_prop_size_hevc = ARRAY_SIZE(sun_vdec_output_properties_hevc),
-	.dec_output_prop_size_vp9 = ARRAY_SIZE(sun_vdec_output_properties_vp9),
-	.dec_output_prop_size_av1 = ARRAY_SIZE(sun_vdec_output_properties_av1),
+	.psc_avc_tbl = seraph_vdec_psc_avc,
+	.psc_avc_tbl_size = ARRAY_SIZE(seraph_vdec_psc_avc),
+	.psc_hevc_tbl = seraph_vdec_psc_hevc,
+	.psc_hevc_tbl_size = ARRAY_SIZE(seraph_vdec_psc_hevc),
+	.psc_vp9_tbl = seraph_vdec_psc_vp9,
+	.psc_vp9_tbl_size = ARRAY_SIZE(seraph_vdec_psc_vp9),
+	.psc_av1_tbl = seraph_vdec_psc_av1,
+	.psc_av1_tbl_size = ARRAY_SIZE(seraph_vdec_psc_av1),
+	.dec_input_prop_avc = seraph_vdec_input_properties_avc,
+	.dec_input_prop_hevc = seraph_vdec_input_properties_hevc,
+	.dec_input_prop_vp9 = seraph_vdec_input_properties_vp9,
+	.dec_input_prop_av1 = seraph_vdec_input_properties_av1,
+	.dec_input_prop_size_avc = ARRAY_SIZE(seraph_vdec_input_properties_avc),
+	.dec_input_prop_size_hevc = ARRAY_SIZE(seraph_vdec_input_properties_hevc),
+	.dec_input_prop_size_vp9 = ARRAY_SIZE(seraph_vdec_input_properties_vp9),
+	.dec_input_prop_size_av1 = ARRAY_SIZE(seraph_vdec_input_properties_av1),
+	.dec_output_prop_avc = seraph_vdec_output_properties_avc,
+	.dec_output_prop_hevc = seraph_vdec_output_properties_hevc,
+	.dec_output_prop_vp9 = seraph_vdec_output_properties_vp9,
+	.dec_output_prop_av1 = seraph_vdec_output_properties_av1,
+	.dec_output_prop_size_avc = ARRAY_SIZE(seraph_vdec_output_properties_avc),
+	.dec_output_prop_size_hevc = ARRAY_SIZE(seraph_vdec_output_properties_hevc),
+	.dec_output_prop_size_vp9 = ARRAY_SIZE(seraph_vdec_output_properties_vp9),
+	.dec_output_prop_size_av1 = ARRAY_SIZE(seraph_vdec_output_properties_av1),
 
-	.msm_vidc_ssr_type = sun_msm_vidc_ssr_type,
-	.msm_vidc_ssr_type_size = ARRAY_SIZE(sun_msm_vidc_ssr_type),
+	.msm_vidc_ssr_type = seraph_msm_vidc_ssr_type,
+	.msm_vidc_ssr_type_size = ARRAY_SIZE(seraph_msm_vidc_ssr_type),
 };
 
-static int msm_vidc_sun_check_ddr_type(void)
+static int msm_vidc_seraph_check_ddr_type(void)
 {
 	u32 ddr_type;
 
@@ -3112,32 +3088,25 @@ static int msm_vidc_sun_check_ddr_type(void)
 		ddr_type != DDR_TYPE_LPDDR5X) {
 		d_vpr_e("%s: wrong ddr type %d\n", __func__, ddr_type);
 		return -EINVAL;
-	} else {
-		d_vpr_h("%s: ddr type %d\n", __func__, ddr_type);
 	}
+
+	d_vpr_h("%s: ddr type %d\n", __func__, ddr_type);
 	return 0;
 }
 
-int msm_vidc_get_platform_data_sun(struct msm_vidc_core *core)
+int msm_vidc_get_platform_data_seraph(struct msm_vidc_core *core)
 {
-	struct device *dev = &core->pdev->dev;
-
-	d_vpr_h("%s: initialize sun data\n", __func__);
-	core->platform->data = sun_data;
-	if (of_device_is_compatible(dev->of_node, "qcom,sm8750-vidc-v2")) {
-		d_vpr_h("%s: update frequency table for sun v2\n", __func__);
-		core->platform->data.freq_tbl = sun_freq_table_v2;
-		core->platform->data.freq_tbl_size = ARRAY_SIZE(sun_freq_table_v2);
-	}
+	d_vpr_h("%s: initialize seraph data\n", __func__);
+	core->platform->data = seraph_data;
 
 	return 0;
 }
 
-int msm_vidc_init_platform_sun(struct msm_vidc_core *core)
+int msm_vidc_init_platform_seraph(struct msm_vidc_core *core)
 {
 	int rc = 0;
 
-	d_vpr_h("%s: initialize sun ops\n", __func__);
+	d_vpr_h("%s: initialize seraph ops\n", __func__);
 	core->mem_ops = get_mem_ops_ext();
 	if (!core->mem_ops) {
 		d_vpr_e("%s: invalid memory ext ops\n", __func__);
@@ -3148,7 +3117,7 @@ int msm_vidc_init_platform_sun(struct msm_vidc_core *core)
 		d_vpr_e("%s: invalid resource ext ops\n", __func__);
 		return -EINVAL;
 	}
-	rc = msm_vidc_sun_check_ddr_type();
+	rc = msm_vidc_seraph_check_ddr_type();
 	if (rc)
 		return rc;
 
