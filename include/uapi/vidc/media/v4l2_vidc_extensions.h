@@ -189,6 +189,18 @@ enum v4l2_mpeg_vidc_av1_tier {
 /* AV1 Decoder Film Grain */
 #define V4L2_CID_MPEG_VIDC_FILM_GRAIN_PRESENT                (VIDC_BASE + 0x35)
 
+/* Control to enable output buffer TX fence (video device signal) feature */
+#define V4L2_CID_MPEG_VIDC_METADATA_OUTPUT_TX_FENCE          (VIDC_BASE + 0x38)
+
+/* Control to set fence id to driver in order to get corresponding fence fd */
+#define V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_ID                (VIDC_BASE + 0x39)
+
+/* Control to get fence fd from driver for the fence id */
+#define V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_FD                (VIDC_BASE + 0x3A)
+
+/* Control to get frame type for TX fence (video device signal) enable case */
+#define V4L2_CID_MPEG_VIDC_METADATA_PICTURE_TYPE             (VIDC_BASE + 0x3B)
+
 #define V4L2_CID_MPEG_VIDC_METADATA_DOLBY_RPU                (VIDC_BASE + 0x40)
 
 #define V4L2_CID_MPEG_VIDC_CLIENT_ID                         (VIDC_BASE + 0x41)
@@ -196,6 +208,12 @@ enum v4l2_mpeg_vidc_av1_tier {
 #define V4L2_CID_MPEG_VIDC_LAST_FLAG_EVENT_ENABLE            (VIDC_BASE + 0x42)
 
 #define V4L2_CID_MPEG_VIDC_VUI_TIMING_INFO                   (VIDC_BASE + 0x43)
+
+/* Control to enable early notify feature */
+#define V4L2_CID_MPEG_VIDC_EARLY_NOTIFY_ENABLE               (VIDC_BASE + 0x44)
+
+/* Control to configure line count to get partial decode completion notification */
+#define V4L2_CID_MPEG_VIDC_EARLY_NOTIFY_LINE_COUNT           (VIDC_BASE + 0x45)
 
 /*
  * This control is introduced to overcome v4l2 limitation
@@ -232,6 +250,78 @@ enum v4l2_mpeg_vidc_av1_tier {
 
 #define V4L2_CID_MPEG_VIDC_CAPTURE_DATA_OFFSET               (VIDC_BASE + 0x4E)
 
+/* Control to enable input buffer RX fence (video device wait) feature */
+#define V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_ENABLE             (VIDC_BASE + 0x4F)
+
+/* Control to set input buffer RX fence (video device wait) type */
+#define V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_TYPE               (VIDC_BASE + 0x51)
+
+/* Control to set output buffer TX fence (video device signal) type */
+#define V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_TYPE              (VIDC_BASE + 0x52)
+enum v4l2_mpeg_vidc_fence_type {
+	V4L2_MPEG_VIDC_FENCE_NONE       = 0,
+	V4L2_MPEG_VIDC_FENCE_SW         = 1,
+	V4L2_MPEG_VIDC_FENCE_SYNX_V2    = 2,
+};
+
+/* Control to set offset in metadata buffer where extra data can be present */
+#define V4L2_CID_MPEG_VIDC_INPUT_EXTRA_METADATA_OFFSET       (VIDC_BASE + 0x53)
+
+/* Control to enable input buffer TX fence (video device signal) feature */
+#define V4L2_CID_MPEG_VIDC_INPUT_TX_FENCE_ENABLE             (VIDC_BASE + 0x54)
+
+/* Control to set input buffer TX fence (video device signal) type */
+#define V4L2_CID_MPEG_VIDC_INPUT_TX_FENCE_TYPE               (VIDC_BASE + 0x55)
+
+/* Control to enable output buffer RX fence (video device wait) feature */
+#define V4L2_CID_MPEG_VIDC_OUTPUT_RX_FENCE_ENABLE            (VIDC_BASE + 0x56)
+
+/* Control to set output buffer RX fence (video device wait) type */
+#define V4L2_CID_MPEG_VIDC_OUTPUT_RX_FENCE_TYPE              (VIDC_BASE + 0x57)
+
+/* Control to queue fence fd array to Driver */
+#define V4L2_CID_MPEG_VIDC_FENCE_INFO                        (VIDC_BASE + 0x58)
+
+/**
+ * @struct v4l2_vidc_fence_info
+ * @brief Structure for managing fence file descriptors and handles
+ *
+ * Client will populate fields(v4l2_type, index, num_rx_fds & fd
+ * array) and queues to driver and driver extracts RX fence
+ * (video device wait) handles using fd array.
+ *
+ * Driver will internally allocates TX fence (video device signal)
+ * handles and associates file descriptors and also populates
+ * (num_tx_fds, fd and handle array), which client will use it during
+ * early input metadata done to send speculative output done.
+ *
+ * @var v4l2_vidc_fence_info::v4l2_type
+ *     The type of the V4L2 buffer (e.g., V4L2_BUF_TYPE_VIDEO_OUTPUT). (Input)
+ *
+ * @var v4l2_vidc_fence_info::index
+ *     The index of the buffer. (Input)
+ *
+ * @var v4l2_vidc_fence_info::num_rx_fds
+ *     The number of RX fences (video device wait). (Input)
+ *
+ * @var v4l2_vidc_fence_info::num_tx_fds
+ *     The number of TX fences (video device signal). (Output)
+ *
+ * @var v4l2_vidc_fence_info::fd
+ *     An array of file descriptors for the fences(RX/TX). (Input/Output)
+ *
+ * @var v4l2_vidc_fence_info::handle
+ *     An array of handles for the fences. (Output)
+ */
+struct v4l2_vidc_fence_info {
+	__u32 v4l2_type;      /* The type of the V4L2 buffer */
+	__u32 index;          /* V4L2 index of the buffer */
+	__u32 num_rx_fds;     /* The number of RX (video device wait) fences */
+	__u32 num_tx_fds;     /* The number of TX (video device signal) fences */
+	int fd[32];           /* An array of file descriptors for the fences (RX/TX) */
+	__u64 handle[32];     /* An array of handles (fence id) for the fences (TX) */
+};
+
 /* Profile information for APV */
 #define V4L2_CID_MPEG_VIDC_APV_PROFILE                       (VIDC_BASE + 0x60)
 enum v4l2_mpeg_vidc_apv_profile {
@@ -259,10 +349,14 @@ enum v4l2_mpeg_vidc_apv_level {
 /* Maximum quantization parameter for APV */
 #define V4L2_CID_MPEG_VIDC_APV_MAX_QP                        (VIDC_BASE + 0x63)
 
-/* Control to send the view ID of multiview buffer to FW*/
+/* Control to send the view ID of multiview buffer to video firmware*/
 #define V4L2_CID_MPEG_VIDC_METADATA_VIEW_ID                  (VIDC_BASE + 0x64)
 
-/* Control to send multiview output buffer pair info to FW*/
+/* Control to send multiview output buffer pair information to video firmware*/
 #define V4L2_CID_MPEG_VIDC_METADATA_VIEW_PAIR                (VIDC_BASE + 0x65)
+
+/* Control to send 3D reference display information to video firmware*/
+#define V4L2_CID_MPEG_VIDC_METADATA_THREE_DIMENSIONAL_REF_DISP_INFO \
+							     (VIDC_BASE + 0x66)
 
 #endif

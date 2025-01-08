@@ -21,12 +21,13 @@
 	((c)->session_ops->op(__VA_ARGS__)) : 0)
 
 struct msm_vidc_session_ops {
-	u64 (*calc_freq)(struct msm_vidc_inst *inst, u32 data_size);
+	int (*scale_clocks)(struct msm_vidc_inst *inst);
 	int (*calc_bw)(struct msm_vidc_inst *inst,
 		       struct vidc_bus_vote_data *vote_data);
 	int (*decide_work_route)(struct msm_vidc_inst *inst);
 	int (*decide_work_mode)(struct msm_vidc_inst *inst);
 	int (*decide_quality_mode)(struct msm_vidc_inst *inst);
+	int (*decide_scaling)(struct msm_vidc_inst *inst);
 	int (*buffer_size)(struct msm_vidc_inst *inst, enum msm_vidc_buffer_type type);
 	int (*min_count)(struct msm_vidc_inst *inst, enum msm_vidc_buffer_type type);
 	int (*extra_count)(struct msm_vidc_inst *inst, enum msm_vidc_buffer_type type);
@@ -76,12 +77,13 @@ struct msm_vidc_inst {
 							 enum msm_vidc_event event,
 							 void *data);
 	enum msm_vidc_sub_state            sub_state;
-	char                               sub_state_name[MAX_NAME_LENGTH];
+	char                               sub_state_name[MAX_MSM_VIDC_NAME_LENGTH];
 	enum msm_vidc_domain_type          domain;
 	enum msm_vidc_codec_type           codec;
 	void                              *core;
 	struct kref                        kref;
 	u32                                session_id;
+	u32                                device_id;
 	u8                                 debug_str[24];
 	void                              *packet;
 	u32                                packet_size;
@@ -99,6 +101,7 @@ struct msm_vidc_inst {
 	struct msm_vidc_rectangle          compose;
 	struct msm_vidc_power              power;
 	struct vidc_bus_vote_data          bus_data;
+	struct vidc_clock_scaling_data     clock_data;
 	struct msm_memory_pool             pool[MSM_MEM_POOL_MAX];
 	struct msm_vidc_buffers_info       buffers;
 	struct msm_vidc_mem_list_info      mem_info;
@@ -120,8 +123,6 @@ struct msm_vidc_inst {
 	struct list_head                   children_list; /* struct msm_vidc_inst_cap_entry */
 	struct list_head                   firmware_list; /* struct msm_vidc_inst_cap_entry */
 	struct list_head                   pending_pkts; /* struct hfi_pending_packet */
-	struct list_head                   input_fence_list; /* struct msm_vidc_fence */
-	struct list_head                   output_fence_list; /* struct msm_vidc_fence */
 	struct list_head                   buffer_stats_list; /* struct msm_vidc_buffer_stats */
 	bool                               once_per_session_set;
 	bool                               ipsc_properties_set;
@@ -133,7 +134,10 @@ struct msm_vidc_inst {
 	struct msm_vidc_statistics         stats;
 	struct msm_vidc_inst_cap           capabilities[INST_CAP_MAX + 1];
 	struct completion                  completions[MAX_SIGNAL];
-	struct msm_vidc_fence_context      fence_context;
+	struct msm_vidc_fence_context      input_rx_f_context;
+	struct msm_vidc_fence_context      input_tx_f_context;
+	struct msm_vidc_fence_context      output_rx_f_context;
+	struct msm_vidc_fence_context      output_tx_f_context;
 	bool                               active;
 	u64                                last_active_time_ns;
 	u64                                initial_time_us;
@@ -148,8 +152,6 @@ struct msm_vidc_inst {
 	u32                                adjust_priority;
 	bool                               iframe;
 	u32                                fw_min_count;
-	u32                                fences_per_output_counter;
-	u64                                prev_seqno;
 };
 
 #endif // _MSM_VIDC_INST_H_

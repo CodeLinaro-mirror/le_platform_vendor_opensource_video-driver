@@ -14,6 +14,13 @@
 enum msm_vidc_debugfs_event;
 struct vb2_buffer;
 struct iommu_domain;
+struct v4l2_vidc_fence_info;
+struct msm_vidc_fence_context;
+
+static inline bool is_dec_scaling_enabled(struct msm_vidc_inst *inst)
+{
+	return inst->capabilities[SCALE_ENABLE].value;
+}
 
 static inline bool is_decode_session(struct msm_vidc_inst *inst)
 {
@@ -273,30 +280,24 @@ static inline bool is_meta_enabled(struct msm_vidc_inst *inst, unsigned int type
 	return enabled;
 }
 
-static inline enum msm_vidc_fence_type get_fence_type(struct msm_vidc_inst *inst,
-	enum msm_vidc_buffer_type buf_type)
+static inline enum msm_vidc_fence_type get_input_rx_fence_type(struct msm_vidc_inst *inst)
 {
-	enum msm_vidc_fence_type type = MSM_VIDC_FENCE_NONE;
-
-	if (is_input_buffer(buf_type))
-		type = inst->capabilities[INPBUF_FENCE_TYPE].value;
-	else if (is_output_buffer(buf_type))
-		type = inst->capabilities[OUTBUF_FENCE_TYPE].value;
-
-	return type;
+	return inst->capabilities[INPUT_RX_FENCE_TYPE].value;
 }
 
-static inline enum msm_vidc_fence_direction get_fence_direction(struct msm_vidc_inst *inst,
-	enum msm_vidc_buffer_type buf_type)
+static inline enum msm_vidc_fence_type get_input_tx_fence_type(struct msm_vidc_inst *inst)
 {
-	enum msm_vidc_fence_direction dir = MSM_VIDC_FENCE_DIR_NONE;
+	return inst->capabilities[INPUT_TX_FENCE_TYPE].value;
+}
 
-	if (is_input_buffer(buf_type))
-		dir = inst->capabilities[INPBUF_FENCE_DIRECTION].value;
-	else if (is_output_buffer(buf_type))
-		dir = inst->capabilities[OUTBUF_FENCE_DIRECTION].value;
+static inline enum msm_vidc_fence_type get_output_rx_fence_type(struct msm_vidc_inst *inst)
+{
+	return inst->capabilities[OUTPUT_RX_FENCE_TYPE].value;
+}
 
-	return dir;
+static inline enum msm_vidc_fence_type get_output_tx_fence_type(struct msm_vidc_inst *inst)
+{
+	return inst->capabilities[OUTPUT_TX_FENCE_TYPE].value;
 }
 
 static inline bool is_sw_fence(struct msm_vidc_inst *inst,
@@ -311,14 +312,24 @@ static inline bool is_synx_v2_fence(struct msm_vidc_inst *inst,
 	return !!(fence_type == MSM_VIDC_SYNX_V2_FENCE);
 }
 
-static inline bool is_outbuf_fence_tx_enabled(struct msm_vidc_inst *inst)
+static inline bool is_output_rx_fence_enabled(struct msm_vidc_inst *inst)
 {
-	return is_meta_rx_inp_enabled(inst, META_OUTBUF_FENCE);
+	return !!(inst->capabilities[OUTPUT_RX_FENCE_ENABLE].value);
 }
 
-static inline bool is_inpbuf_fence_rx_enabled(struct msm_vidc_inst *inst)
+static inline bool is_output_tx_fence_enabled(struct msm_vidc_inst *inst)
 {
-	return !!(inst->capabilities[INPBUF_FENCE_ENABLE].value);
+	return is_meta_rx_inp_enabled(inst, META_OUTPUT_TX_FENCE);
+}
+
+static inline bool is_input_rx_fence_enabled(struct msm_vidc_inst *inst)
+{
+	return !!(inst->capabilities[INPUT_RX_FENCE_ENABLE].value);
+}
+
+static inline bool is_input_tx_fence_enabled(struct msm_vidc_inst *inst)
+{
+	return !!(inst->capabilities[INPUT_TX_FENCE_ENABLE].value);
 }
 
 static inline bool is_linear_yuv_colorformat(enum msm_vidc_colorformat_type colorformat)
@@ -376,6 +387,7 @@ static inline bool is_split_mode_enabled(struct msm_vidc_inst *inst)
 		return false;
 
 	if (is_linear_colorformat(inst->capabilities[PIX_FMTS].value) ||
+		is_dec_scaling_enabled(inst) ||
 		(inst->codec == MSM_VIDC_AV1 &&
 		inst->capabilities[FILM_GRAIN].value))
 		return true;
@@ -457,6 +469,8 @@ static inline bool is_enc_slice_delivery_mode(struct msm_vidc_inst *inst)
 const char *cap_name(enum msm_vidc_inst_capability_type cap_id);
 const char *v4l2_pixelfmt_name(struct msm_vidc_inst *inst, u32 pixelfmt);
 const char *v4l2_type_name(u32 port);
+int msm_vidc_populate_fence_info(struct msm_vidc_inst *inst,
+	struct msm_vidc_buffer *buf, struct msm_vidc_fence_info *finfo);
 void print_fence_buffer(u32 tag, const char *tag_str, const char *str,
 		struct msm_vidc_inst *inst, struct msm_vidc_buffer *buf,
 		struct msm_vidc_fence *fence, int count);
@@ -683,13 +697,13 @@ int msm_vidc_alloc_and_queue_input_internal_buffers(struct msm_vidc_inst *inst);
 int vb2_buffer_to_driver(struct vb2_buffer *vb2, struct msm_vidc_buffer *buf);
 bool is_ssr_type_allowed(struct msm_vidc_core *core, u32 type);
 struct msm_vidc_buffer *msm_vidc_fetch_buffer(struct msm_vidc_inst *inst,
-					      struct vb2_buffer *vb2);
+					    u32 vb2_type, int vb2_index);
 struct context_bank_info
 	*msm_vidc_get_context_bank_for_region(struct msm_vidc_core *core,
 					      enum msm_vidc_buffer_region region);
 struct context_bank_info
 	*msm_vidc_get_context_bank_for_device(struct msm_vidc_core *core, struct device *dev);
-bool msm_vidc_check_inpbuf_fence_allowed(struct msm_vidc_inst *inst);
+bool msm_vidc_check_input_fence_allowed(struct msm_vidc_inst *inst);
 
 #endif // _MSM_VIDC_DRIVER_H_
 

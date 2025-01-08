@@ -166,8 +166,10 @@ static const char * const *msm_vidc_get_qmenu_type(
 		return av1_tier;
 	case IR_TYPE:
 		return mpeg_video_vidc_ir_type;
-	case INPBUF_FENCE_TYPE:
-	case OUTBUF_FENCE_TYPE:
+	case INPUT_RX_FENCE_TYPE:
+	case INPUT_TX_FENCE_TYPE:
+	case OUTPUT_RX_FENCE_TYPE:
+	case OUTPUT_TX_FENCE_TYPE:
 		return mpeg_video_vidc_fence_type;
 	default:
 		i_vpr_e(inst, "%s: No available qmenu for cap id %d\n",
@@ -634,8 +636,14 @@ int msm_vidc_ctrl_handler_init(struct msm_vidc_inst *inst, bool init)
 				ctrl_cfg.type = V4L2_CTRL_TYPE_MENU;
 			else if (cap[idx].flags & CAP_FLAG_BITMASK)
 				ctrl_cfg.type = V4L2_CTRL_TYPE_BITMASK;
+			else if (cap[idx].flags & CAP_FLAG_U8)
+				ctrl_cfg.type = V4L2_CTRL_TYPE_U8;
 			else
 				ctrl_cfg.type = V4L2_CTRL_TYPE_INTEGER;
+			if (ctrl_cfg.type & V4L2_CTRL_TYPE_U8) {
+				ctrl_cfg.elem_size = sizeof(u8);
+				ctrl_cfg.dims[0] = ctrl_cfg.max;
+			}
 			if (is_meta_cap(inst, idx)) {
 				/* bitmask is expected to be enabled for meta controls */
 				if (ctrl_cfg.type != V4L2_CTRL_TYPE_BITMASK) {

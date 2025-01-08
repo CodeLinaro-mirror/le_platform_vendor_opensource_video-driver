@@ -58,6 +58,8 @@ struct clk_table {
 	const char      *name;
 	u32              clk_id;
 	bool             scaling;
+	u64             *freq_table;
+	u32              freq_table_size;
 };
 
 struct clk_rst_table {
@@ -78,10 +80,6 @@ struct context_bank_table {
 	bool             dma_coherant;
 	u32              region;
 	u64              dma_mask;
-};
-
-struct freq_table {
-	unsigned long    freq;
 };
 
 struct reg_preset_table {
@@ -219,13 +217,12 @@ struct msm_vidc_platform_data {
 	unsigned int subcache_tbl_size;
 	const struct context_bank_table *context_bank_tbl;
 	unsigned int context_bank_tbl_size;
-	struct freq_table *freq_tbl;
-	unsigned int freq_tbl_size;
 	const struct reg_preset_table *reg_prst_tbl;
 	unsigned int reg_prst_tbl_size;
 	const struct device_region_table *dev_reg_tbl;
 	unsigned int dev_reg_tbl_size;
 	struct msm_vidc_ubwc_config_data *ubwc_config;
+	u32 clock_source_scaling_ratio;
 	const char *fwname;
 	u32 pas_id;
 	bool supports_mmrm;
@@ -366,10 +363,12 @@ int msm_vidc_adjust_enc_lowlatency_mode(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_session_priority(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_roi_info(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_all_intra(void *instance, struct v4l2_ctrl *ctrl);
-int msm_vidc_adjust_dec_inpbuf_fence_type(void *instance, struct v4l2_ctrl *ctrl);
-int msm_vidc_adjust_dec_outbuf_fence_type(void *instance, struct v4l2_ctrl *ctrl);
-int msm_vidc_adjust_dec_inpbuf_fence_direction(void *instance, struct v4l2_ctrl *ctrl);
-int msm_vidc_adjust_dec_outbuf_fence_direction(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_dec_input_rx_fence_type(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_dec_input_tx_fence_type(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_dec_input_rx_fence_direction(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_dec_output_rx_fence_type(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_dec_output_tx_fence_type(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_dec_output_tx_fence_direction(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_dec_slice_mode(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_early_notify_enable(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_early_notify_line_count(void *instance, struct v4l2_ctrl *ctrl);

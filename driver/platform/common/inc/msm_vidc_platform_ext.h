@@ -9,21 +9,6 @@
 struct v4l2_ctrl;
 enum msm_vidc_inst_capability_type;
 
-/* Enables Output buffer fence id via input metadata */
-#define V4L2_CID_MPEG_VIDC_METADATA_OUTBUF_FENCE                             \
-	(V4L2_CID_MPEG_VIDC_BASE + 0x38)
-/* Control to set fence id to driver in order get corresponding fence fd */
-#define V4L2_CID_MPEG_VIDC_OUTBUF_FENCE_ID                                   \
-	(V4L2_CID_MPEG_VIDC_BASE + 0x39)
-/*
- * Control to get fence fd from driver for the fence id
- * set via V4L2_CID_MPEG_VIDC_OUTBUF_FENCE_ID
- */
-#define V4L2_CID_MPEG_VIDC_OUTBUF_FENCE_FD                                    \
-	(V4L2_CID_MPEG_VIDC_BASE + 0x3A)
-#define V4L2_CID_MPEG_VIDC_METADATA_PICTURE_TYPE                             \
-	(V4L2_CID_MPEG_VIDC_BASE + 0x3B)
-
 /* Encoder Slice Delivery Mode
  * set format has a dependency on this control
  * and gets invoked when this control is updated.
@@ -39,43 +24,12 @@ enum msm_vidc_inst_capability_type;
 #define V4L2_CID_MPEG_VIDC_RESERVE_DURATION                                  \
 	(V4L2_CID_MPEG_VIDC_BASE + 0x3F)
 
-#define V4L2_CID_MPEG_VIDC_EARLY_NOTIFY_ENABLE                                \
-	(V4L2_CID_MPEG_VIDC_BASE + 0x44)
-
-#define V4L2_CID_MPEG_VIDC_EARLY_NOTIFY_LINE_COUNT                            \
-	(V4L2_CID_MPEG_VIDC_BASE + 0x45)
-
-/*
- * Userspace need to enable input fence feature via
- * control V4L2_CID_MPEG_VIDC_INPBUF_FENCE_ENABLE
- */
-#define V4L2_CID_MPEG_VIDC_INPBUF_FENCE_ENABLE                                \
-	(V4L2_CID_MPEG_VIDC_BASE + 0x4F)
-
 /*
  * Control to set fence fd to the driver for each I/P buf
- * set via V4L2_CID_MPEG_VIDC_INPBUF_FENCE_FD
+ * set via V4L2_CID_MPEG_VIDC_INPUT_FENCE_FD
  */
-#define V4L2_CID_MPEG_VIDC_INPBUF_FENCE_FD                                    \
+#define V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_FD                                 \
 	(V4L2_CID_MPEG_VIDC_BASE + 0x50)
-
-/* set input & output fence type */
-#define V4L2_CID_MPEG_VIDC_INPBUF_FENCE_TYPE                                  \
-	(V4L2_CID_MPEG_VIDC_BASE + 0x51)
-#define V4L2_CID_MPEG_VIDC_OUTBUF_FENCE_TYPE                                  \
-	(V4L2_CID_MPEG_VIDC_BASE + 0x52)
-enum v4l2_mpeg_vidc_fence_type {
-	V4L2_MPEG_VIDC_FENCE_NONE       = 0,
-	V4L2_MPEG_VIDC_FENCE_SW         = 1,
-	V4L2_MPEG_VIDC_FENCE_SYNX_V2    = 2,
-};
-
-/**
- * If client sets this extra metada offset, then send additional
- * metadata buffer to fw.
- */
-#define V4L2_CID_MPEG_VIDC_INPUT_EXTRA_METADATA_OFFSET                       \
-	(V4L2_CID_MPEG_VIDC_BASE + 0x53)
 
 int msm_vidc_adjust_ir_period(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_dec_frame_rate(void *instance, struct v4l2_ctrl *ctrl);
@@ -87,5 +41,6 @@ int msm_vidc_set_signal_color_info(void *instance,
 				   enum msm_vidc_inst_capability_type cap_id);
 int msm_vidc_adjust_csc(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_csc_custom_matrix(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_fence_info(void *instance, struct v4l2_ctrl *ctrl);
 
 #endif

@@ -16,6 +16,7 @@
 #include <linux/soc/qcom/msm_mmrm.h>
 #endif
 #include <media/v4l2-mem2mem.h>
+#include <soc/qcom/minidump.h>
 
 #include "msm_vidc_internal.h"
 #include "msm_vidc_driver.h"
@@ -27,6 +28,8 @@
 #include "msm_vidc_fence.h"
 #include "venus_hfi.h"
 #include "resources.h"
+#include "firmware.h"
+#include "msm_vidc_hw_virt.h"
 
 #define BASE_DEVICE_NUMBER 32
 
@@ -342,6 +345,51 @@ static int msm_vidc_check_mmrm_support(struct msm_vidc_core *core)
 }
 #endif
 
+/* This is the call back function invoked from mini dump driver
+ * During kernel panic
+ */
+static int msm_vidc_va_md_callback(struct notifier_block *nb,
+		unsigned long event, void *ptr)
+{
+	struct msm_vidc_core *core = g_core;
+
+	if (!core)
+		return -ENODEV;
+
+	msm_vidc_md_video_queues_dump(core);
+
+	return 0;
+}
+
+static struct notifier_block msm_vidc_va_minidump_nb = {
+	.priority = INT_MAX,
+	.notifier_call = msm_vidc_va_md_callback,
+};
+
+void msm_vidc_qcom_va_md_register(struct msm_vidc_core *core)
+{
+	int ret;
+
+	if (!core->capabilities[SUPPORTS_MINIDUMP].value || !qcom_va_md_enabled())
+		return;
+
+	ret = qcom_va_md_register("msm_vidc", &msm_vidc_va_minidump_nb);
+	if (ret)
+		d_vpr_e("Failed to register notifier with va_minidump: %d\n", ret);
+}
+
+void msm_vidc_qcom_va_md_unregister(struct msm_vidc_core *core)
+{
+	int ret;
+
+	if (!core->capabilities[SUPPORTS_MINIDUMP].value || !qcom_va_md_enabled())
+		return;
+
+	ret = qcom_va_md_unregister("msm_vidc", &msm_vidc_va_minidump_nb);
+	if (ret)
+		d_vpr_e("Failed to unregister notifier with va_minidump: %d\n", ret);
+}
+
 static int msm_vidc_deinitialize_core(struct msm_vidc_core *core)
 {
 	int rc = 0;
@@ -488,6 +536,10 @@ static int msm_vidc_setup_context_bank(struct msm_vidc_core *core,
 {
 	struct context_bank_info *cb = NULL;
 	int rc = 0;
+#if defined(CONFIG_MSM_VIDC_NORDAU)
+	int len = 0;
+	const __be32 *prop;
+#endif
 
 	cb = msm_vidc_get_context_bank_for_device(core, dev);
 	if (!cb) {
@@ -503,6 +555,13 @@ static int msm_vidc_setup_context_bank(struct msm_vidc_core *core,
 		d_vpr_e("%s: Failed to get iommu domain for %s\n", __func__, dev_name(dev));
 		return -EIO;
 	}
+
+	/* update context bank address and size only for nordau */
+#if defined(CONFIG_MSM_VIDC_NORDAU)
+	prop = of_get_property(dev->of_node, "qcom,iommu-dma-addr-pool", &len);
+	cb->addr_range.start = be32_to_cpup(&prop[0]);
+	cb->addr_range.size = be32_to_cpup(&prop[1]);
+#endif
 
 	if (cb->dma_mask) {
 		rc = dma_set_mask_and_coherent(cb->dev, cb->dma_mask);
@@ -646,6 +705,11 @@ static void msm_vidc_component_master_unbind(struct device *dev)
 
 	d_vpr_h("%s(): %s\n", __func__, dev_name(dev));
 
+
+	/* set gvm deinit flag. */
+	if (core->full_virtualization_data.virtualization_en)
+		core->full_virtualization_data.gvm_deinit = 1;
+
 	msm_vidc_core_deinit(core, true);
 	/**
 	 * Sometimes reverse(irq) thread will be running at this point,
@@ -700,6 +764,7 @@ static int msm_vidc_remove_video_device(struct platform_device *pdev)
 
 	sysfs_remove_group(&pdev->dev.kobj, &msm_vidc_core_attr_group);
 	call_fence_op(core, fence_deregister, core);
+	msm_vidc_qcom_va_md_unregister(core);
 
 	dev_set_drvdata(&pdev->dev, NULL);
 	g_core = NULL;
@@ -766,6 +831,17 @@ static int msm_vidc_probe_video_device(struct platform_device *pdev)
 	core->pdev = pdev;
 	dev_set_drvdata(&pdev->dev, core);
 
+	/* Read and store virtualization_en flag, vmid */
+	if (of_property_read_u32(pdev->dev.of_node, "vmid",
+			&core->full_virtualization_data.vmid)) {
+		d_vpr_h("Failed to read vmid. Defaulting to 0\n");
+		core->full_virtualization_data.vmid = 0;
+	} else {
+		/* If gvm, set hw virtualization flag */
+		if (core->full_virtualization_data.vmid != 0)
+			core->full_virtualization_data.virtualization_en = 1;
+	}
+
 	core->debugfs_parent = msm_vidc_devm_debugfs_get(&pdev->dev);
 	if (!core->debugfs_parent)
 		d_vpr_h("Failed to create debugfs for msm_vidc\n");
@@ -795,6 +871,8 @@ static int msm_vidc_probe_video_device(struct platform_device *pdev)
 		rc = (rc == -EAGAIN) ? -EPROBE_DEFER : -EINVAL;
 		goto fence_reg_fail;
 	}
+
+	msm_vidc_qcom_va_md_register(core);
 
 	rc = sysfs_create_group(&pdev->dev.kobj, &msm_vidc_core_attr_group);
 	if (rc) {

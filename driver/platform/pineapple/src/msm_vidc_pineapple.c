@@ -123,11 +123,11 @@ static struct color_format_info color_format_data_pineapple[] = {
 static struct color_primaries_info color_primaries_data_pineapple[] = {
 	{
 		.v4l2_color_primaries  = V4L2_COLORSPACE_DEFAULT,
-		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_RESERVED,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_UNSPECIFIED,
 	},
 	{
 		.v4l2_color_primaries  = V4L2_COLORSPACE_DEFAULT,
-		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_UNSPECIFIED,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_RESERVED,
 	},
 	{
 		.v4l2_color_primaries  = V4L2_COLORSPACE_REC709,
@@ -174,11 +174,11 @@ static struct color_primaries_info color_primaries_data_pineapple[] = {
 static struct transfer_char_info transfer_char_data_pineapple[] = {
 	{
 		.v4l2_transfer_char  = V4L2_XFER_FUNC_DEFAULT,
-		.vidc_transfer_char  = MSM_VIDC_TRANSFER_RESERVED,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_UNSPECIFIED,
 	},
 	{
 		.v4l2_transfer_char  = V4L2_XFER_FUNC_DEFAULT,
-		.vidc_transfer_char  = MSM_VIDC_TRANSFER_UNSPECIFIED,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_RESERVED,
 	},
 	{
 		.v4l2_transfer_char  = V4L2_XFER_FUNC_709,
@@ -237,11 +237,11 @@ static struct transfer_char_info transfer_char_data_pineapple[] = {
 static struct matrix_coeff_info matrix_coeff_data_pineapple[] = {
 	{
 		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_DEFAULT,
-		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_RESERVED,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_UNSPECIFIED,
 	},
 	{
 		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_DEFAULT,
-		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_UNSPECIFIED,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_RESERVED,
 	},
 	{
 		.v4l2_matrix_coeff  = V4L2_YCBCR_VIDC_SRGB_OR_SMPTE_ST428,
@@ -599,71 +599,110 @@ static struct msm_platform_inst_capability instance_cap_data_pineapple[] = {
 		CAP_FLAG_NONE},
 
 	/*
-	 * Client will enable V4L2_CID_MPEG_VIDC_METADATA_OUTBUF_FENCE
+	 * Client will enable V4L2_CID_MPEG_VIDC_METADATA_OUTPUT_TX_FENCE
 	 * to get output fence_id in input metadata buffer done.
 	 */
-	{META_OUTBUF_FENCE, DEC, H264 | HEVC | VP9 | AV1,
+	{META_OUTPUT_TX_FENCE, DEC, H264 | HEVC | VP9 | AV1,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_INPUT,
 		0, MSM_VIDC_META_DISABLE,
-		V4L2_CID_MPEG_VIDC_METADATA_OUTBUF_FENCE,
+		V4L2_CID_MPEG_VIDC_METADATA_OUTPUT_TX_FENCE,
 		HFI_PROP_FENCE_OUTPUT,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
-	/* enable input fence feature */
-	{INPBUF_FENCE_ENABLE, DEC, H264 | HEVC | VP9 | AV1,
+	{OUTPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | VP9 | AV1,
 		0, 1, 1, 0,
-		V4L2_CID_MPEG_VIDC_INPBUF_FENCE_ENABLE,
+		V4L2_CID_MPEG_VIDC_OUTPUT_RX_FENCE_ENABLE,
+		HFI_PROP_FENCE_OUTPUT,
+		CAP_FLAG_OUTPUT_PORT},
+
+	/* enable input rx fence feature */
+	{INPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | VP9 | AV1,
+		0, 1, 1, 0,
+		V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_ENABLE,
+		HFI_PROP_FENCE_INPUT,
+		CAP_FLAG_INPUT_PORT},
+
+	/* enable input rx fence feature */
+	{INPUT_TX_FENCE_ENABLE, DEC, H264 | HEVC | VP9 | AV1,
+		0, 1, 1, 0,
+		V4L2_CID_MPEG_VIDC_INPUT_TX_FENCE_ENABLE,
 		HFI_PROP_FENCE_INPUT,
 		CAP_FLAG_INPUT_PORT},
 
 	/*
-	 * Client to do set_ctrl with OUTBUF_FENCE_ID to set fence_id
-	 * and then client will do get_ctrl with OUTBUF_FENCE_FD to get
+	 * Client to do set_ctrl with OUTPUT_TX_FENCE_ID to set fence_id
+	 * and then client will do get_ctrl with OUTPUT_TX_FENCE_FD to get
 	 * fence_fd corresponding to client set fence_id.
 	 */
-	{OUTBUF_FENCE_ID, DEC, CODECS_ALL,
+	{OUTPUT_TX_FENCE_ID, DEC, CODECS_ALL,
 		INT_MIN, INT_MAX, 1, 0,
-		V4L2_CID_MPEG_VIDC_OUTBUF_FENCE_ID,
+		V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_ID,
 		0,
 		CAP_FLAG_DYNAMIC_ALLOWED | CAP_FLAG_OUTPUT_PORT},
 
-	{OUTBUF_FENCE_FD, DEC, CODECS_ALL,
+	{OUTPUT_TX_FENCE_FD, DEC, CODECS_ALL,
 		INVALID_FD, INT_MAX, 1, INVALID_FD,
-		V4L2_CID_MPEG_VIDC_OUTBUF_FENCE_FD,
+		V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_FD,
 		0,
 		CAP_FLAG_VOLATILE},
 
+	{FENCE_INFO, DEC|ENC, CODECS_ALL,
+		0, sizeof(struct v4l2_vidc_fence_info), 1, 0,
+		V4L2_CID_MPEG_VIDC_FENCE_INFO,
+		0,
+		CAP_FLAG_U8 | CAP_FLAG_DYNAMIC_ALLOWED},
+
 	/*
-	 * Client to do set_ctrl with INPBUF_FENCE_FD to set fence_fd.
+	 * Client to do set_ctrl with INPUT_RX_FENCE_FD to set fence_fd.
 	 * Driver will import fence_fd and uses underlyling fence.
 	 */
-	{INPBUF_FENCE_FD, DEC, CODECS_ALL,
+	{INPUT_RX_FENCE_FD, DEC, CODECS_ALL,
 		INVALID_FD, INT_MAX, 1, INVALID_FD,
-		V4L2_CID_MPEG_VIDC_INPBUF_FENCE_FD,
+		V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_FD,
 		0,
 		CAP_FLAG_DYNAMIC_ALLOWED | CAP_FLAG_INPUT_PORT},
 
-	/* Fence type for input buffer */
-	{INPBUF_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
+	/* Fence type for input rx buffer */
+	{INPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
 		MSM_VIDC_FENCE_NONE, MSM_VIDC_SYNX_V2_FENCE,
-		BIT(MSM_VIDC_FENCE_NONE) | BIT(MSM_VIDC_SYNX_V2_FENCE),
+		BIT(MSM_VIDC_FENCE_NONE) | BIT(MSM_VIDC_SW_FENCE) |
+			BIT(MSM_VIDC_SYNX_V2_FENCE),
 		MSM_VIDC_FENCE_NONE,
-		V4L2_CID_MPEG_VIDC_INPBUF_FENCE_TYPE,
+		V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_TYPE,
 		HFI_PROP_FENCE_TYPE,
 		CAP_FLAG_INPUT_PORT | CAP_FLAG_MENU},
 
-	{OUTBUF_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
+	/* Fence type for input tx buffer */
+	{INPUT_TX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
+		MSM_VIDC_FENCE_NONE, MSM_VIDC_SYNX_V2_FENCE,
+		BIT(MSM_VIDC_FENCE_NONE) | BIT(MSM_VIDC_SW_FENCE) |
+			BIT(MSM_VIDC_SYNX_V2_FENCE),
+		MSM_VIDC_FENCE_NONE,
+		V4L2_CID_MPEG_VIDC_INPUT_TX_FENCE_TYPE,
+		HFI_PROP_FENCE_TYPE,
+		CAP_FLAG_INPUT_PORT | CAP_FLAG_MENU},
+
+	{OUTPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
+		MSM_VIDC_FENCE_NONE, MSM_VIDC_SYNX_V2_FENCE,
+		BIT(MSM_VIDC_FENCE_NONE) | BIT(MSM_VIDC_SW_FENCE) |
+			BIT(MSM_VIDC_SYNX_V2_FENCE),
+		MSM_VIDC_FENCE_NONE,
+		V4L2_CID_MPEG_VIDC_OUTPUT_RX_FENCE_TYPE,
+		HFI_PROP_FENCE_TYPE,
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
+
+	{OUTPUT_TX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
 		MSM_VIDC_FENCE_NONE, MSM_VIDC_SYNX_V2_FENCE,
 		BIT(MSM_VIDC_FENCE_NONE) | BIT(MSM_VIDC_SW_FENCE) |
 			BIT(MSM_VIDC_SYNX_V2_FENCE),
 		MSM_VIDC_SW_FENCE,
-		V4L2_CID_MPEG_VIDC_OUTBUF_FENCE_TYPE,
+		V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_TYPE,
 		HFI_PROP_FENCE_TYPE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
-	/* Fence direction for input buffer */
-	{INPBUF_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
+	/* Fence direction for input rx buffer */
+	{INPUT_RX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
 		MSM_VIDC_FENCE_DIR_NONE, MSM_VIDC_FENCE_DIR_RX,
 		BIT(MSM_VIDC_FENCE_DIR_NONE) | BIT(MSM_VIDC_FENCE_DIR_RX),
 		MSM_VIDC_FENCE_DIR_NONE,
@@ -671,7 +710,7 @@ static struct msm_platform_inst_capability instance_cap_data_pineapple[] = {
 		HFI_PROP_FENCE_DIRECTION,
 		CAP_FLAG_MENU | CAP_FLAG_INPUT_PORT},
 
-	{OUTBUF_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
+	{OUTPUT_TX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
 		MSM_VIDC_FENCE_DIR_NONE, MSM_VIDC_FENCE_DIR_RX,
 		BIT(MSM_VIDC_FENCE_DIR_NONE) | BIT(MSM_VIDC_FENCE_DIR_TX) |
 			BIT(MSM_VIDC_FENCE_DIR_RX),
@@ -2150,42 +2189,66 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_pine
 		NULL,
 		msm_vidc_set_u32},
 
-	{META_OUTBUF_FENCE, DEC, H264 | HEVC | AV1,
-		{OUTBUF_FENCE_TYPE, OUTBUF_FENCE_DIRECTION, SLICE_DECODE,
+	{FENCE_INFO, DEC|ENC, CODECS_ALL,
+		{0},
+		msm_vidc_adjust_fence_info,
+		NULL},
+
+	{META_OUTPUT_TX_FENCE, DEC, H264 | HEVC | AV1,
+		{OUTPUT_TX_FENCE_TYPE, OUTPUT_TX_FENCE_DIRECTION, SLICE_DECODE,
 		EARLY_NOTIFY_ENABLE},
 		NULL,
 		NULL},
 
-	{META_OUTBUF_FENCE, DEC, VP9,
-		{OUTBUF_FENCE_TYPE, OUTBUF_FENCE_DIRECTION},
+	{META_OUTPUT_TX_FENCE, DEC, VP9,
+		{OUTPUT_TX_FENCE_TYPE, OUTPUT_TX_FENCE_DIRECTION},
 		NULL,
 		NULL},
 
-	{INPBUF_FENCE_ENABLE, DEC, H264 | HEVC | AV1 | VP9,
-		{INPBUF_FENCE_TYPE, INPBUF_FENCE_DIRECTION},
+	{INPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | AV1 | VP9,
+		{INPUT_RX_FENCE_TYPE, INPUT_RX_FENCE_DIRECTION},
 		NULL,
 		NULL},
 
-	{INPBUF_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
-		{0},
-		msm_vidc_adjust_dec_inpbuf_fence_type,
+	{INPUT_TX_FENCE_ENABLE, DEC, H264 | HEVC | AV1 | VP9,
+		{INPUT_TX_FENCE_TYPE},
+		NULL,
 		NULL},
 
-	{OUTBUF_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
-		{0},
-		msm_vidc_adjust_dec_outbuf_fence_type,
+	{OUTPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | AV1 | VP9,
+		{OUTPUT_RX_FENCE_TYPE},
+		NULL,
 		NULL},
 
-	{INPBUF_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
+	{INPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
 		{0},
-		msm_vidc_adjust_dec_inpbuf_fence_direction,
+		msm_vidc_adjust_dec_input_rx_fence_type,
 		NULL},
 
-	{OUTBUF_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
+	{INPUT_TX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
 		{0},
-		msm_vidc_adjust_dec_outbuf_fence_direction,
+		msm_vidc_adjust_dec_input_tx_fence_type,
 		NULL},
 
+	{OUTPUT_TX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
+		{0},
+		msm_vidc_adjust_dec_output_tx_fence_type,
+		NULL},
+
+	{OUTPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
+		{0},
+		msm_vidc_adjust_dec_output_rx_fence_type,
+		NULL},
+
+	{INPUT_RX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
+		{0},
+		msm_vidc_adjust_dec_input_rx_fence_direction,
+		NULL},
+
+	{OUTPUT_TX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
+		{0},
+		msm_vidc_adjust_dec_output_tx_fence_direction,
+		NULL},
 	{HFLIP, ENC, CODECS_ALL,
 		{0},
 		NULL,
@@ -2796,7 +2859,17 @@ static const struct clk_table pineapple_clk_table[] = {
 	{ "gcc_video_axi0_clk",     GCC_VIDEO_AXI0_CLK,     0 },
 	{ "video_cc_mvs0c_clk",     VIDEO_CC_MVS0C_CLK,     0 },
 	{ "video_cc_mvs0_clk",      VIDEO_CC_MVS0_CLK,      0 },
-	{ "video_cc_mvs0_clk_src",  VIDEO_CC_MVS0_CLK_SRC,  1 },
+	{ "video_cc_mvs0_clk_src",  VIDEO_CC_MVS0_CLK_SRC,  1,
+	 (u64[]) {533333333, 480000000, 435000000, 380000000, 280000000, 196000000}, 6},
+};
+
+/* name, clock id, scaling */
+static const struct clk_table pineapple_clk_table_v2[] = {
+	{ "gcc_video_axi0_clk",     GCC_VIDEO_AXI0_CLK,     0 },
+	{ "video_cc_mvs0c_clk",     VIDEO_CC_MVS0C_CLK,     0 },
+	{ "video_cc_mvs0_clk",      VIDEO_CC_MVS0_CLK,      0 },
+	{ "video_cc_mvs0_clk_src",  VIDEO_CC_MVS0_CLK_SRC,  1,
+	 (u64[]) {533333333, 480000000, 435000000, 380000000, 300000000, 196000000}, 6},
 };
 
 /* name, exclusive_release */
@@ -2820,15 +2893,6 @@ const struct context_bank_table pineapple_context_bank_table[] = {
 	{"qcom,vidc,cb-sec-pxl", 0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_PIXEL, 0},
 	{"qcom,vidc,cb-sec-non-pxl", 0x01000000, 0x24800000, 1, 0, MSM_VIDC_SECURE_NONPIXEL, 0},
 	{"qcom,vidc,cb-sec-bitstream", 0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_BITSTREAM, 0},
-};
-
-/* freq */
-static struct freq_table pineapple_freq_table[] = {
-	{533333333}, {480000000}, {435000000}, {380000000}, {280000000}, {196000000}
-};
-
-static struct freq_table pineapple_freq_table_v2[] = {
-	{533333333}, {480000000}, {435000000}, {380000000}, {300000000}, {196000000}
 };
 
 /* register, value, mask */
@@ -2990,12 +3054,11 @@ static const struct msm_vidc_platform_data pineapple_data = {
 	.context_bank_tbl_size = ARRAY_SIZE(pineapple_context_bank_table),
 
 	/* platform specific resources */
-	.freq_tbl = pineapple_freq_table,
-	.freq_tbl_size = ARRAY_SIZE(pineapple_freq_table),
 	.reg_prst_tbl = pineapple_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(pineapple_reg_preset_table),
 	.dev_reg_tbl = pineapple_device_region_table,
 	.dev_reg_tbl_size = ARRAY_SIZE(pineapple_device_region_table),
+	.clock_source_scaling_ratio = 3,
 	.fwname = "vpu33_4v",
 	.pas_id = 9,
 	.supports_mmrm = 1,
@@ -3066,9 +3129,9 @@ int msm_vidc_get_platform_data_pineapple(struct msm_vidc_core *core)
 	d_vpr_h("%s: initialize pineapple data\n", __func__);
 	core->platform->data = pineapple_data;
 	if (of_device_is_compatible(dev->of_node, "qcom,sm8650-vidc-v2")) {
-		d_vpr_h("%s: update frequency table for pineapple v2\n", __func__);
-		core->platform->data.freq_tbl = pineapple_freq_table_v2;
-		core->platform->data.freq_tbl_size = ARRAY_SIZE(pineapple_freq_table_v2);
+		d_vpr_h("%s: update clock table for pineapple v2\n", __func__);
+		core->platform->data.clk_tbl = pineapple_clk_table_v2;
+		core->platform->data.clk_tbl_size = ARRAY_SIZE(pineapple_clk_table_v2);
 	}
 
 	return 0;
