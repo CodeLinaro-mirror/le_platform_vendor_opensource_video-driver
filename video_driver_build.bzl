@@ -67,19 +67,13 @@ def define_target_variant_modules(target, variant, registry, modules, config_opt
             "//soc-repo:{}/drivers/soc/qcom/mdt_loader".format(kernel_build),
             "//soc-repo:{}/drivers/soc/qcom/llcc-qcom".format(kernel_build),
             "//soc-repo:{}/drivers/soc/qcom/mem_buf/mem_buf_dev".format(kernel_build),
+            "//soc-repo:{}/drivers/soc/qcom/qcom_va_minidump".format(kernel_build),
+            "//soc-repo:{}/drivers/soc/qcom/minidump".format(kernel_build),
         ],
         "//build/kernel/kleaf:socrepo_false": [
             "//msm-kernel:all_headers",
         ],
     })
-    if target == "sun":
-        all_module_deps += select({
-            "//build/kernel/kleaf:socrepo_true": [
-                "//soc-repo:{}/drivers/soc/qcom/qcom_va_minidump".format(kernel_build),
-                "//soc-repo:{}/drivers/soc/qcom/minidump".format(kernel_build),
-            ],
-            "//build/kernel/kleaf:socrepo_false": [],
-        })
     kernel_build_label = select({
         "//build/kernel/kleaf:socrepo_true": "//soc-repo:{}_base_kernel".format(kernel_build),
         "//build/kernel/kleaf:socrepo_false": "//msm-kernel:{}".format(kernel_build),
@@ -140,19 +134,13 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
             "//soc-repo:{}/drivers/soc/qcom/mdt_loader".format(kernel_build),
             "//soc-repo:{}/drivers/soc/qcom/llcc-qcom".format(kernel_build),
             "//soc-repo:{}/drivers/soc/qcom/mem_buf/mem_buf_dev".format(kernel_build),
+            "//soc-repo:{}/drivers/soc/qcom/qcom_va_minidump".format(kernel_build),
+            "//soc-repo:{}/drivers/soc/qcom/minidump".format(kernel_build),
         ],
         "//build/kernel/kleaf:socrepo_false": [
             "//msm-kernel:all_headers",
         ],
     })
-    if target == "sun":
-        all_module_deps += select({
-            "//build/kernel/kleaf:socrepo_true": [
-                "//soc-repo:{}/drivers/soc/qcom/qcom_va_minidump".format(kernel_build),
-                "//soc-repo:{}/drivers/soc/qcom/minidump".format(kernel_build),
-            ],
-            "//build/kernel/kleaf:socrepo_false": [],
-        })
     kernel_build_label = select({
         "//build/kernel/kleaf:socrepo_true": "//soc-repo:{}_base_kernel".format(kernel_build),
         "//build/kernel/kleaf:socrepo_false": "//msm-kernel:{}".format(kernel_build),
@@ -224,3 +212,4 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
 def define_consolidate_gki_modules(target, registry, modules, config_options = []):
     define_target_variant_modules(target, "consolidate", registry, modules, config_options)
     define_target_variant_modules(target, "perf", registry, modules, config_options)
+    define_target_variant_modules(target, "gki", registry, modules, config_options)

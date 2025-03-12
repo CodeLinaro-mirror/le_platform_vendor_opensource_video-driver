@@ -2897,8 +2897,8 @@ static const struct bw_table seraph_bw_table[] = {
 static const struct regulator_table seraph_regulator_table[] = {
 	{ "iris-ctl", 0 },
 	{ "vcodec",   1 },
-	{ "vpp0",     0 },
-	{ "vpp1",     0 },
+	{ "vpp0",     1 },
+	{ "vpp1",     1 },
 };
 
 /* name, clock id, scaling */
@@ -2953,6 +2953,20 @@ static const struct reg_preset_table seraph_reg_preset_table[] = {
 	{ 0x13440, 0xFFAA5500, 0xFFFFFFFF},
 	{ 0x13448, 0xFF,       0xFFFFFFFF},
 	{ 0xA013C, 0x99,       0xFFFFFFFF},
+};
+
+/* name, phys_addr, size, device_addr, device region type */
+static const struct device_region_table seraph_device_region_table[] = {
+	{
+		"aon-registers",
+		0x0AAE0000, 0x1000, 0xFFAE0000,
+		MSM_VIDC_AON
+	},
+	{
+		"qtimer_f0v1_qtmr_v1_cntpct_lo",
+		0x17421000, 0x1000, 0xFFADE000,
+		MSM_VIDC_QTIMER
+	},
 };
 
 /* decoder properties */
@@ -3079,6 +3093,8 @@ static const struct msm_vidc_platform_data seraph_data = {
 	/* platform specific resources */
 	.reg_prst_tbl = seraph_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(seraph_reg_preset_table),
+	.dev_reg_tbl = seraph_device_region_table,
+	.dev_reg_tbl_size = ARRAY_SIZE(seraph_device_region_table),
 	.clock_source_scaling_ratio = 1,
 	.fwname = "vpu40_2v",
 	.pas_id = 9,

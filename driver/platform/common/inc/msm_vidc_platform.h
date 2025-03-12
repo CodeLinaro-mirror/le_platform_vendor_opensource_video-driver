@@ -47,6 +47,7 @@ struct bw_table {
 
 struct pd_table {
 	const char      *name;
+	bool             hw_trigger;
 };
 
 struct regulator_table {
@@ -362,6 +363,7 @@ int msm_vidc_adjust_min_quality(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_enc_lowlatency_mode(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_session_priority(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_roi_info(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_roi_info_iris4(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_all_intra(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_dec_input_rx_fence_type(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_dec_input_tx_fence_type(void *instance, struct v4l2_ctrl *ctrl);

@@ -273,6 +273,12 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.init_platform              = msm_vidc_init_platform_canoe,
 		.init_iris                  = msm_vidc_init_iris4,
 	},
+	{
+		.compat                     = "qcom,canoe-vidc-v2",
+		.get_platform_data          = msm_vidc_get_platform_data_canoe,
+		.init_platform              = msm_vidc_init_platform_canoe,
+		.init_iris                  = msm_vidc_init_iris4,
+	},
 #endif
 #if defined(CONFIG_MSM_VIDC_SERAPH)
 	{
@@ -454,7 +460,7 @@ int msm_vidc_read_efuse(struct msm_vidc_core *core)
 {
 	int rc = 0;
 	void __iomem *base;
-	u32 i = 0, efuse = 0, efuse_data_count = 0;
+	u32 i = 0, efuse = 0, efuse_data_count = 0, sku_value = 0;
 	struct msm_vidc_efuse_data *efuse_data = NULL;
 	struct msm_vidc_platform_data *platform_data;
 
@@ -477,19 +483,19 @@ int msm_vidc_read_efuse(struct msm_vidc_core *core)
 				return -EINVAL;
 			}
 			efuse = readl_relaxed(base);
-			platform_data->sku_version =
-					(efuse & efuse_data[i].mask) >>
-					efuse_data[i].shift;
+			sku_value = sku_value | ((efuse & efuse_data[i].mask) >>
+						efuse_data[i].shift);
 			break;
 		default:
 			break;
 		}
-		if (platform_data->sku_version) {
+		if (sku_value) {
 			d_vpr_h("efuse 0x%x, platform version 0x%x\n",
-				efuse, platform_data->sku_version);
+				efuse, sku_value);
 			break;
 		}
 	}
+	platform_data->sku_version = sku_value;
 	return rc;
 }
 
@@ -2472,6 +2478,36 @@ int msm_vidc_adjust_roi_info(void *instance, struct v4l2_ctrl *ctrl)
 	if ((rc_type != HFI_RC_VBR_CFR && rc_type != HFI_RC_CBR_CFR &&
 	     rc_type != HFI_RC_CBR_VFR) || !is_8bit_colorformat(pix_fmt) ||
 	     is_scaling_enabled(inst) || is_rotation_90_or_270(inst))
+		adjusted_value = 0;
+
+	msm_vidc_update_cap_value(inst, META_ROI_INFO, adjusted_value, __func__);
+
+	return 0;
+}
+
+int msm_vidc_adjust_roi_info_iris4(void *instance, struct v4l2_ctrl *ctrl)
+{
+	s32 adjusted_value;
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	s64 rc_type = -1, pix_fmt = -1;
+
+	adjusted_value = ctrl ? ctrl->val : inst->capabilities[META_ROI_INFO].value;
+
+	if (msm_vidc_get_parent_value(inst, META_ROI_INFO, BITRATE_MODE,
+				      &rc_type, __func__))
+		return -EINVAL;
+
+	if (msm_vidc_get_parent_value(inst, META_ROI_INFO, PIX_FMTS,
+				      &pix_fmt, __func__))
+		return -EINVAL;
+
+	/*
+	 * iris4 onwards roi is supported for 10bit color format as well and
+	 * hence removed !is_8bit_colorformat(pix_fmt) condition here
+	 */
+	if ((rc_type != HFI_RC_VBR_CFR && rc_type != HFI_RC_CBR_CFR &&
+	     rc_type != HFI_RC_CBR_VFR) || is_scaling_enabled(inst) ||
+	     is_rotation_90_or_270(inst))
 		adjusted_value = 0;
 
 	msm_vidc_update_cap_value(inst, META_ROI_INFO, adjusted_value, __func__);
