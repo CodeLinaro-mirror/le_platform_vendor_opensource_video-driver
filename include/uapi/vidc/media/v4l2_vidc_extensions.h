@@ -426,4 +426,13 @@ enum v4l2_mpeg_vidc_apv_level {
 #define V4L2_CID_MPEG_VIDC_METADATA_THREE_DIMENSIONAL_REF_DISP_INFO \
 							     (VIDC_BASE + 0x66)
 
+/* Control to enable/disable lookahead encoding */
+#define V4L2_CID_MPEG_VIDC_LOOKAHEAD_ENCODE_ENABLE           (VIDC_BASE + 0x67)
+
+/*
+ * Control to send number of tile rows and columns in a HEIF image
+ * (number of tile rows) << 16 | (number of tile columns) & 0xffff
+ */
+#define V4L2_CID_MPEG_VIDC_HEIF_TILES                        (VIDC_BASE + 0x68)
+
 #endif

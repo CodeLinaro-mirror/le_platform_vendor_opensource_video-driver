@@ -114,10 +114,10 @@ enum msm_vidc_metadata_bits {
 #define MAX_AVC_ENH_LAYER_SLIDING_WINDOW      3
 #define MAX_AVC_ENH_LAYER_HYBRID_HP           5
 #define INVALID_DEFAULT_MARK_OR_USE_LTR      -1
-#define MAX_SLICES_PER_FRAME                 10
+#define MAX_SLICES_PER_FRAME                 128
 #define MAX_SLICES_FRAME_RATE                60
 #define MAX_MB_SLICE_WIDTH                 4096
-#define MAX_MB_SLICE_HEIGHT                2160
+#define MAX_MB_SLICE_HEIGHT                2176
 #define MAX_BYTES_SLICE_WIDTH              1920
 #define MAX_BYTES_SLICE_HEIGHT             1088
 #define MIN_HEVC_SLICE_WIDTH                384
@@ -343,6 +343,7 @@ enum msm_vidc_metadata_bits {
 	CAP(MB_CYCLES_LP)                         \
 	CAP(MB_CYCLES_FW)                         \
 	CAP(MB_CYCLES_FW_VPP)                     \
+	CAP(CODEC_MODE)                           \
 	CAP(ENC_RING_BUFFER_COUNT)                \
 	CAP(CLIENT_ID)                            \
 	CAP(SECURE_MODE)                          \
@@ -429,10 +430,13 @@ enum msm_vidc_metadata_bits {
 	CAP(ALLINTRA_MAX_BITRATE)                 \
 	CAP(LOWLATENCY_MAX_BITRATE)               \
 	CAP(LAST_FLAG_EVENT_ENABLE)               \
+	CAP(LOOKAHEAD_ENCODE_ENABLE)              \
+	CAP(LOOKAHEAD_ENCODE_SIZE)                \
 	CAP(NUM_COMV)                             \
 	CAP(SIGNAL_COLOR_INFO)                    \
 	CAP(OPEN_GOP)                             \
 	CAP(CAPTURE_DATA_OFFSET)                  \
+	CAP(HEIF_TILES)                           \
 	CAP(INST_CAP_MAX)                         \
 }
 
@@ -676,6 +680,7 @@ enum msm_vidc_core_capability_type {
 	SUPPORTS_MINIDUMP,
 	SUPPORTS_DEEPSLEEP,
 	NUM_VPU,
+	SKIP_DELAYED_UNMAP,
 	CORE_CAP_MAX,
 };
 
