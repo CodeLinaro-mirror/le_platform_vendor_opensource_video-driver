@@ -4623,10 +4623,12 @@ int msm_vidc_pvm_event_handler(void *p)
 	struct msm_vidc_core *core = p;
 	struct virtio_video_msm_hw_event evt = {0};
 
-	while (core->full_virtualization_data.is_gvm_open) {
+	while (!kthread_should_stop() &&
+		core->full_virtualization_data.is_gvm_open) {
 		if (!virtio_video_queue_event_wait(&evt)) {
 			switch (evt.event_type) {
 			case GVM_SSR:
+				d_vpr_e("%s: Received event GVM_SSR\n", __func__);
 				core->ssr_dev = *(uint32_t *)evt.payload;
 				schedule_work(&core->full_virt_ssr_work);
 				break;
@@ -5003,6 +5005,7 @@ void msm_vidc_hw_virt_ssr_handler(struct work_struct *work)
 		d_vpr_e("%s: invalid params %pK\n", __func__, core);
 		return;
 	}
+	d_vpr_e("%s: Handling SSR for device 0x%x\n", __func__, core->ssr_dev);
 
 	/* set gvm deinit flag for special case where PVM driver failed */
 	if (core->ssr_dev == GVM_SSR_DEVICE_DRIVER)
