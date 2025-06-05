@@ -10,6 +10,7 @@
 #include "msm_vidc_driver.h"
 #include "msm_vidc_inst.h"
 #include "msm_vidc_core.h"
+#include "msm_vidc_platform.h"
 #include "msm_vidc_debug.h"
 #include "perf_static_model.h"
 #include "msm_vidc_power.h"
@@ -92,6 +93,7 @@ static int msm_vidc_init_codec_input_freq(struct msm_vidc_inst *inst, u32 data_s
 	u32 color_fmt, tile_rows_columns = 0;
 	int rc = 0;
 	u32 max_rate, frame_rate;
+	struct msm_vidc_core *core;
 
 	codec_input->chipset_gen = MSM_CANOE;
 
@@ -180,6 +182,13 @@ static int msm_vidc_init_codec_input_freq(struct msm_vidc_inst *inst, u32 data_s
 
 	/* set as sanity mode, this regression mode has no effect on power calculations */
 	codec_input->regression_mode = REGRESSION_MODE_SANITY;
+
+	codec_input->video_adv_feature = VIDEO_ADV_FEATURE_NONE;
+	if (inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value)
+		codec_input->video_adv_feature = FEATURE_LOOKAHEAD_ENCODE;
+
+	core = inst->core;
+	codec_input->vpu_ver = core->platform->data.vpu_ver;
 
 	return 0;
 }
@@ -331,6 +340,10 @@ static int msm_vidc_init_codec_input_bus(struct msm_vidc_inst *inst, struct vidc
 		codec_input->av1d_commer_tile_enable = 0;
 	}
 
+	codec_input->video_adv_feature = VIDEO_ADV_FEATURE_NONE;
+	if (inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value)
+		codec_input->video_adv_feature = FEATURE_LOOKAHEAD_ENCODE;
+
 	/* Dump all the variables for easier debugging */
 	if (msm_vidc_debug & VIDC_BUS) {
 		struct dump dump[] = {
@@ -367,6 +380,7 @@ static int msm_vidc_init_codec_input_bus(struct msm_vidc_inst *inst, struct vidc
 		{"lumaonly_decode", "%d", codec_input->lumaonly_decode},
 		{"av1d_commer_tile_enable", "%d", codec_input->av1d_commer_tile_enable},
 		{"regression_mode", "%d", codec_input->regression_mode},
+		{"video_adv_feature", "%d", codec_input->video_adv_feature},
 		};
 		__dump(dump, ARRAY_SIZE(dump));
 	}
