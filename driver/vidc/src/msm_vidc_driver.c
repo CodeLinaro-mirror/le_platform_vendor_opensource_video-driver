@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/delay.h>
@@ -38,7 +38,7 @@
 extern struct msm_vidc_core *g_core;
 
 #define is_odd(val) ((val) % 2 == 1)
-#define is_in_range(val, min, max) (((min) <= (val)) && ((val) <= (max)))
+#define check_in_range(val, min, max) (((min) <= (val)) && ((val) <= (max)))
 #define COUNT_BITS(a, out) {       \
 	while ((a) >= 1) {          \
 		(out) += (a) & (1); \
@@ -1225,9 +1225,11 @@ int msm_vidc_qbuf_cache_operation(struct msm_vidc_inst *inst,
 		return -EINVAL;
 	}
 
-	rc = msm_memory_cache_operations(inst, buf->dmabuf, cache_type);
-	if (rc)
-		print_vidc_buffer(VIDC_ERR, "err ", "qbuf cache ops failed", inst, buf);
+	if (buf->dmabuf) {
+		rc = msm_memory_cache_operations(inst, buf->dmabuf, cache_type);
+		if (rc)
+			print_vidc_buffer(VIDC_ERR, "err ", "qbuf cache ops failed", inst, buf);
+	}
 
 	return rc;
 }
@@ -1266,9 +1268,12 @@ int msm_vidc_dqbuf_cache_operation(struct msm_vidc_inst *inst,
 	if (skip)
 		return 0;
 
-	rc = msm_memory_cache_operations(inst, buf->dmabuf, cache_type);
-	if (rc)
-		print_vidc_buffer(VIDC_ERR, "err ", "dqbuf cache ops failed", inst, buf);
+
+	if (buf->dmabuf) {
+		rc = msm_memory_cache_operations(inst, buf->dmabuf, cache_type);
+		if (rc)
+			print_vidc_buffer(VIDC_ERR, "err ", "dqbuf cache ops failed", inst, buf);
+	}
 
 	return rc;
 }
@@ -2120,7 +2125,7 @@ int vb2_buffer_to_driver(struct vb2_buffer *vb2,
 	return rc;
 }
 
-int msm_vidc_process_readonly_buffers(struct msm_vidc_inst *inst,
+static int msm_vidc_process_readonly_buffers(struct msm_vidc_inst *inst,
 	struct msm_vidc_buffer *buf)
 {
 	int rc = 0;
@@ -2298,7 +2303,7 @@ int msm_vidc_update_input_rate(struct msm_vidc_inst *inst, struct vb2_buffer *vb
 	return 0;
 }
 
-int msm_vidc_flush_input_timer(struct msm_vidc_inst *inst)
+static int msm_vidc_flush_input_timer(struct msm_vidc_inst *inst)
 {
 	struct msm_vidc_input_timer *input_timer, *dummy_timer;
 	struct msm_vidc_core *core;
@@ -2582,7 +2587,7 @@ struct msm_vidc_buffer *msm_vidc_get_driver_buf(struct msm_vidc_inst *inst,
 
 	if (is_decode_session(inst) && is_output_buffer(buf->type)) {
 		/* get a reference */
-		if (!buf->dbuf_get) {
+		if (!buf->dbuf_get && !buf->kvaddr) {
 			buf->dmabuf = call_mem_op(core, dma_buf_get, inst, buf->fd);
 			if (!buf->dmabuf)
 				return NULL;
@@ -2601,6 +2606,8 @@ int msm_vidc_allocate_buffers(struct msm_vidc_inst *inst,
 	struct msm_vidc_buffer *buf = NULL;
 	struct msm_vidc_buffers *buffers;
 	struct msm_vidc_core *core;
+	struct msm_vidc_inst *i;
+	u32 count = 0;
 
 	core = inst->core;
 
@@ -2608,7 +2615,10 @@ int msm_vidc_allocate_buffers(struct msm_vidc_inst *inst,
 	if (!buffers)
 		return -EINVAL;
 
-	for (idx = 0; idx < num_buffers; idx++) {
+	list_for_each_entry(i, &buffers->list, list)
+		count++;
+
+	for (idx = 0; idx < num_buffers; idx++, count++) {
 		buf = msm_vidc_pool_alloc(inst, MSM_MEM_POOL_BUFFER);
 		if (!buf) {
 			i_vpr_e(inst, "%s: alloc failed\n", __func__);
@@ -2617,7 +2627,7 @@ int msm_vidc_allocate_buffers(struct msm_vidc_inst *inst,
 		INIT_LIST_HEAD(&buf->list);
 		list_add_tail(&buf->list, &buffers->list);
 		buf->type = buf_type;
-		buf->index = idx;
+		buf->index = count;
 		buf->region = call_mem_op(core, buffer_region, inst, buf_type);
 	}
 	i_vpr_h(inst, "%s: allocated %d buffers for type %s\n",
@@ -3636,11 +3646,8 @@ int msm_vidc_vb2_buffer_done(struct msm_vidc_inst *inst,
 
 int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst)
 {
+	struct video_device *vdev = get_video_device(inst);
 	int rc = 0;
-	int index;
-	struct msm_vidc_core *core;
-
-	core = inst->core;
 
 	/* do not init, if already inited */
 	if (inst->fh.vdev) {
@@ -3648,14 +3655,7 @@ int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
-	if (is_decode_session(inst))
-		index = 0;
-	else if (is_encode_session(inst))
-		index = 1;
-	else
-		return -EINVAL;
-
-	v4l2_fh_init(&inst->fh, &core->vdev[index].vdev);
+	v4l2_fh_init(&inst->fh, vdev);
 	inst->fh.ctrl_handler = &inst->ctrl_handler;
 	v4l2_fh_add(&inst->fh);
 
@@ -3772,6 +3772,8 @@ int msm_vidc_vb2_queue_init(struct msm_vidc_inst *inst)
 		goto fail_in_meta_alloc;
 	}
 
+	inst->bufq[INPUT_META_PORT].vb2q->lock = &inst->ctx_q_lock;
+
 	/* do input meta port queues initialization */
 	rc = vb2q_init(inst, inst->bufq[INPUT_META_PORT].vb2q, INPUT_META_PLANE);
 	if (rc)
@@ -3783,6 +3785,8 @@ int msm_vidc_vb2_queue_init(struct msm_vidc_inst *inst)
 		rc = -ENOMEM;
 		goto fail_out_meta_alloc;
 	}
+
+	inst->bufq[OUTPUT_META_PORT].vb2q->lock = &inst->ctx_q_lock;
 
 	/* do output meta port queues initialization */
 	rc = vb2q_init(inst, inst->bufq[OUTPUT_META_PORT].vb2q, OUTPUT_META_PLANE);
@@ -5128,7 +5132,10 @@ int msm_vidc_flush_read_only_buffers(struct msm_vidc_inst *inst,
 		ro_buf->sg_table = NULL;
 		ro_buf->dmabuf = NULL;
 		ro_buf->dbuf_get = 0;
+		ro_buf->kvaddr = NULL;
 		ro_buf->device_addr = 0x0;
+		ro_buf->handler.put = NULL;
+		ro_buf->handler.arg = NULL;
 		list_del_init(&ro_buf->list);
 		msm_vidc_pool_free(inst, ro_buf);
 	}
@@ -5197,6 +5204,10 @@ void msm_vidc_destroy_buffers(struct msm_vidc_inst *inst)
 				buf->attach, buf->sg_table);
 		if (buf->attach && buf->dmabuf)
 			call_mem_op(core, dma_buf_detach, core, buf->dmabuf, buf->attach);
+		if (buf->kvaddr && buf->device_addr && refcount_read(&buf->refcount) > 0)
+			i_vpr_e(inst,
+				"%s: destroy ro buffer with Non-Zero refcount %d, daddr 0x%llx\n",
+					__func__, refcount_read(&buf->refcount), buf->device_addr);
 		if (buf->dbuf_get)
 			call_mem_op(core, dma_buf_put, inst, buf->dmabuf);
 		list_del_init(&buf->list);
@@ -5214,6 +5225,10 @@ void msm_vidc_destroy_buffers(struct msm_vidc_inst *inst)
 					buf->attach, buf->sg_table);
 			if (buf->attach && buf->dmabuf)
 				call_mem_op(core, dma_buf_detach, core, buf->dmabuf, buf->attach);
+			if (buf->kvaddr && buf->device_addr && refcount_read(&buf->refcount) > 0)
+				i_vpr_e(inst,
+					"%s: destroying ext buffer, refcount %d, daddr 0x%llx\n",
+					__func__, refcount_read(&buf->refcount), buf->device_addr);
 			if (buf->dbuf_get) {
 				print_vidc_buffer(VIDC_ERR, "err ", "destroying: put dmabuf",
 						  inst, buf);
@@ -5920,8 +5935,8 @@ static bool msm_vidc_allow_image_encode_session(struct msm_vidc_inst *inst)
 	min_height = cap[FRAME_HEIGHT].min;
 	max_height = cap[FRAME_HEIGHT].max;
 	fmt = &inst->fmts[INPUT_PORT];
-	if (!is_in_range(fmt->fmt.pix_mp.width, min_width, max_width) ||
-		!is_in_range(fmt->fmt.pix_mp.height, min_height, max_height)) {
+	if (!check_in_range(fmt->fmt.pix_mp.width, min_width, max_width) ||
+		!check_in_range(fmt->fmt.pix_mp.height, min_height, max_height)) {
 		i_vpr_e(inst, "unsupported wxh [%u x %u], allowed [%u x %u] to [%u x %u]\n",
 			fmt->fmt.pix_mp.width, fmt->fmt.pix_mp.height,
 			min_width, min_height, max_width, max_height);
@@ -6022,8 +6037,8 @@ static int msm_vidc_check_resolution_supported(struct msm_vidc_inst *inst)
 
 	/* check if input width and height is in supported range */
 	if (is_decode_session(inst) || is_encode_session(inst)) {
-		if (!is_in_range(width, min_width, max_width) ||
-			!is_in_range(height, min_height, max_height)) {
+		if (!check_in_range(width, min_width, max_width) ||
+			!check_in_range(height, min_height, max_height)) {
 			i_vpr_e(inst,
 				"%s: unsupported input wxh [%u x %u], allowed range: [%u x %u] to [%u x %u]\n",
 				__func__, width, height, min_width,

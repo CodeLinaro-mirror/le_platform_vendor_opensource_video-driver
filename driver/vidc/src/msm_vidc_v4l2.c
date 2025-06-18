@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <media/v4l2-event.h>
@@ -20,25 +20,28 @@
 
 extern struct msm_vidc_core *g_core;
 
-struct video_device *get_video_device(struct msm_vidc_inst *inst)
+static inline void *to_msm_vidc_inst_from_fh(struct v4l2_fh *fh)
 {
-	struct msm_vidc_core *core = inst->core;
-	struct video_device *vdev = NULL;
+	if (!fh)
+		return NULL;
 
-	if (is_decode_session(inst))
-		vdev = &core->vdev[0].vdev;
-	else if (is_encode_session(inst))
-		vdev = &core->vdev[1].vdev;
+	return container_of(fh, struct msm_vidc_inst, fh);
+}
 
-	return vdev;
+static inline void *to_msm_vidc_inst_from_ctrl(struct v4l2_ctrl *ctrl)
+{
+	if (!ctrl || !ctrl->handler)
+		return NULL;
+
+	return container_of(ctrl->handler, struct msm_vidc_inst, ctrl_handler);
 }
 
 static struct msm_vidc_inst *get_vidc_inst(struct file *filp, void *fh)
 {
 	if (!filp || !filp->private_data)
 		return NULL;
-	return container_of(filp->private_data,
-					struct msm_vidc_inst, fh);
+
+	return container_of(filp->private_data, struct msm_vidc_inst, fh);
 }
 
 static int __msm_v4l2_try_fmt(struct msm_vidc_inst *inst, void *data)
@@ -111,6 +114,30 @@ static unsigned int msm_v4l2_poll(struct file *filp, struct poll_table_struct *p
 exit:
 	put_inst(inst);
 	return poll;
+}
+
+static int msm_v4l2_mmap(struct file *filp, struct vm_area_struct *vma)
+{
+	struct msm_vidc_inst *inst = get_vidc_inst(filp, NULL);
+	int ret;
+
+	inst = get_inst_ref(g_core, inst);
+	if (!inst) {
+		d_vpr_e("%s: invalid instance\n", __func__);
+		return -ENOMEM;
+	}
+
+	if (is_session_error(inst)) {
+		i_vpr_e(inst, "%s: inst in error state\n", __func__);
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	ret = msm_vidc_mmap((void *)inst, filp, vma);
+
+exit:
+	put_inst(inst);
+	return ret;
 }
 
 static int msm_v4l2_open(struct file *filp)
@@ -255,6 +282,37 @@ static int msm_v4l2_prepare_buf(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_prepare_buf, data, false, __func__);
 }
 
+static int msm_v4l2_export_buf(struct file *filp, void *fh,
+			struct v4l2_exportbuffer *eb)
+{
+	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
+	int rc = 0;
+
+	inst = get_inst_ref(g_core, inst);
+	if (!inst || !eb) {
+		d_vpr_e("%s: invalid instance\n", __func__);
+		return -EINVAL;
+	}
+
+	client_lock(inst, __func__);
+	inst_lock(inst, __func__);
+	if (is_session_error(inst)) {
+		i_vpr_e(inst, "%s: inst in error state\n", __func__);
+		rc = -EBUSY;
+		goto unlock;
+	}
+	rc = msm_vidc_exportbuf((void *)inst, eb);
+	if (rc)
+		goto unlock;
+
+unlock:
+	inst_unlock(inst, __func__);
+	client_unlock(inst, __func__);
+	put_inst(inst);
+
+	return rc;
+}
+
 static int msm_v4l2_qbuf(struct file *filp, void *fh,
 				struct v4l2_buffer *data)
 {
@@ -304,7 +362,7 @@ static int msm_v4l2_streamoff(struct file *filp, void *fh,
 static int msm_v4l2_subscribe_event(struct v4l2_fh *fh,
 				const struct v4l2_event_subscription *data)
 {
-	void *instance = container_of(fh, struct msm_vidc_inst, fh);
+	void *instance = to_msm_vidc_inst_from_fh(fh);
 
 	return msm_vidc_session(instance, msm_vidc_subscribe_event,
 			(void *)data, false, __func__);
@@ -313,7 +371,7 @@ static int msm_v4l2_subscribe_event(struct v4l2_fh *fh,
 static int msm_v4l2_unsubscribe_event(struct v4l2_fh *fh,
 				const struct v4l2_event_subscription *data)
 {
-	void *instance = container_of(fh, struct msm_vidc_inst, fh);
+	void *instance = to_msm_vidc_inst_from_fh(fh);
 
 	return msm_vidc_session(instance, msm_vidc_unsubscribe_event,
 			(void *)data, true, __func__);
@@ -387,7 +445,7 @@ static int msm_v4l2_querymenu(struct file *filp, void *fh,
 
 static int msm_v4l2_op_s_ctrl(struct v4l2_ctrl *ctrl)
 {
-	void *instance = container_of(ctrl->handler, struct msm_vidc_inst, ctrl_handler);
+	void *instance = to_msm_vidc_inst_from_ctrl(ctrl);
 	struct msm_vidc_ctrl_data *priv_ctrl_data;
 
 	/*
@@ -406,7 +464,7 @@ static int msm_v4l2_op_s_ctrl(struct v4l2_ctrl *ctrl)
 
 static int msm_v4l2_op_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 {
-	void *instance = container_of(ctrl->handler, struct msm_vidc_inst, ctrl_handler);
+	void *instance = to_msm_vidc_inst_from_ctrl(ctrl);
 
 	return msm_vidc_session(instance, msm_vidc_get_control, ctrl, true, __func__);
 }
@@ -451,6 +509,7 @@ static const struct v4l2_file_operations msm_v4l2_file_operations = {
 	.release                        = msm_v4l2_close,
 	.unlocked_ioctl                 = video_ioctl2,
 	.poll                           = msm_v4l2_poll,
+	.mmap                           = msm_v4l2_mmap,
 };
 
 static const struct v4l2_ioctl_ops msm_v4l2_ioctl_ops_enc = {
@@ -485,6 +544,7 @@ static const struct v4l2_ioctl_ops msm_v4l2_ioctl_ops_enc = {
 	.vidioc_querybuf                = msm_v4l2_querybuf,
 	.vidioc_create_bufs             = msm_v4l2_create_bufs,
 	.vidioc_prepare_buf             = msm_v4l2_prepare_buf,
+	.vidioc_expbuf                  = msm_v4l2_export_buf,
 	.vidioc_qbuf                    = msm_v4l2_qbuf,
 	.vidioc_dqbuf                   = msm_v4l2_dqbuf,
 	.vidioc_streamon                = msm_v4l2_streamon,
@@ -527,6 +587,7 @@ static const struct v4l2_ioctl_ops msm_v4l2_ioctl_ops_dec = {
 	.vidioc_querybuf                = msm_v4l2_querybuf,
 	.vidioc_create_bufs             = msm_v4l2_create_bufs,
 	.vidioc_prepare_buf             = msm_v4l2_prepare_buf,
+	.vidioc_expbuf                  = msm_v4l2_export_buf,
 	.vidioc_qbuf                    = msm_v4l2_qbuf,
 	.vidioc_dqbuf                   = msm_v4l2_dqbuf,
 	.vidioc_streamon                = msm_v4l2_streamon,
