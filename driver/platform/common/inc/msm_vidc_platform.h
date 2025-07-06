@@ -233,8 +233,12 @@ struct msm_vidc_platform_data {
 	bool supports_mmrm;
 	const struct msm_platform_core_capability *core_data;
 	u32 core_data_size;
+	const struct msm_platform_core_capability *sku_core_data;
+	u32 sku_core_data_size;
 	struct msm_platform_inst_capability *inst_cap_data;
 	u32 inst_cap_data_size;
+	struct msm_platform_inst_capability *sku_inst_cap_data;
+	u32 sku_inst_cap_data_size;
 	struct msm_platform_inst_cap_dependency *inst_cap_dependency_data;
 	u32 inst_cap_dependency_data_size;
 	struct msm_vidc_csc_coeff csc_data;
