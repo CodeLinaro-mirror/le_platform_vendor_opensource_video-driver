@@ -187,6 +187,265 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 #endif
 };
 
+static struct codec_info codec_data_common[] = {
+	{
+		.v4l2_codec  = V4L2_PIX_FMT_H264,
+		.vidc_codec  = MSM_VIDC_H264,
+		.pixfmt_name = "AVC",
+	},
+	{
+		.v4l2_codec  = V4L2_PIX_FMT_HEVC,
+		.vidc_codec  = MSM_VIDC_HEVC,
+		.pixfmt_name = "HEVC",
+	},
+	{
+		.v4l2_codec  = V4L2_PIX_FMT_VP9,
+		.vidc_codec  = MSM_VIDC_VP9,
+		.pixfmt_name = "VP9",
+	},
+	{
+		.v4l2_codec  = V4L2_PIX_FMT_AV1,
+		.vidc_codec  = MSM_VIDC_AV1,
+		.pixfmt_name = "AV1",
+	},
+	{
+		.v4l2_codec  = V4L2_PIX_FMT_VIDC_HEIC,
+		.vidc_codec  = MSM_VIDC_HEIC,
+		.pixfmt_name = "HEIC",
+	},
+	{
+		.v4l2_codec  = V4L2_PIX_FMT_VIDC_APV,
+		.vidc_codec  = MSM_VIDC_APV,
+		.pixfmt_name = "APV",
+	},
+};
+
+static struct color_format_info color_format_data_common[] = {
+	{
+		.v4l2_color_format = V4L2_PIX_FMT_NV12,
+		.vidc_color_format = MSM_VIDC_FMT_NV12,
+		.pixfmt_name       = "NV12",
+	},
+	{
+		.v4l2_color_format = V4L2_PIX_FMT_NV21,
+		.vidc_color_format = MSM_VIDC_FMT_NV21,
+		.pixfmt_name       = "NV21",
+	},
+	{
+		.v4l2_color_format = V4L2_PIX_FMT_QC08C,
+		.vidc_color_format = MSM_VIDC_FMT_NV12C,
+		.pixfmt_name       = "NV12C",
+	},
+	{
+		.v4l2_color_format = V4L2_PIX_FMT_QC10C,
+		.vidc_color_format = MSM_VIDC_FMT_TP10C,
+		.pixfmt_name       = "TP10C",
+	},
+	{
+		.v4l2_color_format = V4L2_PIX_FMT_RGBA32,
+		.vidc_color_format = MSM_VIDC_FMT_RGBA8888,
+		.pixfmt_name       = "RGBA",
+	},
+	{
+		.v4l2_color_format = V4L2_PIX_FMT_P010,
+		.vidc_color_format = MSM_VIDC_FMT_P010,
+		.pixfmt_name       = "P010",
+	},
+	{
+		.v4l2_color_format = V4L2_PIX_FMT_VIDC_P210,
+		.vidc_color_format = MSM_VIDC_FMT_P210,
+		.pixfmt_name       = "P210",
+	},
+	{
+		.v4l2_color_format = V4L2_PIX_FMT_VIDC_P210C,
+		.vidc_color_format = MSM_VIDC_FMT_P210C,
+		.pixfmt_name       = "P210C",
+	},
+	{
+		.v4l2_color_format = V4L2_META_FMT_VIDC,
+		.vidc_color_format = MSM_VIDC_FMT_META,
+		.pixfmt_name       = "META",
+	},
+};
+
+static struct color_primaries_info color_primaries_data_common[] = {
+	{
+		.v4l2_color_primaries  = V4L2_COLORSPACE_DEFAULT,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_UNSPECIFIED,
+	},
+	{
+		.v4l2_color_primaries  = V4L2_COLORSPACE_DEFAULT,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_RESERVED,
+	},
+	{
+		.v4l2_color_primaries  = V4L2_COLORSPACE_REC709,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_BT709,
+	},
+	{
+		.v4l2_color_primaries  = V4L2_COLORSPACE_470_SYSTEM_M,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_BT470_SYSTEM_M,
+	},
+	{
+		.v4l2_color_primaries  = V4L2_COLORSPACE_470_SYSTEM_BG,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_BT470_SYSTEM_BG,
+	},
+	{
+		.v4l2_color_primaries  = V4L2_COLORSPACE_SMPTE170M,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_BT601_525,
+	},
+	{
+		.v4l2_color_primaries  = V4L2_COLORSPACE_SMPTE240M,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_SMPTE_ST240M,
+	},
+	{
+		.v4l2_color_primaries  = V4L2_COLORSPACE_VIDC_GENERIC_FILM,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_GENERIC_FILM,
+	},
+	{
+		.v4l2_color_primaries  = V4L2_COLORSPACE_BT2020,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_BT2020,
+	},
+	{
+		.v4l2_color_primaries  = V4L2_COLORSPACE_DCI_P3,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_SMPTE_RP431_2,
+	},
+	{
+		.v4l2_color_primaries  = V4L2_COLORSPACE_VIDC_EG431,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_SMPTE_EG431_1,
+	},
+	{
+		.v4l2_color_primaries  = V4L2_COLORSPACE_VIDC_EBU_TECH,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_SMPTE_EBU_TECH,
+	},
+};
+
+static struct transfer_char_info transfer_char_data_common[] = {
+	{
+		.v4l2_transfer_char  = V4L2_XFER_FUNC_DEFAULT,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_UNSPECIFIED,
+	},
+	{
+		.v4l2_transfer_char  = V4L2_XFER_FUNC_DEFAULT,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_RESERVED,
+	},
+	{
+		.v4l2_transfer_char  = V4L2_XFER_FUNC_709,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_BT709,
+	},
+	{
+		.v4l2_transfer_char  = V4L2_XFER_FUNC_VIDC_BT470_SYSTEM_M,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_BT470_SYSTEM_M,
+	},
+	{
+		.v4l2_transfer_char  = V4L2_XFER_FUNC_VIDC_BT470_SYSTEM_BG,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_BT470_SYSTEM_BG,
+	},
+	{
+		.v4l2_transfer_char  = V4L2_XFER_FUNC_VIDC_BT601_525_OR_625,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_BT601_525_OR_625,
+	},
+	{
+		.v4l2_transfer_char  = V4L2_XFER_FUNC_SMPTE240M,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_SMPTE_ST240M,
+	},
+	{
+		.v4l2_transfer_char  = V4L2_XFER_FUNC_VIDC_LINEAR,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_LINEAR,
+	},
+	{
+		.v4l2_transfer_char  = V4L2_XFER_FUNC_VIDC_XVYCC,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_XVYCC,
+	},
+	{
+		.v4l2_transfer_char  = V4L2_XFER_FUNC_VIDC_BT1361,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_BT1361_0,
+	},
+	{
+		.v4l2_transfer_char  = V4L2_XFER_FUNC_SRGB,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_SRGB_SYCC,
+	},
+	{
+		.v4l2_transfer_char  = V4L2_XFER_FUNC_VIDC_BT2020,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_BT2020_14,
+	},
+	{
+		.v4l2_transfer_char  = V4L2_XFER_FUNC_SMPTE2084,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_SMPTE_ST2084_PQ,
+	},
+	{
+		.v4l2_transfer_char  = V4L2_XFER_FUNC_VIDC_ST428,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_SMPTE_ST428_1,
+	},
+	{
+		.v4l2_transfer_char  = V4L2_XFER_FUNC_VIDC_HLG,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_BT2100_2_HLG,
+	},
+	{
+		.v4l2_transfer_char  = V4L2_XFER_FUNC_VIDC_CUSTLOG,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_CUSTLOG,
+	},
+};
+
+static struct matrix_coeff_info matrix_coeff_data_common[] = {
+	{
+		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_DEFAULT,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_UNSPECIFIED,
+	},
+	{
+		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_DEFAULT,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_RESERVED,
+	},
+	{
+		.v4l2_matrix_coeff  = V4L2_YCBCR_VIDC_SRGB_OR_SMPTE_ST428,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_SRGB_SMPTE_ST428_1,
+	},
+	{
+		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_709,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_BT709,
+	},
+	{
+		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_XV709,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_BT709,
+	},
+	{
+		.v4l2_matrix_coeff  = V4L2_YCBCR_VIDC_FCC47_73_682,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_FCC_TITLE_47,
+	},
+	{
+		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_XV601,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_BT470_SYS_BG_OR_BT601_625,
+	},
+	{
+		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_601,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_BT601_525_BT1358_525_OR_625,
+	},
+	{
+		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_SMPTE240M,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_SMPTE_ST240,
+	},
+	{
+		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_BT2020,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_BT2020_NON_CONSTANT,
+	},
+	{
+		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_BT2020_CONST_LUM,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_BT2020_CONSTANT,
+	},
+};
+
+struct msm_vidc_format_capability format_data_common = {
+	.codec_info = codec_data_common,
+	.codec_info_size = ARRAY_SIZE(codec_data_common),
+	.color_format_info = color_format_data_common,
+	.color_format_info_size = ARRAY_SIZE(color_format_data_common),
+	.color_prim_info = color_primaries_data_common,
+	.color_prim_info_size = ARRAY_SIZE(color_primaries_data_common),
+	.transfer_char_info = transfer_char_data_common,
+	.transfer_char_info_size = ARRAY_SIZE(transfer_char_data_common),
+	.matrix_coeff_info = matrix_coeff_data_common,
+	.matrix_coeff_info_size = ARRAY_SIZE(matrix_coeff_data_common),
+};
+
 static int msm_vidc_init_ops(struct msm_vidc_core *core)
 {
 	d_vpr_h("%s: initialize ops\n", __func__);
@@ -4507,6 +4766,70 @@ int msm_vidc_set_lookahead_encode_size(void *instance,
 	hfi_value = inst->capabilities[LOOKAHEAD_ENCODE_SIZE].value;
 	rc = msm_vidc_packetize_control(inst, cap_id, HFI_PAYLOAD_U32,
 			&hfi_value, sizeof(u32), __func__);
+
+	return rc;
+}
+
+int msm_vidc_set_ring_buffer_count(void *instance,
+	enum msm_vidc_inst_capability_type cap_id)
+{
+	int rc = 0;
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	struct v4l2_format *output_fmt, *input_fmt;
+	struct msm_vidc_core *core;
+	u32 count = 0, data_size = 0, pixel_count = 0, fps = 0;
+	u32 frame_rate = 0, operating_rate = 0;
+
+	core = inst->core;
+	output_fmt = &inst->fmts[OUTPUT_PORT];
+	input_fmt = &inst->fmts[INPUT_PORT];
+
+	frame_rate = inst->capabilities[FRAME_RATE].value >> 16;
+	operating_rate = inst->capabilities[OPERATING_RATE].value >> 16;
+	fps = max(frame_rate, operating_rate);
+	pixel_count = output_fmt->fmt.pix_mp.width *
+		output_fmt->fmt.pix_mp.height;
+
+	/*
+	 * try to enable ring buffer feature if
+	 * resolution >= 8k and fps >= 30fps and
+	 * resolution >= 4k and fps >= 120fps and
+	 * resolution >= 1080p and fps >= 480fps and
+	 * resolution >= 720p and fps >= 960fps
+	 */
+	if ((pixel_count >= 7680 * 4320 && fps >= 30) ||
+	    (pixel_count >= 3840 * 2160 && fps >= 120) ||
+	    (pixel_count >= 1920 * 1080 && fps >= 480) ||
+	    (pixel_count >= 1280 * 720 && fps >= 960)) {
+		data_size = input_fmt->fmt.pix_mp.plane_fmt[0].sizeimage;
+		i_vpr_h(inst, "%s: calculate ring buffer count\n", __func__);
+		rc = call_session_op(core, ring_buf_count, inst, data_size);
+		if (rc) {
+			i_vpr_e(inst, "%s: failed to calculate ring buffer count\n",
+				__func__);
+			/* ignore error */
+			rc = 0;
+			inst->capabilities[cap_id].value = 0;
+		}
+	} else {
+		i_vpr_h(inst,
+			"%s: session %ux%u@%u fps does not support ring buffer\n",
+			__func__, output_fmt->fmt.pix_mp.width,
+			output_fmt->fmt.pix_mp.height, fps);
+		inst->capabilities[cap_id].value = 0;
+	}
+
+	count = inst->capabilities[cap_id].value;
+	i_vpr_h(inst, "%s: ring buffer count: %u\n", __func__, count);
+	rc = venus_hfi_session_property(inst,
+			HFI_PROP_ENC_RING_BIN_BUF,
+			HFI_HOST_FLAGS_NONE,
+			HFI_PORT_BITSTREAM,
+			HFI_PAYLOAD_U32,
+			&count,
+			sizeof(u32));
+	if (rc)
+		return rc;
 
 	return rc;
 }
