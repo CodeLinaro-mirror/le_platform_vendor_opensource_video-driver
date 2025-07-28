@@ -12,7 +12,6 @@
 #include "msm_vidc_core.h"
 #include "msm_vidc_platform.h"
 #include "msm_vidc_debug.h"
-#include "perf_static_model.h"
 #include "msm_vidc_power.h"
 #include "resources.h"
 
@@ -458,7 +457,7 @@ msm_vidc_calc_freq_iris4(struct msm_vidc_inst *inst,
 	ret = msm_vidc_init_codec_input_freq(inst, clock_scaling_data->data_size, &codec_input);
 	if (ret)
 		return ret;
-	ret = msm_vidc_calculate_frequency(codec_input, &codec_output);
+	ret = msm_vidc_calculate_frequency_iris4(codec_input, &codec_output);
 	if (ret)
 		return ret;
 
@@ -658,8 +657,10 @@ static int msm_vidc_get_freq_corner(struct msm_vidc_inst *inst)
 
 int msm_vidc_scale_clocks_iris4(struct msm_vidc_inst *inst)
 {
+	u64 vpp_turbo_freq, apv_turbo_freq, bse_turbo_freq, tensilica_turbo_freq;
 	struct vidc_clock_scaling_data *clock_data;
 	struct msm_vidc_core *core;
+	int turbo_index = 0;
 
 	core = inst->core;
 	clock_data = &inst->clock_data;
@@ -668,15 +669,33 @@ int msm_vidc_scale_clocks_iris4(struct msm_vidc_inst *inst)
 	    is_image_session(inst) ||
 	    is_sub_state(inst, MSM_VIDC_DRC) ||
 	    is_sub_state(inst, MSM_VIDC_DRAIN)) {
-		inst->power.min_vpp_freq = get_clock_freq(core, "video_cc_mvs0_clk_src",
-							  get_max_clock_index(core));
-		inst->power.min_apv_freq = get_clock_freq(core, "video_cc_mvs0a_clk_src",
-							  get_max_clock_index(core));
-		inst->power.min_bse_freq = get_clock_freq(core, "video_cc_mvs0b_clk_src",
-							  get_max_clock_index(core));
-		inst->power.min_tensilica_freq = get_clock_freq(core, "video_cc_mvs0c_clk_src",
-								get_max_clock_index(core));
+		if (core->platform->data.clk_corner_idx_tbl)
+			turbo_index =
+				core->platform->data.clk_corner_idx_tbl[CLK_LEVEL_TURBO];
+
+		clock_data->data_size = inst->max_input_data_size;
+
+		/* image session need to run with highest frequency rather than just Turbo. */
+		if (is_image_session(inst))
+			turbo_index = 0;
+		else
+			msm_vidc_calc_freq_iris4(inst, clock_data);
+
+		vpp_turbo_freq = get_clock_freq(core, "video_cc_mvs0_clk_src", turbo_index);
+
+		apv_turbo_freq = get_clock_freq(core, "video_cc_mvs0a_clk_src", turbo_index);
+
+		bse_turbo_freq = get_clock_freq(core, "video_cc_mvs0b_clk_src", turbo_index);
+
+		tensilica_turbo_freq = get_clock_freq(core, "video_cc_mvs0c_clk_src", turbo_index);
+
+		inst->power.min_vpp_freq = max(clock_data->vpp_freq, vpp_turbo_freq);
+		inst->power.min_apv_freq = max(clock_data->apv_freq, apv_turbo_freq);
+		inst->power.min_bse_freq = max(clock_data->bse_freq, bse_turbo_freq);
+		inst->power.min_tensilica_freq = max(clock_data->tensilica_freq,
+							tensilica_turbo_freq);
 		inst->power.dcvs_flags = 0;
+
 	} else if (msm_vidc_clock_voting ||
 		   (msm_vidc_vpp_clock_voting && msm_vidc_apv_clock_voting &&
 		    msm_vidc_bse_clock_voting && msm_vidc_tensilica_clock_voting)) {
@@ -714,7 +733,7 @@ int msm_vidc_calc_bw_iris4(struct msm_vidc_inst *inst,
 	ret = msm_vidc_init_codec_input_bus(inst, vidc_data, &codec_input);
 	if (ret)
 		return ret;
-	ret = msm_vidc_calculate_bandwidth(codec_input, &codec_output);
+	ret = msm_vidc_calculate_bandwidth_iris4(codec_input, &codec_output);
 	if (ret)
 		return ret;
 
@@ -729,7 +748,7 @@ int msm_vidc_calc_bw_iris4(struct msm_vidc_inst *inst,
 	if (inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value) {
 		codec_input.frame_width /= 2;
 		codec_input.frame_height /= 2;
-		ret = msm_vidc_calculate_bandwidth(codec_input, &codec_output);
+		ret = msm_vidc_calculate_bandwidth_iris4(codec_input, &codec_output);
 		if (ret)
 			return ret;
 		vidc_data->calc_bw_ddr +=
@@ -766,7 +785,7 @@ int msm_vidc_ring_buf_count_iris4(struct msm_vidc_inst *inst, u32 data_size)
 	rc = msm_vidc_init_codec_input_freq(inst, data_size, &codec_input);
 	if (rc)
 		return rc;
-	rc = msm_vidc_calculate_frequency(codec_input, &codec_output);
+	rc = msm_vidc_calculate_frequency_iris4(codec_input, &codec_output);
 	if (rc)
 		return rc;
 

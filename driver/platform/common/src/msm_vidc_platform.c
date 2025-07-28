@@ -27,6 +27,8 @@
 #if defined(CONFIG_MSM_VIDC_SUN)
 #include "msm_vidc_sun.h"
 #include "msm_vidc_iris35.h"
+#include "msm_vidc_tuna.h"
+#include "msm_vidc_iris33.h"
 #endif
 #if defined(CONFIG_MSM_VIDC_PINEAPPLE)
 #include "msm_vidc_pineapple.h"
@@ -122,6 +124,12 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.get_platform_data          = msm_vidc_get_platform_data_sun,
 		.init_platform              = msm_vidc_init_platform_sun,
 		.init_iris                  = msm_vidc_init_iris35,
+	},
+	{
+		.compat                     = "qcom,tuna-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_tuna,
+		.init_platform              = msm_vidc_init_platform_tuna,
+		.init_iris                  = msm_vidc_init_iris33,
 	},
 #endif
 #if defined(CONFIG_MSM_VIDC_LEMANS)
@@ -545,6 +553,7 @@ int msm_vidc_v4l2_to_hfi_enum(struct msm_vidc_inst *inst,
 	case HEVC_TIER:
 	case AV1_TIER:
 	case BLUR_TYPES:
+	case LOG_VIDEO_ENCODE:
 		*value = inst->capabilities[cap_id].value;
 		return 0;
 	case LAYER_TYPE:
@@ -1552,6 +1561,7 @@ int msm_vidc_adjust_slice_count(void *instance, struct v4l2_ctrl *ctrl)
 {
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
 
+	struct msm_vidc_core *core = inst->core;
 	struct v4l2_format *output_fmt;
 	s32 adjusted_value, slice_mode;
 	s64 rc_type = -1, all_intra = 0, enh_layer_count = 0;
@@ -1655,8 +1665,7 @@ int msm_vidc_adjust_slice_count(void *instance, struct v4l2_ctrl *ctrl)
 
 	if (slice_mode == V4L2_MPEG_VIDEO_MULTI_SLICE_MODE_MAX_MB) {
 		update_cap = SLICE_MAX_MB;
-		slice_val = inst->capabilities[SLICE_MAX_MB].value;
-		slice_val = max(slice_val, mbpf / MAX_SLICES_PER_FRAME);
+		slice_val = call_session_op(core, decide_slice_max_mb, inst);
 	} else {
 		slice_val = inst->capabilities[SLICE_MAX_BYTES].value;
 		update_cap = SLICE_MAX_BYTES;
@@ -3194,6 +3203,60 @@ int msm_vidc_adjust_lookahead_encode_size(void *instance, struct v4l2_ctrl *ctrl
 	}
 
 	msm_vidc_update_cap_value(inst, LOOKAHEAD_ENCODE_SIZE, lookahead_size, __func__);
+	return 0;
+}
+
+int msm_vidc_adjust_log_mode(void *instance, struct v4l2_ctrl *ctrl)
+{
+	s32 value;
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	s64 pix_fmt = -1;
+	s64 hfi_rc_type = -1;
+
+	value = ctrl ? ctrl->val : inst->capabilities[LOG_VIDEO_ENCODE].value;
+	/*
+	 * IRIS4 encoder LOG mode supports for:
+	 *   HEVC/APV encoders 10bit only
+	 *   VBR rate control only
+	 */
+	if (msm_vidc_get_parent_value(inst, LOG_VIDEO_ENCODE, PIX_FMTS,
+		      &pix_fmt, __func__))
+		return -EINVAL;
+	if (!is_10bit_colorformat(pix_fmt))
+		goto disable;
+
+	if (msm_vidc_get_parent_value(inst, LOG_VIDEO_ENCODE, BITRATE_MODE,
+		      &hfi_rc_type, __func__))
+		return -EINVAL;
+	if (hfi_rc_type != HFI_RC_VBR_CFR)
+		goto disable;
+
+	msm_vidc_update_cap_value(inst, LOG_VIDEO_ENCODE, value, __func__);
+	return 0;
+
+disable:
+	msm_vidc_update_cap_value(inst, LOG_VIDEO_ENCODE, MSM_VIDC_LOG_VIDEO_TYPE_NONE, __func__);
+	return 0;
+}
+
+int msm_vidc_adjust_bitdepth(void *instance, struct v4l2_ctrl *ctrl)
+{
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	s64 pix_fmts = MSM_VIDC_FMT_NONE;
+	s32 adjusted_value;
+
+	if (is_decode_session(inst))
+		return 0;
+
+	pix_fmts = inst->capabilities[PIX_FMTS].value;
+
+	if (is_8bit_colorformat(pix_fmts))
+		adjusted_value = BIT_DEPTH_8;
+	else
+		adjusted_value = BIT_DEPTH_10;
+
+	msm_vidc_update_cap_value(inst, BIT_DEPTH, adjusted_value, __func__);
+
 	return 0;
 }
 
