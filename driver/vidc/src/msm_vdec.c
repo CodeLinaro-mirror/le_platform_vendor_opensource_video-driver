@@ -2878,7 +2878,8 @@ int msm_vdec_inst_init(struct msm_vidc_inst *inst)
 	f = &inst->fmts[OUTPUT_PORT];
 	f->type = OUTPUT_MPLANE;
 	f->fmt.pix_mp.pixelformat =
-		v4l2_colorformat_from_driver(inst, MSM_VIDC_FMT_NV12C, __func__);
+		v4l2_colorformat_from_driver(inst,
+		core->inst_caps[MSM_VIDC_H264].cap[PIX_FMTS].value, __func__);
 	colorformat = v4l2_colorformat_to_driver(inst,
 		f->fmt.pix_mp.pixelformat, __func__);
 	f->fmt.pix_mp.width = video_y_stride_pix(colorformat, DEFAULT_WIDTH);
