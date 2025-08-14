@@ -55,6 +55,10 @@
 #include "msm_vidc_nordau.h"
 #include "msm_vidc_iris36.h"
 #endif
+#if defined(CONFIG_MSM_VIDC_ART)
+#include "msm_vidc_art.h"
+#include "msm_vidc_iris5.h"
+#endif
 
 #define CAP_TO_8BIT_QP(a) {          \
 	if ((a) < MIN_QP_8BIT)                 \
@@ -167,6 +171,14 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.get_platform_data          = msm_vidc_get_platform_data_alor,
 		.init_platform              = msm_vidc_init_platform_alor,
 		.init_iris                  = msm_vidc_init_iris4,
+	},
+#endif
+#if defined(CONFIG_MSM_VIDC_ART)
+	{
+		.compat                     = "qcom,art-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_art,
+		.init_platform              = msm_vidc_init_platform_art,
+		.init_iris                  = msm_vidc_init_iris5,
 	},
 #endif
 #if defined(CONFIG_MSM_VIDC_SERAPH)
