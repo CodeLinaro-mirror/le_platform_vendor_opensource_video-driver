@@ -98,6 +98,83 @@ u32 vpe_csc_custom_limit_coeff[MAX_LIMIT_COEFFS] = {
 	16, 235, 16, 240, 16, 240
 };
 
+u64 apv_bitrate_tbl[8][6][4] = {
+	{
+		/* qHD 960x540 */
+		/* LQ,        SQ,        HQ,        UQ */
+		{  29000000,  41000000,  58000000,  86000000 },/* 24 fps */
+		{  31000000,  43000000,  60000000,  90000000 },/* 25 fps */
+		{  37000000,  51000000,  72000000, 108000000 },/* 30 fps */
+		{  61000000,  86000000, 120000000, 180000000 },/* 50 fps */
+		{  73000000, 103000000, 144000000, 216000000 },/* 60 fps */
+		{ 147000000, 206000000, 288000000, 432000000 } /* 120 fps */
+	},
+	{
+		/* HD 1280x720 */
+		{  40000000,  56000000,  78000000, 118000000 },
+		{  42000000,  58000000,  82000000, 123000000 },
+		{  50000000,  70000000,  98000000, 147000000 },
+		{  83000000, 117000000, 163000000, 245000000 },
+		{ 100000000, 140000000, 196000000, 294000000 },
+		{ 200000000, 280000000, 392000000, 588000000 }
+	},
+	{
+		/* FHD 1920x1080 */
+		{  81000000, 113000000, 158000000, 238000000 },
+		{  84000000, 118000000, 165000000, 248000000 },
+		{ 101000000, 141000000, 198000000, 297000000 },
+		{ 168000000, 236000000, 330000000, 495000000 },
+		{ 202000000, 283000000, 396000000, 594000000 },
+		{ 404000000, 566000000, 792000000, 1188000000 }
+	},
+	{
+		/* 2K 2048x1080 */
+		{  86000000, 121000000, 169000000, 253000000 },
+		{  90000000, 126000000, 176000000, 264000000 },
+		{ 108000000, 151000000, 211000000, 317000000 },
+		{ 180000000, 251000000, 352000000, 528000000 },
+		{ 216000000, 302000000, 422000000, 634000000 },
+		{ 431000000, 603000000, 845000000, 1267000000 }
+	},
+	{
+		/* UHD 4K 3840x2160 */
+		{  325000000,  455000000,  637000000,  955000000 },
+		{  338000000,  474000000,  663000000,  995000000 },
+		{  406000000,  569000000,  796000000, 1194000000 },
+		{  677000000,  948000000, 1327000000, 1990000000 },
+		{  812000000, 1137000000, 1592000000, 2388000000 },
+		{ 1624000000, 2274000000, 3184000000, 4776000000 }
+	},
+	{
+		/* 4K 4096x2160 */
+		{  347000000,  485000000,  679000000, 1019000000 },
+		{  361000000,  505000000,  708000000, 1061000000 },
+		{  433000000,  606000000,  849000000, 1274000000 },
+		{  722000000, 1011000000, 1415000000, 2123000000 },
+		{  866000000, 1213000000, 1698000000, 2547000000 },
+		{ 1733000000, 2426000000, 3396000000, 5094000000 }
+	},
+	{
+		/* UHD 8K 7680x4320 */
+		{ 1300000000, 1819000000, 2547000000, 3821000000 },
+		{ 1354000000, 1895000000, 2653000000, 3980000000 },
+		{ 1624000000, 2274000000, 3184000000, 4776000000 },
+		{ 2707000000, 3790000000, 5307000000, 7960000000 },
+		{ 3249000000, 4549000000, 6368000000, 9552000000 },
+		{ 6498000000, 9097000000, 12736000000, 19104000000 }
+	},
+	{
+		/* 8K 8192x4320 */
+		{ 1386000000, 1941000000, 2717000000, 4076000000 },
+		{ 1444000000, 2022000000, 2830000000, 4245000000 },
+		{ 1733000000, 2426000000, 3396000000, 5094000000 },
+		{ 2888000000, 4043000000, 5660000000, 8491000000 },
+		{ 3466000000, 4852000000, 6793000000, 10189000000 },
+		{ 6931000000, 9704000000, 13585000000, 20378000000 }
+	}
+
+};
+
 static const struct msm_vidc_compat_handle compat_handle[] = {
 #if defined(CONFIG_MSM_VIDC_PINEAPPLE)
 	{
@@ -759,6 +836,118 @@ int msm_vidc_adjust_session_core_id(void *instance, struct v4l2_ctrl *ctrl)
 	return rc;
 }
 
+int msm_vidc_adjust_bitrate_apv(void *instance, struct v4l2_ctrl *ctrl)
+{
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	s64 adjusted_value = 0, resolution = 0;
+	struct v4l2_format *output_fmt;
+	u32 frame_rate, quality_level;
+	u32 res_index = 0, fps_index = 0, quality_index = 0, multiplier = 1;
+
+	adjusted_value =  ctrl ? ctrl->val : inst->capabilities[BIT_RATE].value;
+	output_fmt = &inst->fmts[OUTPUT_PORT];
+	resolution = output_fmt->fmt.pix_mp.width * output_fmt->fmt.pix_mp.height;
+	frame_rate = inst->capabilities[FRAME_RATE].value >> 16;
+	quality_level = inst->capabilities[CONSTANT_QUALITY].value;
+
+	/* Set user input bitrate for 8k session if input bitrate >= 2gpbs */
+	if (resolution >= 7680 * 4320 && msm_vidc_apv_bitrate >= 2000000000) {
+		/* Max bitrate allowed is 3.3gbps */
+		if (msm_vidc_apv_bitrate > 3.3 * 1000 * 1000 * 1000) {
+			i_vpr_h(inst, "%s:  limit APV bitrate to 3.3Gbps\n", __func__);
+			msm_vidc_apv_bitrate = 3.3 * 1000 * 1000 * 1000;
+		}
+		i_vpr_h(inst, "%s: update bitrate to %u for 8k resolution\n",
+			__func__, msm_vidc_apv_bitrate);
+		adjusted_value = msm_vidc_apv_bitrate;
+	}
+
+	if (inst->hfi_rc_type != HFI_RC_CQ)
+		goto update_bitrate;
+
+	/* update the bitrate based on constant quality level */
+	if (resolution < ALIGN(960, 16) * ALIGN(540, 16))
+		res_index = 0;
+	else if (resolution <= ALIGN(1280, 16) * ALIGN(720, 16))
+		res_index = 1;
+	else if (resolution <= ALIGN(1920, 16) * ALIGN(1080, 16))
+		res_index = 2;
+	else if (resolution <= ALIGN(2048, 16) * ALIGN(1080, 16))
+		res_index = 3;
+	else if (resolution <= ALIGN(3840, 16) * ALIGN(2160, 16))
+		res_index = 4;
+	else if (resolution <= ALIGN(4096, 16) * ALIGN(2160, 16))
+		res_index = 5;
+	else if (resolution <= ALIGN(7680, 16) * ALIGN(4320, 16))
+		res_index = 6;
+	else /* if (resolution <= ALIGN(8192, 16) * ALIGN(4320, 16)) */
+		res_index = 7;
+
+	if (frame_rate <= 24) {
+		fps_index = 0;
+	} else if (frame_rate <= 25) {
+		fps_index = 1;
+	} else if (frame_rate <= 30) {
+		fps_index = 2;
+	} else if (frame_rate <= 50) {
+		fps_index = 3;
+	} else if (frame_rate <= 60) {
+		fps_index = 4;
+	} else if (frame_rate <= 120) {
+		fps_index = 5;
+	} else {
+		fps_index = 5;
+		multiplier = 1;
+		if (frame_rate <= 240)
+			multiplier = 2;
+		else if (frame_rate <= 480)
+			multiplier = 4;
+		else
+			multiplier = 8;
+	}
+
+	if (quality_level <= 70)
+		quality_index = 0;
+	else if (quality_level <= 80)
+		quality_index = 1;
+	else
+		quality_index = 2;
+
+	adjusted_value =
+		apv_bitrate_tbl[res_index][fps_index][quality_index] * multiplier;
+	/* limit apv bitrate to 3.333gbps (maximum) */
+	if (adjusted_value > 3333000000)
+		adjusted_value = 3333000000;
+
+update_bitrate:
+	msm_vidc_update_cap_value(inst, BIT_RATE, adjusted_value, __func__);
+
+	return 0;
+}
+
+int msm_vidc_adjust_constant_quality(void *instance, struct v4l2_ctrl *ctrl)
+{
+	s32 adjusted_value;
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+
+	adjusted_value = ctrl ? ctrl->val :
+		inst->capabilities[CONSTANT_QUALITY].value;
+
+	if (inst->codec == MSM_VIDC_APV) {
+		/* recommended quality levels are 70 (LQ), 80 (SQ), 90 (HQ) */
+		if (adjusted_value <= 70)
+			adjusted_value = 70;
+		else if (adjusted_value <= 80)
+			adjusted_value = 80;
+		else
+			adjusted_value = 90;
+	}
+
+	msm_vidc_update_cap_value(inst, CONSTANT_QUALITY, adjusted_value, __func__);
+
+	return 0;
+}
+
 int msm_vidc_adjust_bitrate_mode(void *instance, struct v4l2_ctrl *ctrl)
 {
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
@@ -792,6 +981,30 @@ int msm_vidc_adjust_bitrate_mode(void *instance, struct v4l2_ctrl *ctrl)
 		hfi_value = HFI_RC_CQ;
 	}
 
+	if (inst->codec == MSM_VIDC_APV) {
+		/*
+		 * for apv, use bitrate only for VBR, client set BITRATE and
+		 *          client did not set CONSTANT_QUALITY, in all other
+		 *          cases, default to CONSTANT_QUALITY.
+		 */
+		bool const_quality_set =
+			!!(inst->capabilities[CONSTANT_QUALITY].flags &
+			   CAP_FLAG_CLIENT_SET);
+		bool bitrate_set =
+			!!(inst->capabilities[BIT_RATE].flags &
+			   CAP_FLAG_CLIENT_SET);
+
+		if (bitrate_mode == V4L2_MPEG_VIDEO_BITRATE_MODE_VBR &&
+		    bitrate_set && !const_quality_set) {
+			hfi_value = HFI_RC_VBR_CFR;
+		} else {
+			hfi_value = HFI_RC_CQ;
+			i_vpr_h(inst,
+				"%s: APV default to CQ (constant quality %s, bitrate %s)\n",
+				__func__, const_quality_set ? "set" : "not set",
+				bitrate_set ? "set" : "not set");
+		}
+	}
 update:
 	inst->hfi_rc_type = hfi_value;
 	i_vpr_h(inst, "%s: hfi rc type: %#x\n",

@@ -363,6 +363,8 @@ int msm_vidc_packetize_control(struct msm_vidc_inst *inst,
 			       enum msm_vidc_inst_capability_type cap_id, u32 payload_type,
 			       void *hfi_val, u32 payload_size, const char *func);
 int msm_vidc_adjust_bitrate(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_bitrate_apv(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_constant_quality(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_layer_bitrate(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_bitrate_mode(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_entropy_mode(void *instance, struct v4l2_ctrl *ctrl);
