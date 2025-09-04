@@ -57,7 +57,8 @@ static inline bool is_video_device(struct device *dev)
 		of_device_is_compatible(dev->of_node, "qcom,seraph-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,sa8797-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,niobe-vidc") ||
-		of_device_is_compatible(dev->of_node, "qcom,alor-vidc"));
+		of_device_is_compatible(dev->of_node, "qcom,alor-vidc") ||
+		of_device_is_compatible(dev->of_node, "qcom,art-vidc"));
 }
 
 static inline bool is_video_context_bank_device_node(struct device_node *of_node)

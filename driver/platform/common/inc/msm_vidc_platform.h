@@ -218,6 +218,9 @@ enum vpu_version {
 	VPU_VERSION_IRIS33_2P, // IRIS3 2 PIPE
 	VPU_VERSION_IRIS2_2P, // IRIS2 2 PIPE
 	VPU_VERSION_IRIS4_1P, // IRIS4 1 PIPE
+	VPU_VERSION_IRIS4_2P, // IRIS4 2 PIPE
+	VPU_VERSION_IRIS5_1P, // IRIS5 1 PIPE
+	VPU_VERSION_IRIS5_2P, // IRIS5 2 PIPE
 };
 
 struct msm_vidc_platform_data {
@@ -363,6 +366,8 @@ int msm_vidc_packetize_control(struct msm_vidc_inst *inst,
 			       enum msm_vidc_inst_capability_type cap_id, u32 payload_type,
 			       void *hfi_val, u32 payload_size, const char *func);
 int msm_vidc_adjust_bitrate(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_bitrate_apv(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_constant_quality(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_layer_bitrate(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_bitrate_mode(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_entropy_mode(void *instance, struct v4l2_ctrl *ctrl);
@@ -457,5 +462,9 @@ int msm_vidc_set_lookahead_encode_size(void *instance, enum msm_vidc_inst_capabi
 int msm_vidc_adjust_log_mode(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_bitdepth(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_req_sync_frame(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_min_quality_iris5p(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_bitrate_boost_iris5p(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_set_ring_buffer_count(void *instance,
+	enum msm_vidc_inst_capability_type cap_id);
 
 #endif // _MSM_VIDC_PLATFORM_H_
