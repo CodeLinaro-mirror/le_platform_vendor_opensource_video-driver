@@ -1978,8 +1978,20 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)            \
 		size = size_single_pipe_eval; \
 	} while (0)
 
-#define HFI_BUFFER_BIN_ENC(_size, rc_type, frame_width, frame_height, lcu_size, \
-			work_mode, num_vpp_pipes, profile, ring_buf_count, lookahead) \
+/* HFICCB: 6211558 */
+#define SE_TLB_SIZE(frame_width) \
+	HFI_ALIGN(frame_width, 256)
+
+#define SE_LLB_SIZE(frame_height, lcu_size) \
+	HFI_ALIGN((frame_height + (lcu_size - 1)) / lcu_size * 5 * 16, 256)
+
+#define SAO_PADDED_SIZE(frame_width, frame_height) \
+	HFI_ALIGN(64 * (((frame_width + 32) * (frame_height + 32)) >> 10) \
+		+ 384, 256)
+
+#define BUFFER_BIN_ENC(_size, rc_type, frame_width, frame_height, lcu_size, \
+			work_mode, num_vpp_pipes, profile, ring_buf_count, is_dual_core, \
+			lookahead, min_alloc_se_lb_sao) \
 	do { \
 		HFI_U32 bitstream_size = 0, total_bitbin_buffers = 0, \
 			size_single_pipe = 0, bitbin_size = 0; \
@@ -2004,22 +2016,68 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)            \
 		} \
 		else \
 			/* Avoid 512 Bytes allocation in case of 1Pipe HEVC Direct Mode*/ \
-			_size = 0; \
+		{ \
+			_size = (min_alloc_se_lb_sao) ? (SE_TLB_SIZE(frame_width) + \
+			SE_LLB_SIZE(frame_height, lcu_size) + \
+			SAO_PADDED_SIZE(frame_width, frame_height) + 512) : 0; \
+		} \
 		if (lookahead) \
 			_size = (_size << 1) +  (5 * bitstream_size); \
 	} while (0)
 
 #define HFI_BUFFER_BIN_H264E(_size, rc_type, frame_width, frame_height, \
-			work_mode, num_vpp_pipes, profile, ring_buf_count, \
+			work_mode, num_vpp_pipes, profile, ring_buf_count, is_dual_core, \
 			lookahead) \
-		HFI_BUFFER_BIN_ENC(_size, rc_type, frame_width, frame_height, 16, \
-			work_mode, num_vpp_pipes, profile, ring_buf_count, lookahead) \
+	{ \
+		BUFFER_BIN_ENC(_size, rc_type, frame_width, frame_height, 16, \
+			work_mode, num_vpp_pipes, profile, ring_buf_count, \
+			is_dual_core, is_lookahead, 0 /*min_alloc_se_lb_sao*/); \
+	} \
+
+#define HFI_BUFFER_BIN_H264E_IRIS4(_size, rc_type, frame_width, frame_height, \
+	work_mode, num_vpp_pipes, profile, ring_buf_count, is_dual_core, \
+	is_lookahead) \
+	{ \
+		BUFFER_BIN_ENC(_size, rc_type, frame_width, frame_height, 16, \
+			work_mode, num_vpp_pipes, profile, ring_buf_count, \
+			is_dual_core, is_lookahead, 1 /*min_alloc_se_lb_sao*/); \
+	} \
+
+#define HFI_BUFFER_BIN_H264E_IRIS5(_size, rc_type, frame_width, frame_height, \
+	work_mode, num_vpp_pipes, profile, ring_buf_count, is_dual_core, \
+	is_lookahead) \
+	{ \
+		BUFFER_BIN_ENC(_size, rc_type, frame_width, frame_height, 16, \
+			work_mode, num_vpp_pipes, profile, ring_buf_count, \
+			is_dual_core, is_lookahead, 0 /*min_alloc_se_lb_sao*/); \
+	} \
 
 #define HFI_BUFFER_BIN_H265E(_size, rc_type, frame_width, frame_height, \
+	work_mode, num_vpp_pipes, profile, ring_buf_count, is_dual_core, \
+	lookahead)    \
+	{ \
+		BUFFER_BIN_ENC(_size, rc_type, frame_width, frame_height, 32, \
 			work_mode, num_vpp_pipes, profile, ring_buf_count, \
-			lookahead)    \
-		HFI_BUFFER_BIN_ENC(_size, rc_type, frame_width, frame_height, 32,\
-			work_mode, num_vpp_pipes, profile, ring_buf_count, lookahead) \
+			is_dual_core, is_lookahead, 0 /*min_alloc_se_lb_sao*/); \
+	} \
+
+#define HFI_BUFFER_BIN_H265E_IRIS4(_size, rc_type, frame_width, frame_height, \
+	work_mode, num_vpp_pipes, profile, ring_buf_count, is_dual_core, \
+	is_lookahead) \
+	{ \
+		BUFFER_BIN_ENC(_size, rc_type, frame_width, frame_height, 32,\
+				work_mode, num_vpp_pipes, profile, ring_buf_count, \
+				is_dual_core, is_lookahead, 1 /*min_alloc_se_lb_sao*/); \
+	} \
+
+#define HFI_BUFFER_BIN_H265E_IRIS5(_size, rc_type, frame_width, frame_height, \
+	work_mode, num_vpp_pipes, profile, ring_buf_count, is_dual_core, \
+	is_lookahead) \
+	{ \
+		BUFFER_BIN_ENC(_size, rc_type, frame_width, frame_height, 32,\
+				work_mode, num_vpp_pipes, profile, ring_buf_count, \
+				is_dual_core, is_lookahead, 0 /*min_alloc_se_lb_sao*/); \
+	} \
 
 #define SIZE_ENC_SLICE_INFO_BUF(num_lcu_in_frame) HFI_ALIGN((256 + \
 		(num_lcu_in_frame << 4)), VENUS_DMA_ALIGNMENT)
