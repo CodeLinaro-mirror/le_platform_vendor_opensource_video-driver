@@ -1738,7 +1738,15 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)            \
 			bitstream_size *= bits_per_pixel_numerator; \
 			bitstream_size = bitstream_size >> bits_per_pixel_denominator; \
 			bitstream_size += bitstream_size / 2; \
-			bitstream_size *= 3; \
+			/* FW HFICCB: 6249280 */ \
+			if (yuv_size < 7680 * 4320 * 4) { \
+				bitstream_size *= 3; \
+			} else { \
+				bits_per_pixel_numerator = 23; \
+				bits_per_pixel_denominator = 3; \
+				bitstream_size *= bits_per_pixel_numerator; \
+				bitstream_size = bitstream_size >> bits_per_pixel_denominator; \
+			} \
 			if ((rc_type == HFI_RC_OFF) || (yuv_size < (1280 * 720 * 4))) { \
 				bitstream_size = (bitstream_size << 1); \
 				if (yuv_size < 352 * 288 * 4) { \
