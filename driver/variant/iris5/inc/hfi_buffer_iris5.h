@@ -1805,31 +1805,51 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)            \
 		_size = HFI_ALIGN(_size, VENUS_DMA_ALIGNMENT); \
 	}
 
-#define HFI_BUFFER_BITSTREAM_ENC(size, frame_width, frame_height, \
-			rc_type, is_ten_bit) \
+#define HFI_BUFFER_BITSTREAM_ENC(_size, frame_width, frame_height, \
+		rc_type, is_ten_bit, chroma_fmt) \
 	do { \
-		HFI_U32 aligned_width, aligned_height, bitstream_size, yuv_size; \
+		HFI_U32 bit_buf_size = 0; \
+		BUFFER_BITSTREAM_ENC(bit_buf_size, frame_width, \
+			frame_height, rc_type, is_ten_bit, chroma_fmt); \
+		_size = bit_buf_size;\
+	} while (0)
+
+/* Sub-macro for bitstream buffer size calculation - will be used in
+ * both BIN buf size calculation and BIT buf size calculation
+ */
+#define BUFFER_BITSTREAM_ENC(size, frame_width, frame_height,\
+		rc_type, is_ten_bit, chroma_fmt) \
+	do { \
+		HFI_U32 aligned_width, aligned_height, bitstream_size, yuv_size;\
 		aligned_width = HFI_ALIGN(frame_width, 32); \
 		aligned_height = HFI_ALIGN(frame_height, 32); \
 		bitstream_size = aligned_width * aligned_height * 3; \
 		yuv_size = (aligned_width * aligned_height * 3) >> 1; \
 		if (aligned_width * aligned_height > (4096 * 2176)) { \
-		    /* bitstream_size = 0.25 * yuv_size; */ \
+			/* bitstream_size = 0.25 * yuv_size; */ \
 			bitstream_size = (bitstream_size >> 3); \
 		} \
 		else if (aligned_width * aligned_height > (1280 * 720)) { \
-		    /* bitstream_size = 0.5 * yuv_size; */ \
+			/* bitstream_size = 0.5 * yuv_size; */ \
 			bitstream_size = (bitstream_size >> 2); \
-		} else { \
-		    /* bitstream_size = 2 * yuv_size; */ \
+		} \
+		else { \
+			/* bitstream_size = 2 * yuv_size; */ \
 		} \
 		if (((rc_type == HFI_RC_CQ) || (rc_type == HFI_RC_OFF)) \
-			&& (bitstream_size < yuv_size))  { \
-			bitstream_size = (bitstream_size << 1);\
+			&& (bitstream_size < yuv_size)) { \
+			bitstream_size = (bitstream_size << 1); \
+		} else if (rc_type == HFI_RC_LOSSLESS) { \
+			/* bitstream_size = 1.5 * yuv_size */ \
+			bitstream_size = (yuv_size * 3 >> 1); \
 		} \
 		if (is_ten_bit) { \
-			bitstream_size = (bitstream_size) + \
-					(bitstream_size >> 2); \
+			bitstream_size = (bitstream_size) + (bitstream_size >> 2); \
+		} \
+		if (chroma_fmt == V4L2_PIX_FMT_YUV422M /*HFI_CHROMA_FMT_YUV_422*/) { \
+			bitstream_size *= 4 / 3; \
+		} else if (chroma_fmt == V4L2_PIX_FMT_YVU444M /*HFI_CHROMA_FMT_YUV_444*/) { \
+			bitstream_size *= 2; \
 		} \
 		size = HFI_ALIGN(bitstream_size, HFI_ALIGNMENT_4096); \
 	} while (0)
@@ -2150,6 +2170,61 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)            \
 			_size = (_size << 1) +  (5 * bitstream_size); \
 	} while (0)
 
+#define BUFFER_BIN_ENC_IRIS5(_size, rc_type, frame_width, frame_height, \
+		lcu_size, work_mode, num_vpp_pipes, ring_buf_count, \
+		is_dual_core, is_lookahead, min_alloc_se_lb_sao, is_ten_bit, \
+		chroma_fmt) \
+	do { \
+		HFI_U32 bit_buf_size = 0, total_bitbin_buffers = 0, \
+			size_single_pipe = 0, bitbin_size = 0; \
+		BUFFER_BITSTREAM_ENC(bit_buf_size, frame_width, \
+			frame_height, rc_type, is_ten_bit, chroma_fmt); \
+		if (work_mode == HFI_WORKMODE_2) { \
+			/* if dual_core encoding is disabled */ \
+			if (!is_dual_core) { \
+				total_bitbin_buffers = (ring_buf_count > 3) ? \
+					ring_buf_count : 3; \
+			} else { \
+				total_bitbin_buffers = 5; \
+			} \
+			bitbin_size = bit_buf_size * 17 / 10; \
+			bitbin_size = HFI_ALIGN(bitbin_size, VENUS_DMA_ALIGNMENT); \
+		} else if ((lcu_size == 16) || (num_vpp_pipes > 1)) { \
+			/* Need for H264e or More than 1 Pipe cases */ \
+			if (!is_dual_core) { \
+				total_bitbin_buffers = 1; \
+			} else { \
+				total_bitbin_buffers = 2; \
+			} \
+			bitbin_size = bit_buf_size; \
+		} \
+		if (total_bitbin_buffers > 0) { \
+			SIZE_ENC_SINGLE_PIPE(size_single_pipe, \
+				rc_type, bitbin_size, \
+				num_vpp_pipes, frame_width, \
+				frame_height, lcu_size); \
+			bitbin_size = size_single_pipe * num_vpp_pipes; \
+			_size = HFI_ALIGN(bitbin_size, VENUS_DMA_ALIGNMENT) * \
+						total_bitbin_buffers + 512; \
+		} else { \
+			/* Avoid 512 Bytes allocation for 1Pipe HEVC Direct Mode */ \
+			_size = (min_alloc_se_lb_sao) ? \
+				(SE_TLB_SIZE(frame_width) + \
+				SE_LLB_SIZE(frame_height, lcu_size) + \
+				SAO_PADDED_SIZE(frame_width, frame_height) + \
+				512) : 0; \
+		} \
+		/* Extra bitstream buf alloted from scratch buf for Lookahead 1st pass */ \
+		if (is_lookahead) { \
+			_size = (_size << 1) + (5 * bit_buf_size); \
+		} \
+		if (chroma_fmt == V4L2_PIX_FMT_YUV422M /*HFI_CHROMA_FMT_YUV_422*/) { \
+			_size *= 4 / 3; \
+		} else if (chroma_fmt == V4L2_PIX_FMT_YVU444M /*HFI_CHROMA_FMT_YUV_444*/) { \
+			_size *= 2; \
+		} \
+	} while (0)
+
 #define HFI_BUFFER_BIN_H264E(_size, rc_type, frame_width, frame_height, \
 			work_mode, num_vpp_pipes, profile, ring_buf_count, is_dual_core, \
 			lookahead) \
@@ -2170,12 +2245,13 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)            \
 
 #define HFI_BUFFER_BIN_H264E_IRIS5(_size, rc_type, frame_width, frame_height, \
 	work_mode, num_vpp_pipes, profile, ring_buf_count, is_dual_core, \
-	is_lookahead) \
+	is_lookahead, is_ten_bit, chroma_fmt) \
 	{ \
-		BUFFER_BIN_ENC(_size, rc_type, frame_width, frame_height, 16, \
-			work_mode, num_vpp_pipes, profile, ring_buf_count, \
-			is_dual_core, is_lookahead, 0 /*min_alloc_se_lb_sao*/); \
-	} \
+		BUFFER_BIN_ENC_IRIS5(_size, rc_type, frame_width, frame_height, 16, \
+				work_mode, num_vpp_pipes, ring_buf_count, \
+				is_dual_core, is_lookahead, 0 /*min_alloc_se_lb_sao*/, \
+				is_ten_bit, chroma_fmt); \
+	}
 
 #define HFI_BUFFER_BIN_H265E(_size, rc_type, frame_width, frame_height, \
 	work_mode, num_vpp_pipes, profile, ring_buf_count, is_dual_core, \
@@ -2197,12 +2273,13 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)            \
 
 #define HFI_BUFFER_BIN_H265E_IRIS5(_size, rc_type, frame_width, frame_height, \
 	work_mode, num_vpp_pipes, profile, ring_buf_count, is_dual_core, \
-	is_lookahead) \
+	is_lookahead, is_ten_bit, chroma_fmt) \
 	{ \
-		BUFFER_BIN_ENC(_size, rc_type, frame_width, frame_height, 32,\
-				work_mode, num_vpp_pipes, profile, ring_buf_count, \
-				is_dual_core, is_lookahead, 0 /*min_alloc_se_lb_sao*/); \
-	} \
+		BUFFER_BIN_ENC_IRIS5(_size, rc_type, frame_width, frame_height, 32, \
+				work_mode, num_vpp_pipes, ring_buf_count, \
+				is_dual_core, is_lookahead, 0 /*min_alloc_se_lb_sao*/, \
+				is_ten_bit, chroma_fmt); \
+	}
 
 #define SIZE_ENC_SLICE_INFO_BUF(num_lcu_in_frame) HFI_ALIGN((256 + \
 		(num_lcu_in_frame << 4)), VENUS_DMA_ALIGNMENT)
