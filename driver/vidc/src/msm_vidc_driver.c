@@ -4998,6 +4998,7 @@ unlock:
 void msm_vidc_hw_virt_ssr_handler(struct work_struct *work)
 {
 	struct msm_vidc_core *core = NULL;
+	struct msm_vidc_inst *i = NULL, *temp = NULL;
 	struct hfi_packet pkt = {};
 
 	core = container_of(work, struct msm_vidc_core, full_virt_ssr_work);
@@ -5015,6 +5016,10 @@ void msm_vidc_hw_virt_ssr_handler(struct work_struct *work)
 	pkt.type = HFI_SYS_ERROR_FATAL;
 
 	handle_system_error(core, &pkt);
+
+	/* clear dangling session list */
+	list_for_each_entry_safe(i, temp, &core->dangling_instances, list)
+		list_del_init(&i->list);
 }
 
 void msm_vidc_ssr_handler(struct work_struct *work)
