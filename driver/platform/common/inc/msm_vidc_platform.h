@@ -221,6 +221,7 @@ enum vpu_version {
 	VPU_VERSION_IRIS4_2P, // IRIS4 2 PIPE
 	VPU_VERSION_IRIS5_1P, // IRIS5 1 PIPE
 	VPU_VERSION_IRIS5_2P, // IRIS5 2 PIPE
+	VPU_VERSION_IRIS5_4P, // IRIS5 4 PIPE
 };
 
 struct msm_vidc_platform_data {
@@ -306,7 +307,6 @@ struct msm_vidc_platform_data {
 	unsigned int dec_output_prop_size_mpeg2;
 	const u32  *msm_vidc_ssr_type;
 	unsigned int msm_vidc_ssr_type_size;
-
 };
 
 struct msm_vidc_platform {
