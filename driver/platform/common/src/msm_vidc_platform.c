@@ -935,6 +935,7 @@ int msm_vidc_v4l2_to_hfi_enum(struct msm_vidc_inst *inst,
 	case PROFILE:
 	case LEVEL:
 	case HEVC_TIER:
+	case VVC_TIER:
 	case AV1_TIER:
 	case BLUR_TYPES:
 	case LOG_VIDEO_ENCODE:
@@ -1584,6 +1585,58 @@ static u32 msm_vidc_apv_level_band_v4l2_to_hfi(s64 v4l2_level)
 	}
 
 	return HFI_LEVEL_NONE;
+}
+
+static u32 msm_vidc_vvc_level_v4l2_to_hfi(s64 v4l2_level)
+{
+
+	switch (v4l2_level) {
+	case V4L2_MPEG_VIDEO_VIDC_VVC_LEVEL_1:
+		return HFI_H266_LEVEL_1;
+	case V4L2_MPEG_VIDEO_VIDC_VVC_LEVEL_2:
+		return HFI_H266_LEVEL_2;
+	case V4L2_MPEG_VIDEO_VIDC_VVC_LEVEL_2_1:
+		return HFI_H266_LEVEL_2_1;
+	case V4L2_MPEG_VIDEO_VIDC_VVC_LEVEL_3:
+		return HFI_H266_LEVEL_3;
+	case V4L2_MPEG_VIDEO_VIDC_VVC_LEVEL_3_1:
+		return HFI_H266_LEVEL_3_1;
+	case V4L2_MPEG_VIDEO_VIDC_VVC_LEVEL_4:
+		return HFI_H266_LEVEL_4;
+	case V4L2_MPEG_VIDEO_VIDC_VVC_LEVEL_4_1:
+		return HFI_H266_LEVEL_4_1;
+	case V4L2_MPEG_VIDEO_VIDC_VVC_LEVEL_5:
+		return HFI_H266_LEVEL_5;
+	case V4L2_MPEG_VIDEO_VIDC_VVC_LEVEL_5_1:
+		return HFI_H266_LEVEL_5_1;
+	case V4L2_MPEG_VIDEO_VIDC_VVC_LEVEL_5_2:
+		return HFI_H266_LEVEL_5_2;
+	case V4L2_MPEG_VIDEO_VIDC_VVC_LEVEL_6:
+		return HFI_H266_LEVEL_6;
+	case V4L2_MPEG_VIDEO_VIDC_VVC_LEVEL_6_1:
+		return HFI_H266_LEVEL_6_1;
+	case V4L2_MPEG_VIDEO_VIDC_VVC_LEVEL_6_2:
+		return HFI_H266_LEVEL_6_2;
+	case V4L2_MPEG_VIDEO_VIDC_VVC_LEVEL_6_3:
+		return HFI_H266_LEVEL_6_3;
+	default:
+		return HFI_LEVEL_NONE;
+	}
+}
+
+static u32 msm_vidc_vvc_profile_v4l2_to_hfi(s64 v4l2_profile)
+{
+
+	switch (v4l2_profile) {
+	case V4L2_MPEG_VIDEO_VIDC_VVC_PROFILE_MAIN_10:
+		return HFI_H266_PROFILE_MAIN_10;
+	case V4L2_MPEG_VIDEO_VIDC_VVC_PROFILE_MAIN_10_STILL_PICTURE:
+		return HFI_H266_PROFILE_MAIN_10_STILL_PICTURE;
+	case V4L2_MPEG_VIDEO_VIDC_VVC_PROFILE_MAIN_10_MULTILAYER:
+		return HFI_H266_PROFILE_MULTILAYER_MAIN_10;
+	default:
+		return HFI_H266_PROFILE_MAIN_10;
+	}
 }
 
 static s64 msm_vidc_adjust_apv_level(struct msm_vidc_inst *inst,
@@ -4840,6 +4893,40 @@ int msm_vidc_set_apv_level_band(void *instance,
 					&hfi_value, sizeof(u32), __func__);
 
 	return rc;
+}
+
+int msm_vidc_set_vvc_level(void *instance,
+		       enum msm_vidc_inst_capability_type cap_id)
+{
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	u32 hfi_value = HFI_LEVEL_NONE;
+
+	if (cap_id != LEVEL)
+		return -EINVAL;
+
+	if (inst->capabilities[LEVEL].flags & CAP_FLAG_CLIENT_SET)
+		hfi_value = msm_vidc_vvc_level_v4l2_to_hfi(
+					inst->capabilities[LEVEL].value);
+
+	return msm_vidc_packetize_control(inst, LEVEL, HFI_PAYLOAD_U32_ENUM,
+					&hfi_value, sizeof(u32), __func__);
+}
+
+int msm_vidc_set_vvc_profile(void *instance,
+		       enum msm_vidc_inst_capability_type cap_id)
+{
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	u32 hfi_value = HFI_H266_PROFILE_MAIN_10;
+
+	if (cap_id != PROFILE)
+		return -EINVAL;
+
+	if (inst->capabilities[PROFILE].flags & CAP_FLAG_CLIENT_SET)
+		hfi_value = msm_vidc_vvc_profile_v4l2_to_hfi(
+					inst->capabilities[PROFILE].value);
+
+	return msm_vidc_packetize_control(inst, PROFILE, HFI_PAYLOAD_U32_ENUM,
+					&hfi_value, sizeof(u32), __func__);
 }
 
 int msm_vidc_set_q16(void *instance,
