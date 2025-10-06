@@ -152,6 +152,7 @@ static const struct of_device_id msm_vidc_dt_match[] = {
 	{.compatible = "qcom,canoe-vidc"},
 	{.compatible = "qcom,canoe-vidc-v2"},
 	{.compatible = "qcom,canoe-vidc-v3"},
+	{.compatible = "qcom,art-vidc"},
 	{.compatible = "qcom,seraph-vidc"},
 	{.compatible = "qcom,alor-vidc"},
 	{.compatible = "qcom,sa8797-vidc"},
