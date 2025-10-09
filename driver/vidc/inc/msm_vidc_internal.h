@@ -450,6 +450,7 @@ enum msm_vidc_log_encode_mode {
 	CAP(NUM_COMV)                             \
 	CAP(SIGNAL_COLOR_INFO)                    \
 	CAP(OPEN_GOP)                             \
+	CAP(MULTI_SLICE_MULTI_TILE_MODE)          \
 	CAP(CAPTURE_DATA_OFFSET)                  \
 	CAP(HEIF_TILES)                           \
 	CAP(CORE_ID_MASK)                         \
