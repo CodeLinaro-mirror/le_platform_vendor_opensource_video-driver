@@ -1153,6 +1153,10 @@ typedef u64     HFI_U64;
 		if (h_idx > 7)                                                  \
 			h_idx = 7;                                                  \
 		_size = top_lb[w_idx] + lft_lb[h_idx] * num_vpp_pipes + vsp_qp; \
+		if (is_opb) {                                                   \
+			_size += ((HFI_ALIGN(frame_height, 128) + 8) * 32 * 3 * 2)  \
+				* num_vpp_pipes;                                        \
+		}                                                               \
 	} while (0)
 
 #define HFI_BUFFER_LINE_H266D_DS(_size, frame_width, frame_height,      \
