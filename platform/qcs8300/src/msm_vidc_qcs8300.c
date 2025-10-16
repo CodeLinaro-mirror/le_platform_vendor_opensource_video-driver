@@ -2460,7 +2460,7 @@ static const struct msm_vidc_platform_data qcs8300_data = {
 	.freq_tbl_size = ARRAY_SIZE(qcs8300_freq_table),
 	.reg_prst_tbl = qcs8300_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(qcs8300_reg_preset_table),
-	.fwname = "./qcom/vpu-3.0/vpu30_4v",
+	.fwname = "qcom/vpu/vpu30_p4_s6",
 	.pas_id = 9,
 	.supports_mmrm = 0,
 
