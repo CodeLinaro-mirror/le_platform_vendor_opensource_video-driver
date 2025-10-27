@@ -4871,10 +4871,11 @@ static int msm_vidc_pvm_event_handler(void *p)
 	struct msm_vidc_core *core = p;
 	struct virtio_video_msm_hw_event evt = {0};
 
-	while (core->is_gvm_open) {
+	while (!kthread_should_stop() && core->is_gvm_open) {
 		if (!virtio_video_queue_event_wait(&evt)) {
 			switch (evt.event_type) {
 			case GVM_SSR:
+				d_vpr_e("%s: Received event GVM_SSR\n", __func__);
 				core->ssr_dev = *(uint32_t *)evt.payload;
 				schedule_work(&core->hw_virt_ssr_work);
 				break;
@@ -4983,6 +4984,17 @@ int msm_vidc_inst_timeout(struct msm_vidc_inst *inst)
 	/* mark video hw unresponsive */
 	msm_vidc_change_core_sub_state(core,
 		0, CORE_SUBSTATE_VIDEO_UNRESPONSIVE, __func__);
+
+	/*
+	 * In case of hw virtualization, call close_gvm
+	 * to perform deinit from pvm
+	 */
+	if (core->is_hw_virt) {
+#ifdef MSM_VIDC_HW_VIRT
+		virtio_video_msm_cmd_close_gvm();
+#endif
+		core->is_gvm_open = false;
+	}
 
 	/* call core deinit for a valid instance timeout case */
 	msm_vidc_core_deinit_locked(core, true);
@@ -5180,6 +5192,7 @@ int msm_vidc_trigger_ssr(struct msm_vidc_core *core,
 void msm_vidc_hw_virt_ssr_handler(struct work_struct *work)
 {
 	struct msm_vidc_core *core = NULL;
+	struct msm_vidc_inst *i = NULL, *temp = NULL;
 	bool bug_on = false;
 
 	core = container_of(work, struct msm_vidc_core, hw_virt_ssr_work);
@@ -5187,20 +5200,30 @@ void msm_vidc_hw_virt_ssr_handler(struct work_struct *work)
 		d_vpr_e("%s: invalid params %pK\n", __func__, core);
 		return;
 	}
+	d_vpr_e("%s: Handling SSR for device 0x%x\n", __func__, core->ssr_dev);
 
 	bug_on = !!(msm_vidc_enable_bugon & MSM_VIDC_BUG_ON_FATAL);
 	MSM_VIDC_FATAL(bug_on);
-	msm_vidc_core_deinit(core, true);
+
+	core_lock(core, __func__);
+	msm_vidc_core_deinit_locked(core, true);
+
+	/* clear dangling session list */
+	list_for_each_entry_safe(i, temp, &core->dangling_instances, list)
+		list_del_init(&i->list);
 
 	if (core->ssr_dev == GVM_SSR_DEVICE_DRIVER) {
 		virtio_video_msm_cmd_close_gvm();
 		core->is_gvm_open = false;
+		if (core->pvm_event_handler_thread) {
+			kthread_stop(core->pvm_event_handler_thread);
+			core->pvm_event_handler_thread = NULL;
+		}
 		/* update core state and clear all substates */
 		msm_vidc_change_core_sub_state(core,
 			CORE_SUBSTATE_MAX - 1, 0, __func__);
-		msm_vidc_change_core_state(core,
-			MSM_VIDC_CORE_DEINIT, __func__);
 	}
+	core_unlock(core, __func__);
 }
 #endif
 

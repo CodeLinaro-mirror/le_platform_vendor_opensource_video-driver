@@ -1347,7 +1347,7 @@ int venus_hfi_session_set_core_id(struct msm_vidc_inst *inst)
 
 	/* Encoder supports multiple cores for a single session on specific scenarios.
 	 * Certain GOP structures can utilize both the cores independently.
-	 * 1. Hierarchical-P and 8k@60fps
+	 * 1. Hierarchical-P, Layer count is 1 and 8k@60fps
 	 * 2. All Intra
 	 * 3. Lossless Encoding
 	 * If in one of these scenarios, set device_core_mask to the available cores mask.
@@ -1360,6 +1360,7 @@ int venus_hfi_session_set_core_id(struct msm_vidc_inst *inst)
 	if ((is_encode_session(inst)) &&
 		(((inst->capabilities->cap[LAYER_TYPE].value ==
 		V4L2_MPEG_VIDEO_HEVC_HIERARCHICAL_CODING_P) &&
+		(inst->capabilities->cap[ENH_LAYER_COUNT].value == 1) &&
 		(MIN_HP_DUALCORE_REQUIREMENT( width, height, frame_rate))) ||
 		(inst->capabilities->cap[ALL_INTRA].value == 1) ||
 	        (inst->capabilities->cap[LOSSLESS].value == 1))) {

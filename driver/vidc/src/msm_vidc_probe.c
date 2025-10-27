@@ -662,6 +662,7 @@ static int vidc_reboot_notify(
 	case SYS_HALT:
 	case SYS_POWER_OFF:
 		msm_vidc_core_deinit(core, true);
+		core_lock(core, __func__);
 		if (core && core->is_hw_virt && core->is_gvm_open) {
 			/* close gvm */
 			virtio_video_msm_cmd_close_gvm();
@@ -669,9 +670,8 @@ static int vidc_reboot_notify(
 			/* update core state and clear all substates */
 			msm_vidc_change_core_sub_state(core,
 				CORE_SUBSTATE_MAX - 1, 0, __func__);
-			msm_vidc_change_core_state(core,
-				MSM_VIDC_CORE_DEINIT, __func__);
 		}
+		core_unlock(core, __func__);
 		break;
 	}
 
