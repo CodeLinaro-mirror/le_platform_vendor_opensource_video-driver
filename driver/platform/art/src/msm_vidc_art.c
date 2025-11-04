@@ -3001,10 +3001,9 @@ const struct context_bank_table art_context_bank_table[] = {
 	{"qcom,vidc,cb-sec-non-pxl",    0x01000000, 0x24800000, 1, 0,
 		MSM_VIDC_SECURE_NONPIXEL,      0 },
 	{"qcom,vidc,cb-ns",             0x25800000, 0xda400000, 0, 1,
-		MSM_VIDC_NON_SECURE |
-		MSM_VIDC_NON_SECURE_BITSTREAM, 0 },
+		MSM_VIDC_NON_SECURE,           0 },
 	{"qcom,vidc,cb-ns-bitstream",   0x00100000, 0xffb00000, 0, 1,
-		MSM_VIDC_REGION_NONE,          0 },
+		MSM_VIDC_NON_SECURE_BITSTREAM, 0 },
 	{"qcom,vidc,cb-ns-pxl",         0x00100000, 0xffb00000, 0, 1,
 		MSM_VIDC_NON_SECURE_PIXEL,     0 },
 	{"qcom,vidc,cb-sec-pxl",        0x00100000, 0xffb00000, 1, 0,
