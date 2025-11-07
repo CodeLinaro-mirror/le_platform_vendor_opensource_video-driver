@@ -16,8 +16,9 @@
 #include <linux/soc/qcom/msm_mmrm.h>
 #endif
 #include <media/v4l2-mem2mem.h>
+#ifdef CONFIG_MSM_VIDC_DMA_IOMMU_MAPPING
 #include <linux/msm_dma_iommu_mapping.h>
-
+#endif
 #include "msm_vidc_internal.h"
 #include "msm_vidc_driver.h"
 #include "msm_vidc_debug.h"
@@ -54,11 +55,14 @@ static inline bool is_video_device(struct device *dev)
 		of_device_is_compatible(dev->of_node, "qcom,tuna-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,canoe-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,canoe-vidc-v2") ||
+		of_device_is_compatible(dev->of_node, "qcom,canoe-vidc-v3") ||
 		of_device_is_compatible(dev->of_node, "qcom,seraph-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,sa8797-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,niobe-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,alor-vidc") ||
-		of_device_is_compatible(dev->of_node, "qcom,art-vidc"));
+		of_device_is_compatible(dev->of_node, "qcom,art-vidc") ||
+		of_device_is_compatible(dev->of_node, "qcom,x1e80100-vidc") ||
+		of_device_is_compatible(dev->of_node, "qcom,sa8775p-iris"));
 }
 
 static inline bool is_video_context_bank_device_node(struct device_node *of_node)
@@ -147,6 +151,8 @@ static const struct of_device_id msm_vidc_dt_match[] = {
 	{.compatible = "qcom,sm8750-vidc-v2"},
 	{.compatible = "qcom,canoe-vidc"},
 	{.compatible = "qcom,canoe-vidc-v2"},
+	{.compatible = "qcom,canoe-vidc-v3"},
+	{.compatible = "qcom,art-vidc"},
 	{.compatible = "qcom,seraph-vidc"},
 	{.compatible = "qcom,alor-vidc"},
 	{.compatible = "qcom,sa8797-vidc"},
@@ -154,6 +160,8 @@ static const struct of_device_id msm_vidc_dt_match[] = {
 	{.compatible = "qcom,volcano-vidc"},
 	{.compatible = "qcom,niobe-vidc"},
 	{.compatible = "qcom,tuna-vidc"},
+	{.compatible = "qcom,x1e80100-vidc"},
+	{.compatible = "qcom,sa8775p-iris"},
 	{.compatible = "qcom,vidc,cb-ns-pxl"},
 	{.compatible = "qcom,vidc,cb-ns"},
 	{.compatible = "qcom,vidc,cb-ns-bitstream"},
@@ -607,9 +615,10 @@ static void msm_vidc_component_unbind(struct device *dev,
 	struct device *parent, void *data)
 {
 	d_vpr_h("%s(): %s\n", __func__, dev_name(dev));
-
+#ifdef CONFIG_MSM_VIDC_DMA_IOMMU_MAPPING
 	if (is_video_context_bank_device(dev))
 		msm_dma_unmap_all_for_dev(dev);
+#endif
 }
 
 static int msm_vidc_component_master_bind(struct device *dev)
@@ -813,6 +822,8 @@ static int msm_vidc_probe_video_device(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 	g_core = core;
+
+	core->hw_version = MSM_VIDC_HW_VERSION_V1;
 
 	core->pdev = pdev;
 	dev_set_drvdata(&pdev->dev, core);

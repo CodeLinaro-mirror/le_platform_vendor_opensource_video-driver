@@ -1349,11 +1349,35 @@ bool msm_vidc_allow_property(struct msm_vidc_inst *inst, u32 hfi_id)
 		else
 			is_allowed = false;
 		break;
-	case HFI_PROP_FENCE_OUTPUT:
+	case HFI_PROP_TX_FENCE_ID_OUTPUT:
 		if (!is_output_tx_fence_enabled(inst)) {
 			i_vpr_h(inst,
 				"%s: cap: %24s not enabled, hence not allowed to subscribe\n",
 				__func__, cap_name(META_OUTPUT_TX_FENCE));
+			is_allowed = false;
+		}
+		break;
+	case HFI_PROP_RX_FENCE_ID_OUTPUT:
+		if (!is_output_rx_fence_enabled(inst)) {
+			i_vpr_h(inst,
+				"%s: cap: %24s not enabled, hence not allowed to subscribe\n",
+				__func__, cap_name(OUTPUT_RX_FENCE_ENABLE));
+			is_allowed = false;
+		}
+		break;
+	case HFI_PROP_TX_FENCE_ID_INPUT:
+		if (!is_input_tx_fence_enabled(inst)) {
+			i_vpr_h(inst,
+				"%s: cap: %24s not enabled, hence not allowed to subscribe\n",
+				__func__, cap_name(INPUT_TX_FENCE_ENABLE));
+			is_allowed = false;
+		}
+		break;
+	case HFI_PROP_RX_FENCE_ID_INPUT:
+		if (!is_input_rx_fence_enabled(inst)) {
+			i_vpr_h(inst,
+				"%s: cap: %24s not enabled, hence not allowed to subscribe\n",
+				__func__, cap_name(INPUT_RX_FENCE_ENABLE));
 			is_allowed = false;
 		}
 		break;
@@ -4011,6 +4035,9 @@ int msm_vidc_session_set_default_header(struct msm_vidc_inst *inst)
 	int rc = 0;
 	u32 default_header = false;
 
+	if (inst->codec == MSM_VIDC_VVC)
+		return 0;
+
 	default_header = inst->capabilities[DEFAULT_HEADER].value;
 	i_vpr_h(inst, "%s: default header: %d", __func__, default_header);
 	rc = venus_hfi_session_property(inst,
@@ -5643,6 +5670,7 @@ static const char *get_codec_str(enum msm_vidc_codec_type type)
 	case MSM_VIDC_AV1:  return " av1";
 	case MSM_VIDC_HEIC: return "heic";
 	case MSM_VIDC_MPEG2: return "mpeg2";
+	case MSM_VIDC_VVC:  return " vvc";
 	}
 
 	return "....";

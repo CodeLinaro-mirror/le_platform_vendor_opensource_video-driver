@@ -12,6 +12,11 @@ KBUILD_CPPFLAGS += -DCONFIG_MSM_VIDC_ANDROID=1
 VIDEO_DRIVER_ABS_PATH := $(VIDEO_ROOT)/msm_video/driver
 VIDEO_DRIVER_REL_PATH := ../msm_video/driver
 
+ifeq ($(CONFIG_ARCH_X1E80100), y)
+include $(VIDEO_ROOT)/config/x1e80100_video.conf
+LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/x1e80100_video.h
+endif
+
 ifeq ($(CONFIG_ARCH_NIOBE), y)
 include $(VIDEO_ROOT)/config/niobe_video.conf
 LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/niobe_video.h
@@ -36,6 +41,11 @@ include $(VIDEO_ROOT)/config/canoe_video.conf
 LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/canoe_video.h
 endif
 
+ifeq ($(CONFIG_ARCH_ART), y)
+include $(VIDEO_ROOT)/config/art_video.conf
+LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/art_video.h
+endif
+
 ifeq ($(CONFIG_ARCH_SERAPH), y)
 include $(VIDEO_ROOT)/config/seraph_video.conf
 LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/seraph_video.h
@@ -47,6 +57,11 @@ KBUILD_CPPFLAGS += -DMSM_VIDC_HW_VIRT
 include $(VIDEO_ROOT)/config/nordau_video.conf
 LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/nordau_video.h
 endif
+endif
+
+ifeq ($(CONFIG_MSM_VIDC_X1E80100), y)
+LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/x1e80100/inc \
+                  -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris3/inc
 endif
 
 ifeq ($(CONFIG_MSM_VIDC_PINEAPPLE), y)
@@ -65,6 +80,11 @@ ifeq ($(CONFIG_MSM_VIDC_CANOE), y)
 LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/canoe/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/platform/alor/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris4/inc
+endif
+
+ifeq ($(CONFIG_MSM_VIDC_ART), y)
+LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/art/inc \
+                  -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris5/inc
 endif
 
 ifeq ($(CONFIG_MSM_VIDC_SERAPH), y)
@@ -93,6 +113,15 @@ ccflags-y += -Wmissing-prototypes
 ccflags-y += -Werror
 ccflags-y += -Wno-enum-conversion
 obj-m += msm_video.o
+
+ifeq ($(CONFIG_MSM_VIDC_X1E80100), y)
+msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/x1e80100/src/msm_vidc_x1e80100.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_buffer_iris3.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_power_iris3.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_bus_iris3.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_clock_iris3.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_iris3.o
+endif
 
 ifeq ($(CONFIG_MSM_VIDC_NIOBE), y)
 msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/niobe/src/msm_vidc_niobe.o \
@@ -132,6 +161,14 @@ msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/canoe/src/msm_vidc_canoe.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris4/src/msm_vidc_bus_iris4.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris4/src/msm_vidc_clock_iris4.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris4/src/msm_vidc_iris4.o
+endif
+ifeq ($(CONFIG_MSM_VIDC_ART), y)
+msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/art/src/msm_vidc_art.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris5/src/msm_vidc_buffer_iris5.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris5/src/msm_vidc_power_iris5.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris5/src/msm_vidc_bus_iris5.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris5/src/msm_vidc_clock_iris5.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris5/src/msm_vidc_iris5.o
 endif
 ifeq ($(CONFIG_MSM_VIDC_SERAPH), y)
 msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/seraph/src/msm_vidc_seraph.o \

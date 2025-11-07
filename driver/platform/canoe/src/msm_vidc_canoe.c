@@ -2344,7 +2344,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_DOLBY_RPU_METADATA,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
-	{META_DOLBY_RPU, DEC, H264 | HEVC,
+	{META_DOLBY_RPU, DEC, H264 | HEVC | AV1,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_OUTPUT,
 		0, MSM_VIDC_META_DISABLE,
@@ -2488,11 +2488,13 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 
 	{LOG_VIDEO_ENCODE, ENC, HEVC | APV,
 		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
-		MSM_VIDC_LOG_VIDEO_TYPE_COMMON, 1,
+		MSM_VIDC_LOG_VIDEO_TYPE_HDR,
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_NONE) |
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_HDR),
 		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
 		V4L2_CID_MPEG_VIDC_LOG_VIDEO_ENCODE,
 		HFI_PROP_LOG_VIDEO_ENCODE,
-		CAP_FLAG_OUTPUT_PORT},
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 };
 
 /*
@@ -2570,11 +2572,13 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v2[] = {
 
 	{LOG_VIDEO_ENCODE, ENC, HEVC,
 		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
-		MSM_VIDC_LOG_VIDEO_TYPE_COMMON, 1,
+		MSM_VIDC_LOG_VIDEO_TYPE_HDR,
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_NONE) |
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_HDR),
 		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
 		V4L2_CID_MPEG_VIDC_LOG_VIDEO_ENCODE,
 		HFI_PROP_LOG_VIDEO_ENCODE,
-		CAP_FLAG_OUTPUT_PORT},
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 };
 
 /*
@@ -2593,15 +2597,11 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v1[] = {
 	 *      flags}
 	 */
 
-	{FRAME_WIDTH, DEC, CODECS_ALL, 96, 4096, 1, 1920},
-
 	{FRAME_WIDTH, ENC, CODECS_ALL, 128, 4096, 1, 1920},
 
 	{FRAME_WIDTH, ENC, HEVC | APV, 96, 4096, 1, 1920},
 
 	{LOSSLESS_FRAME_WIDTH, ENC, CODECS_ALL, 128, 4096, 1, 1920},
-
-	{FRAME_HEIGHT, DEC, CODECS_ALL, 96, 7680, 1, 1080},
 
 	{FRAME_HEIGHT, ENC, CODECS_ALL, 128, 4096, 1, 1080},
 
@@ -2802,11 +2802,13 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v1[] = {
 
 	{LOG_VIDEO_ENCODE, ENC, HEVC | APV,
 		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
-		MSM_VIDC_LOG_VIDEO_TYPE_COMMON, 1,
+		MSM_VIDC_LOG_VIDEO_TYPE_HDR,
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_NONE) |
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_HDR),
 		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
 		V4L2_CID_MPEG_VIDC_LOG_VIDEO_ENCODE,
 		HFI_PROP_LOG_VIDEO_ENCODE,
-		CAP_FLAG_OUTPUT_PORT},
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 };
 
 /*
@@ -3032,11 +3034,13 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v3[] = {
 
 	{LOG_VIDEO_ENCODE, ENC, HEVC,
 		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
-		MSM_VIDC_LOG_VIDEO_TYPE_COMMON, 1,
+		MSM_VIDC_LOG_VIDEO_TYPE_HDR,
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_NONE) |
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_HDR),
 		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
 		V4L2_CID_MPEG_VIDC_LOG_VIDEO_ENCODE,
 		HFI_PROP_LOG_VIDEO_ENCODE,
-		CAP_FLAG_OUTPUT_PORT},
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 };
 
 static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_canoe[] = {
@@ -4345,6 +4349,7 @@ int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
 		core->platform->data.clk_tbl_size = ARRAY_SIZE(canoe_clk_table_v2);
 		core->platform->data.clk_corner_idx_tbl = canoe_corner_idx_tbl_v2;
 		core->platform->data.fwname = "vpu40_2v";
+		core->hw_version = MSM_VIDC_HW_VERSION_V2;
 
 		platform_cap_data = core->platform->data.inst_cap_data;
 		for (i = 0; i < core->platform->data.inst_cap_data_size; i++) {
@@ -4355,6 +4360,27 @@ int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
 		}
 	}
 
+	if (of_device_is_compatible(dev->of_node, "qcom,canoe-vidc-v3")) {
+		d_vpr_h("%s: update context bank table for canoe v3\n", __func__);
+		/* It's same as V2 expect frequency table
+		 * V1 and V3 should use same frequency table
+		 */
+		core->platform->data.context_bank_tbl = canoe_context_bank_table_v2;
+		core->platform->data.context_bank_tbl_size =
+			ARRAY_SIZE(canoe_context_bank_table_v2);
+		core->platform->data.clk_tbl = canoe_clk_table;
+		core->platform->data.clk_tbl_size = ARRAY_SIZE(canoe_clk_table);
+		core->platform->data.clk_corner_idx_tbl = canoe_corner_idx_tbl;
+		core->platform->data.fwname = "vpu40_2v";
+
+		platform_cap_data = core->platform->data.inst_cap_data;
+		for (i = 0; i < core->platform->data.inst_cap_data_size; i++) {
+			if (platform_cap_data[i].cap_id == SECURE_MODE) {
+				platform_cap_data[i].max = 1;
+				break;
+			}
+		}
+	}
 	return rc;
 }
 

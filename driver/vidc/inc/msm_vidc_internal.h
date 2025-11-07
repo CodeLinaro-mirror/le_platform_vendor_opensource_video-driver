@@ -82,7 +82,7 @@ enum msm_vidc_metadata_bits {
 
 enum msm_vidc_log_encode_mode {
 	MSM_VIDC_LOG_VIDEO_TYPE_NONE    = 0x0,
-	MSM_VIDC_LOG_VIDEO_TYPE_COMMON  = 0x1,
+	MSM_VIDC_LOG_VIDEO_TYPE_HDR  = 0x1,
 };
 
 #define MSM_VIDC_METADATA_SIZE             (4 * 4096) /* 16 KB */
@@ -405,6 +405,7 @@ enum msm_vidc_log_encode_mode {
 	CAP(LEVEL)                                \
 	CAP(HEVC_TIER)                            \
 	CAP(AV1_TIER)                             \
+	CAP(VVC_TIER)                             \
 	CAP(DISPLAY_DELAY_ENABLE)                 \
 	CAP(DISPLAY_DELAY)                        \
 	CAP(CONCEAL_COLOR_8BIT)                   \
@@ -509,6 +510,7 @@ enum msm_vidc_codec_type {
 	MSM_VIDC_AV1               = BIT(4),
 	MSM_VIDC_MPEG2             = BIT(5),
 	MSM_VIDC_APV               = BIT(6),
+	MSM_VIDC_VVC               = BIT(7),
 };
 
 enum msm_vidc_colorformat_type {
@@ -896,8 +898,10 @@ struct msm_vidc_hfi_frame_info {
 	u32                    fence_error;
 	u32                    av1_tile_rows_columns;
 	bool                   av1_non_uniform_tile_spacing;
-	u64                    fence_id[MAX_FENCE_COUNT];
-	u32                    fence_count;
+	u32                    tx_fence_count;
+	u32                    rx_fence_count;
+	u64                    tx_fence_id[MAX_FENCE_COUNT];
+	u64                    rx_fence_id[MAX_FENCE_COUNT];
 };
 
 struct msm_vidc_decode_vpp_delay {
