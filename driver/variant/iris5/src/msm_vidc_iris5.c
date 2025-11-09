@@ -388,11 +388,10 @@ static int __boot_firmware_iris5(struct msm_vidc_core *core)
 			return rc;
 
 		if ((ctrl_status & HFI_CTRL_ERROR_FATAL) ||
-		    (ctrl_status & HFI_CTRL_ERROR_UC_REGION_NOT_SET) ||
-		    (ctrl_status & HFI_CTRL_ERROR_HW_FENCE_QUEUE)) {
-			d_vpr_e("%s: boot firmware failed, ctrl status %#x\n",
-				__func__, ctrl_status);
-			return -EINVAL;
+			(ctrl_status & HFI_CTRL_ERROR_UC_REGION_NOT_SET) ||
+			(ctrl_status & HFI_CTRL_ERROR_HW_FENCE_QUEUE)) {
+			rc = -EINVAL;
+			goto boot_error;
 		} else if (ctrl_status & HFI_CTRL_READY) {
 			d_vpr_h("%s: boot firmware is successful, ctrl status %#x\n",
 				__func__, ctrl_status);
@@ -404,8 +403,8 @@ static int __boot_firmware_iris5(struct msm_vidc_core *core)
 	}
 
 	if (count >= max_tries) {
-		d_vpr_e(FMT_STRING_BOOT_FIRMWARE_ERROR, ctrl_status, ctrl_init_val);
-		return -ETIME;
+		rc = -ETIME;
+		goto boot_error;
 	}
 
 	/* Enable interrupt before sending commands to venus */
@@ -417,6 +416,11 @@ static int __boot_firmware_iris5(struct msm_vidc_core *core)
 	if (rc)
 		return rc;
 
+	return rc;
+
+boot_error:
+	__read_register(core, HFI_CTRL_INIT_IRIS5, &ctrl_init_val);
+	d_vpr_e(FMT_STRING_BOOT_FIRMWARE_ERROR, ctrl_status, ctrl_init_val);
 	return rc;
 }
 
