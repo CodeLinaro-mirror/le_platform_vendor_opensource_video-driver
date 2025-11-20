@@ -167,15 +167,16 @@ static int msm_vdec_set_scale_crop(struct msm_vidc_inst *inst)
 	ds_crop_height = inst->crop.height;
 
 	if (inst->capabilities[SCALE_ENABLE].value &&
-		(inst->crop.width < inst->compose.width ||
-		inst->crop.height < inst->compose.height)) {
+		(inst->crop.width <= inst->compose.width ||
+		inst->crop.height <= inst->compose.height)) {
 		payload[0] = left_offset << 16 | top_offset;
 		payload[1] = ds_crop_width << 16 | ds_crop_height;
 		i_vpr_h(inst,
 			"%s: left_offset: %d top_offset: %d ds_crop_width: %d ds_crop_height: %d\n",
 			__func__, left_offset, top_offset, ds_crop_width, ds_crop_height);
 	} else {
-		i_vpr_h(inst, "%s: ds crop resolution set as 0\n", __func__);
+		i_vpr_e(inst, "%s: ds crop resolution set as 0\n", __func__);
+		return -EINVAL;
 	}
 
 	rc = venus_hfi_session_property(inst,
