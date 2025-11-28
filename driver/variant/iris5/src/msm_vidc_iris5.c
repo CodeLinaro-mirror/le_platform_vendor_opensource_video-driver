@@ -1281,6 +1281,16 @@ static int __power_off_controller_iris5(struct msm_vidc_core *core)
 	return rc;
 }
 
+static int wait_for_wfi(struct msm_vidc_core *core)
+{
+	int rc = 0;
+
+	rc = __read_register_with_poll_timeout(core, WRAPPER_TSW_CPU_STATUS_IRIS5,
+				BIT(0), 0x1, 2500, 500000);
+
+	return rc;
+}
+
 static int __power_off_iris5(struct msm_vidc_core *core)
 {
 	int rc = 0;
@@ -1299,6 +1309,10 @@ static int __power_off_iris5(struct msm_vidc_core *core)
 	rc = call_res_op(core, gdsc_sw_ctrl, core);
 	if (rc)
 		d_vpr_e("%s: gdsc_sw_ctrl failed\n", __func__);
+
+	// before powering off the hardware, wait for firmware idle
+	if (wait_for_wfi(core))
+		d_vpr_e("%s: wfi status not set: firmware is not idle\n", __func__);
 
 	if (__power_off_apv_iris5(core))
 		d_vpr_e("%s: failed to power off apv\n", __func__);
