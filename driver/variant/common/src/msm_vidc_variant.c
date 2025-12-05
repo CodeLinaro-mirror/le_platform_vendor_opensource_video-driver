@@ -515,9 +515,10 @@ int msm_vidc_decide_scaling_iris5p(struct msm_vidc_inst *inst)
 	if (inst->capabilities[SCALE_FACTOR].max <= 1)
 		goto exit;
 
-	/* downscaling supported for AVC, HEVC, AV1, VP9 (not APV) */
+	/* downscaling supported for AVC, HEVC, VVC, AV1, VP9 (not APV) */
 	if (inst->codec != MSM_VIDC_H264 &&
 	    inst->codec != MSM_VIDC_HEVC &&
+	    inst->codec != MSM_VIDC_VVC  &&
 	    inst->codec != MSM_VIDC_AV1  &&
 	    inst->codec != MSM_VIDC_VP9)
 		goto exit;
