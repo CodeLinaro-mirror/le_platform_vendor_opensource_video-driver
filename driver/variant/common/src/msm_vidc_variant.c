@@ -682,6 +682,9 @@ static int msm_vidc_init_codec_iris5p(struct msm_vidc_inst *inst,
 	} else if (inst->codec == MSM_VIDC_HEVC) {
 		codec_input->codec = CODEC_HEVC;
 		codec_input->lcu_size = 32;
+	} else if (inst->codec == MSM_VIDC_VVC) {
+		codec_input->codec = CODEC_VVC;
+		codec_input->lcu_size = 32;
 	} else if (inst->codec == MSM_VIDC_VP9) {
 		codec_input->codec = CODEC_VP9;
 		codec_input->lcu_size = 32;
