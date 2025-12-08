@@ -59,6 +59,12 @@ module_entry(
             "driver/variant/iris33/src/msm_vidc_iris33.c",
             "driver/platform/pineapple/src/msm_vidc_pineapple.c",
         ],
+        "CONFIG_MSM_VIDC_CHORA" : [
+            "driver/variant/iris2/src/msm_vidc_buffer_iris2.c",
+            "driver/variant/iris2/src/msm_vidc_power_iris2.c",
+            "driver/variant/iris2/src/msm_vidc_iris2.c",
+            "driver/platform/chora/src/msm_vidc_chora.c",
+        ],
         "CONFIG_MSM_VIDC_SUN" : [
             "driver/variant/iris35/src/msm_vidc_buffer_iris35.c",
             "driver/variant/iris35/src/msm_vidc_bus_iris35.c",
@@ -72,6 +78,7 @@ module_entry(
             "driver/variant/iris33/src/msm_vidc_power_iris33.c",
             "driver/variant/iris33/src/msm_vidc_iris33.c",
             "driver/platform/tuna/src/msm_vidc_tuna.c",
+            "driver/platform/kera/src/msm_vidc_kera.c",
         ],
         "CONFIG_MSM_VIDC_CANOE" : [
             "driver/variant/iris4/src/msm_vidc_buffer_iris4.c",
@@ -115,8 +122,12 @@ module_entry(
             "//vendor/qcom/opensource/synx-kernel:synx_headers",
             "//vendor/qcom/opensource/synx-kernel:%b_modules",
             "//vendor/qcom/opensource/mm-drivers/hw_fence:%b_msm_hw_fence",
+    ],
+    config_deps = {
+        "CONFIG_MSM_MMRM" : [
             "//vendor/qcom/opensource/mmrm-driver:%b_mmrm_driver",
         ],
+    },
 )
 
 module_entry(
@@ -170,6 +181,12 @@ module_entry(
             "driver/variant/iris33/src/msm_vidc_clock_iris33.c",
             "driver/variant/iris33/src/msm_vidc_iris33.c",
         ],
+        "CONFIG_MSM_VIDC_CHORA" : [
+            "driver/platform/chora/src/chora.c",
+            "driver/variant/iris2/src/msm_vidc_buffer_iris2.c",
+            "driver/variant/iris2/src/msm_vidc_power_iris2.c",
+            "driver/variant/iris2/src/msm_vidc_iris2.c",
+        ],
         "CONFIG_MSM_VIDC_SUN" : [
             "driver/platform/sun/src/sun.c",
             "driver/variant/iris35/src/msm_vidc_buffer_iris35.c",
@@ -178,6 +195,7 @@ module_entry(
             "driver/variant/iris35/src/msm_vidc_clock_iris35.c",
             "driver/variant/iris35/src/msm_vidc_iris35.c",
             "driver/platform/tuna/src/tuna.c",
+            "driver/platform/kera/src/kera.c",
             "driver/variant/iris33/src/msm_vidc_buffer_iris33.c",
             "driver/variant/iris33/src/msm_vidc_bus_iris33.c",
             "driver/variant/iris33/src/msm_vidc_clock_iris33.c",
@@ -226,6 +244,10 @@ module_entry(
             "//vendor/qcom/opensource/synx-kernel:synx_headers",
             "//vendor/qcom/opensource/synx-kernel:%b_modules",
             "//vendor/qcom/opensource/mm-drivers/hw_fence:%b_msm_hw_fence",
+    ],
+    config_deps = {
+        "CONFIG_MSM_MMRM" : [
             "//vendor/qcom/opensource/mmrm-driver:%b_mmrm_driver",
         ],
+    },
 )

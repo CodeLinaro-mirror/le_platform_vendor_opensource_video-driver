@@ -25,10 +25,16 @@
 #include "venus_hfi.h"
 #include "resources.h"
 
+#if defined(CONFIG_MSM_VIDC_CHORA)
+#include "msm_vidc_chora.h"
+#include "msm_vidc_iris2.h"
+#endif
+
 #if defined(CONFIG_MSM_VIDC_SUN)
 #include "msm_vidc_sun.h"
 #include "msm_vidc_iris35.h"
 #include "msm_vidc_tuna.h"
+#include "msm_vidc_kera.h"
 #include "msm_vidc_iris33.h"
 #endif
 #if defined(CONFIG_MSM_VIDC_PINEAPPLE)
@@ -201,6 +207,14 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.init_iris                  = msm_vidc_init_iris33,
 	},
 #endif
+#if defined(CONFIG_MSM_VIDC_CHORA)
+	{
+		.compat                     = "qcom,chora-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_chora,
+		.init_platform              = msm_vidc_init_platform_chora,
+		.init_iris                  = msm_vidc_init_iris2,
+	},
+#endif
 #if defined(CONFIG_MSM_VIDC_SUN)
 	{
 		.compat                     = "qcom,sm8750-vidc",
@@ -218,6 +232,12 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.compat                     = "qcom,tuna-vidc",
 		.get_platform_data          = msm_vidc_get_platform_data_tuna,
 		.init_platform              = msm_vidc_init_platform_tuna,
+		.init_iris                  = msm_vidc_init_iris33,
+	},
+	{
+		.compat                     = "qcom,kera-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_kera,
+		.init_platform              = msm_vidc_init_platform_kera,
 		.init_iris                  = msm_vidc_init_iris33,
 	},
 #endif
