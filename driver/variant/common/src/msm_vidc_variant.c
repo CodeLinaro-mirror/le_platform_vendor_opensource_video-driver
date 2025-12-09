@@ -515,9 +515,10 @@ int msm_vidc_decide_scaling_iris5p(struct msm_vidc_inst *inst)
 	if (inst->capabilities[SCALE_FACTOR].max <= 1)
 		goto exit;
 
-	/* downscaling supported for AVC, HEVC, AV1, VP9 (not APV) */
+	/* downscaling supported for AVC, HEVC, VVC, AV1, VP9 (not APV) */
 	if (inst->codec != MSM_VIDC_H264 &&
 	    inst->codec != MSM_VIDC_HEVC &&
+	    inst->codec != MSM_VIDC_VVC  &&
 	    inst->codec != MSM_VIDC_AV1  &&
 	    inst->codec != MSM_VIDC_VP9)
 		goto exit;
@@ -680,6 +681,9 @@ static int msm_vidc_init_codec_iris5p(struct msm_vidc_inst *inst,
 		}
 	} else if (inst->codec == MSM_VIDC_HEVC) {
 		codec_input->codec = CODEC_HEVC;
+		codec_input->lcu_size = 32;
+	} else if (inst->codec == MSM_VIDC_VVC) {
+		codec_input->codec = CODEC_VVC;
 		codec_input->lcu_size = 32;
 	} else if (inst->codec == MSM_VIDC_VP9) {
 		codec_input->codec = CODEC_VP9;
@@ -860,9 +864,9 @@ int msm_vidc_init_codec_input_bus_iris5p(struct msm_vidc_inst *inst,
 
 	/*
 	 * If the calculated motion_vector_complexity is > 2 then set the
-	 * complexity_setting and refframe_complexity to be pwc(performance worst case)
-	 * values. If the motion_vector_complexity is < 2 then set the complexity_setting
-	 * and refframe_complexity to be average case values.
+	 * complexity_setting to be pwc(performance worst case) values.
+	 * If the motion_vector_complexity is < 2 then set the complexity_setting
+	 * to be average case values.
 	 */
 
 	complexity_factor_int = Q16_INT(d->complexity_factor);
@@ -870,15 +874,14 @@ int msm_vidc_init_codec_input_bus_iris5p(struct msm_vidc_inst *inst,
 
 	if (complexity_factor_int < COMPLEXITY_THRESHOLD ||
 		(complexity_factor_int == COMPLEXITY_THRESHOLD &&
-		complexity_factor_frac == 0)) {
-		/* set as average case values */
+		complexity_factor_frac == 0))
 		codec_input->complexity_setting = COMPLEXITY_SETTING_AVG;
-		codec_input->refframe_complexity = REFFRAME_COMPLEXITY_AVG;
-	} else {
-		/* set as pwc */
+	else
 		codec_input->complexity_setting = COMPLEXITY_SETTING_PWC;
-		codec_input->refframe_complexity = REFFRAME_COMPLEXITY_PWC;
-	}
+
+	codec_input->refframe_complexity = complexity_factor_int * 100 + complexity_factor_frac;
+
+	codec_input->ref_frame_complexity_factor = codec_input->refframe_complexity;
 
 	codec_input->status_llc_onoff = d->use_sys_cache;
 
@@ -969,6 +972,7 @@ int msm_vidc_init_codec_input_bus_iris5p(struct msm_vidc_inst *inst,
 		struct dump dump[] = {
 		{"complexity_factor_int", "%d", complexity_factor_int},
 		{"complexity_factor_frac", "%d", complexity_factor_frac},
+		{"ref_frame_complexity_factor", "%d", codec_input->ref_frame_complexity_factor},
 		{"refframe_complexity", "%d", codec_input->refframe_complexity},
 		{"complexity_setting", "%d", codec_input->complexity_setting},
 		{"cr_dpb", "%d", codec_input->cr_dpb},
