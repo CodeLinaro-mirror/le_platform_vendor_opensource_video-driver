@@ -1,5 +1,6 @@
 load("//build/kernel/kleaf:kernel.bzl", "ddk_module", "kernel_module_group")
 load("//build/bazel_common_rules/dist:dist.bzl", "copy_to_dist_dir")
+load(":target_variants.bzl", "targets")
 
 def _register_module_to_map(module_map, name, path, config_option, srcs, config_srcs, deps, config_deps):
     processed_config_srcs = {}
@@ -265,3 +266,15 @@ def define_consolidate_gki_modules(target, registry, modules, config_options = [
     define_target_variant_modules(target, "consolidate", registry, modules, config_options)
     define_target_variant_modules(target, "perf", registry, modules, config_options)
     define_target_variant_modules(target, "gki", registry, modules, config_options)
+
+def matching_la_variant(t):
+    for target in targets:
+        if t.startswith(target):
+            return target
+    return None
+
+def define_16k_aliases(t):
+    native.alias(
+        name = "{}_headers".format(t),
+        actual = "{}_headers".format(matching_la_variant(t)),
+    )
