@@ -116,6 +116,12 @@ module_entry(
         "CONFIG_MSM_VIDC_MINIDUMP": [
             "driver/vidc/src/msm_vidc_md.c",
         ],
+        "CONFIG_MSM_VIDC_RAVELIN" : [
+            "driver/variant/ar50lt/src/msm_vidc_buffer_ar50lt.c",
+            "driver/variant/ar50lt/src/msm_vidc_power_ar50lt.c",
+            "driver/variant/ar50lt/src/msm_vidc_ar50lt.c",
+            "driver/platform/ar50lt/src/msm_vidc_ravelin.c",
+        ],
     },
     deps = [
             "//vendor/qcom/opensource/mm-drivers:mm_drivers_headers",
@@ -237,6 +243,12 @@ module_entry(
         ],
         "CONFIG_MSM_VIDC_MINIDUMP": [
             "driver/vidc/src/msm_vidc_md.c",
+        ],
+        "CONFIG_MSM_VIDC_RAVELIN" : [
+            "driver/platform/ar50lt/src/msm_vidc_ravelin.c",
+            "driver/variant/ar50lt/src/msm_vidc_buffer_ar50lt.c",
+            "driver/variant/ar50lt/src/msm_vidc_power_ar50lt.c",
+            "driver/variant/ar50lt/src/msm_vidc_ar50lt.c",
         ],
     },
     deps = [

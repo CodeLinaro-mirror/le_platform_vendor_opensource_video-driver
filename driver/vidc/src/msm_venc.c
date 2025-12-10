@@ -1839,7 +1839,8 @@ int msm_venc_inst_init(struct msm_vidc_inst *inst)
 	f = &inst->fmts[INPUT_PORT];
 	f->type = INPUT_MPLANE;
 	f->fmt.pix_mp.pixelformat =
-		v4l2_colorformat_from_driver(inst, MSM_VIDC_FMT_NV12C, __func__);
+			v4l2_colorformat_from_driver(inst,
+			core->inst_caps[MSM_VIDC_H264].cap[PIX_FMTS].value, __func__);
 	f->fmt.pix_mp.width = DEFAULT_WIDTH;
 	f->fmt.pix_mp.height = DEFAULT_HEIGHT;
 	f->fmt.pix_mp.num_planes = 1;
