@@ -406,7 +406,7 @@ decision_done:
 	return 0;
 }
 
-int msm_vidc_update_scaling_iris5p(struct msm_vidc_inst *inst)
+static int msm_vidc_update_scaling_iris5p(struct msm_vidc_inst *inst)
 {
 	u32 input_width, input_height;
 	u32 output_crop_width, output_crop_height;
