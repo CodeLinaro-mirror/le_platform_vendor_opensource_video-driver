@@ -56,6 +56,11 @@ include $(VIDEO_ROOT)/config/art_video.conf
 LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/art_video.h
 endif
 
+ifeq ($(CONFIG_ARCH_RAVELIN), y)
+include $(VIDEO_ROOT)/config/ravelin_video.conf
+LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/ravelin_video.h
+endif
+
 ifeq ($(CONFIG_ARCH_SERAPH), y)
 include $(VIDEO_ROOT)/config/seraph_video.conf
 LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/seraph_video.h
@@ -101,6 +106,11 @@ endif
 ifeq ($(CONFIG_MSM_VIDC_ART), y)
 LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/art/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris5/inc
+endif
+
+ifeq ($(CONFIG_MSM_VIDC_RAVELIN), y)
+LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/ravelin/inc \
+                  -I$(VIDEO_DRIVER_ABS_PATH)/variant/ar50lt/inc
 endif
 
 ifeq ($(CONFIG_MSM_VIDC_SERAPH), y)
@@ -211,6 +221,13 @@ msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/nordau/src/msm_vidc_nordau.o
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris36/src/msm_vidc_iris36.o
 endif
 
+ifeq ($(CONFIG_MSM_VIDC_RAVELIN), y)
+msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/ravelin/src/msm_vidc_ravelin.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/ar50lt/src/msm_vidc_buffer_ar50lt.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/ar50lt/src/msm_vidc_power_ar50lt.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/ar50lt/src/msm_vidc_ar50lt.o
+endif
+
 msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/common/src/msm_vidc_platform.o \
                   $(VIDEO_DRIVER_REL_PATH)/platform/common/src/msm_vidc_platform_ext.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/common/src/msm_vidc_variant.o \
@@ -238,7 +255,9 @@ msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/common/src/msm_vidc_platform
                   $(VIDEO_DRIVER_REL_PATH)/vidc/src/venus_hfi_response.o
 
 ifneq ($(CONFIG_MSM_VIDC_NORDAU), y)
+ifneq ($(CONFIG_MSM_VIDC_RAVELIN), y)
 msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/vidc/src/msm_vidc_synx.o
+endif
 endif
 
 ifeq ($(CONFIG_MSM_VIDC_MINIDUMP), y)

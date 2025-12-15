@@ -406,7 +406,7 @@ decision_done:
 	return 0;
 }
 
-int msm_vidc_update_scaling_iris5p(struct msm_vidc_inst *inst)
+static int msm_vidc_update_scaling_iris5p(struct msm_vidc_inst *inst)
 {
 	u32 input_width, input_height;
 	u32 output_crop_width, output_crop_height;
@@ -683,7 +683,7 @@ static int msm_vidc_init_codec_iris5p(struct msm_vidc_inst *inst,
 		codec_input->codec = CODEC_HEVC;
 		codec_input->lcu_size = 32;
 	} else if (inst->codec == MSM_VIDC_VVC) {
-		codec_input->codec = CODEC_VVC;
+		codec_input->codec = CODEC_HEVC;
 		codec_input->lcu_size = 32;
 	} else if (inst->codec == MSM_VIDC_VP9) {
 		codec_input->codec = CODEC_VP9;
