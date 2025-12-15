@@ -220,7 +220,7 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.compat                     = "qcom,chora-vidc",
 		.get_platform_data          = msm_vidc_get_platform_data_chora,
 		.init_platform              = msm_vidc_init_platform_chora,
-		.init_vpu                  = msm_vidc_init_iris2,
+		.init_vpu                   = msm_vidc_init_iris2,
 	},
 #endif
 #if defined(CONFIG_MSM_VIDC_SUN)
