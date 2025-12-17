@@ -4250,13 +4250,13 @@ int msm_vidc_session_open(struct msm_vidc_inst *inst)
 
 	if (core->is_hw_virt) {
 #ifdef MSM_VIDC_HW_VIRT
+		core_lock(core, __func__);
 		rc = virtio_video_msm_cmd_open_gvm_session(&inst->device_id, &inst->session_id);
 		if (!rc) {
-			core_lock(core, __func__);
 			__resume(core);
 			call_venus_op(core, enable_intr, core);
-			core_unlock(core, __func__);
 		}
+		core_unlock(core, __func__);
 #endif
 	} else {
 		rc = venus_hfi_session_open(inst);

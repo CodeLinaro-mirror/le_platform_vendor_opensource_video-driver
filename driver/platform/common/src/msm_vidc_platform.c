@@ -2583,6 +2583,31 @@ int msm_vidc_adjust_dec_slice_mode(void *instance, struct v4l2_ctrl *ctrl)
 	return 0;
 }
 
+int msm_vidc_adjust_csc(void *instance, struct v4l2_ctrl *ctrl)
+{
+	s32 adjusted_value = 0;
+	s32 pix_fmt = -1;
+	struct msm_vidc_inst_capability *capability = NULL;
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+
+	if (is_decode_session(inst))
+		return 0;
+	capability = inst->capabilities;
+	adjusted_value = ctrl ? ctrl->val : capability->cap[CSC].value;
+
+	if (msm_vidc_get_parent_value(inst, CSC, PIX_FMTS,
+				      &pix_fmt, __func__))
+		return -EINVAL;
+
+	/* disable csc for 10-bit encoding */
+	if (is_10bit_colorformat(pix_fmt))
+		adjusted_value = 0;
+
+	msm_vidc_update_cap_value(inst, CSC, adjusted_value, __func__);
+
+	return 0;
+}
+
 /******************* End of Control Adjust functions *************************/
 
 /************************* Control Set functions *****************************/

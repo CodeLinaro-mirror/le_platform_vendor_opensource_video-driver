@@ -28,7 +28,6 @@ static const u32 msm_venc_input_set_prop[] = {
 static const u32 msm_venc_output_set_prop[] = {
 	HFI_PROP_BITSTREAM_RESOLUTION,
 	HFI_PROP_CROP_OFFSETS,
-	HFI_PROP_CSC,
 };
 
 static const u32 msm_venc_input_subscribe_for_properties[] = {
@@ -378,48 +377,6 @@ static int msm_venc_set_colorspace(struct msm_vidc_inst* inst,
 	return 0;
 }
 
-static bool msm_venc_csc_required(struct msm_vidc_inst* inst)
-{
-	struct v4l2_format *in_fmt = &inst->fmts[INPUT_PORT];
-	struct v4l2_format *out_fmt = &inst->fmts[OUTPUT_PORT];
-
-	/* video hardware supports conversion to REC709 CSC only */
-	if (in_fmt->fmt.pix_mp.colorspace != out_fmt->fmt.pix_mp.colorspace &&
-		out_fmt->fmt.pix_mp.colorspace == V4L2_COLORSPACE_REC709)
-		return true;
-
-	return false;
-}
-
-static int msm_venc_set_csc(struct msm_vidc_inst* inst,
-	enum msm_vidc_port_type port)
-{
-	int rc = 0;
-	u32 csc = 0;
-
-	if (port != OUTPUT_PORT) {
-		i_vpr_e(inst, "%s: invalid port %d\n", __func__, port);
-		return -EINVAL;
-	}
-
-	msm_vidc_update_cap_value(inst, CSC,
-		msm_venc_csc_required(inst) ? 1 : 0, __func__);
-
-	csc = inst->capabilities->cap[CSC].value;
-	i_vpr_h(inst, "%s: csc: %u\n", __func__, csc);
-	rc = venus_hfi_session_property(inst,
-		HFI_PROP_CSC,
-		HFI_HOST_FLAGS_NONE,
-		get_hfi_port(inst, port),
-		HFI_PAYLOAD_U32,
-		&csc,
-		sizeof(u32));
-	if (rc)
-		return rc;
-
-	return 0;
-}
-
 static int msm_venc_set_quality_mode(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
@@ -491,7 +448,6 @@ static int msm_venc_set_output_properties(struct msm_vidc_inst *inst)
 	static const struct msm_venc_prop_type_handle prop_type_handle_arr[] = {
 		{HFI_PROP_BITSTREAM_RESOLUTION,       msm_venc_set_bitstream_resolution    },
 		{HFI_PROP_CROP_OFFSETS,               msm_venc_set_crop_offsets            },
-		{HFI_PROP_CSC,                        msm_venc_set_csc                     },
 	};
 
 	if (!inst) {

@@ -1005,7 +1005,8 @@ void *msm_vidc_open(void *vidc_core, u32 session_type)
 
 	rc = msm_vidc_session_open(inst);
 	if (rc) {
-		msm_vidc_core_deinit(core, true);
+		if (!core->is_hw_virt)
+			msm_vidc_core_deinit(core, true);
 		goto error;
 	}
 
