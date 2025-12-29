@@ -2244,6 +2244,25 @@ static bool msm_vidc_check_max_sessions_vp9d(struct msm_vidc_core *core)
 	return false;
 }
 
+static bool msm_vidc_check_max_sessions_mpeg2d(struct msm_vidc_core *core)
+{
+	u32 mp2d_instance_count = 0;
+	struct msm_vidc_inst *inst = NULL;
+
+	core_lock(core, __func__);
+	list_for_each_entry(inst, &core->instances, list) {
+		if (is_decode_session(inst) &&
+			inst->fmts[INPUT_PORT].fmt.pix_mp.pixelformat ==
+				V4L2_PIX_FMT_MPEG2)
+			mp2d_instance_count++;
+	}
+	core_unlock(core, __func__);
+
+	if (mp2d_instance_count > MAX_MPEG2D_INST_COUNT)
+		return true;
+	return false;
+}
+
 int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 {
 	int rc = 0;
@@ -2272,6 +2291,16 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 				i_vpr_e(inst,
 					"%s: vp9d sessions exceeded max limit %d\n",
 					__func__, MAX_VP9D_INST_COUNT);
+				rc = -ENOMEM;
+				goto err_invalid_fmt;
+			}
+		}
+
+		if (f->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_MPEG2) {
+			if (msm_vidc_check_max_sessions_mpeg2d(inst->core)) {
+				i_vpr_e(inst,
+					"%s: mpeg2d sessions exceeded max limit %d\n",
+					__func__, MAX_MPEG2D_INST_COUNT);
 				rc = -ENOMEM;
 				goto err_invalid_fmt;
 			}

@@ -297,7 +297,7 @@ static struct msm_platform_core_capability core_data_nordau[] = {
 	{MAX_NUM_1080P_SESSIONS, 32},
 	{MAX_NUM_4K_SESSIONS, 16},
 	{MAX_NUM_8K_SESSIONS, 1},
-	{MAX_SECURE_SESSION_COUNT, 4},
+	{MAX_SECURE_SESSION_COUNT, 3},
 	{MAX_RT_MBPF, 765952},	/* ((4096*2176)/256) * 22 */
 	{MAX_MBPF, 765952}, /* ((4096*2176)/256) * 22 */
 	{MAX_MBPS, 17925000},	/* max_load

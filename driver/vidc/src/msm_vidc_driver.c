@@ -4964,6 +4964,16 @@ int msm_vidc_inst_timeout(struct msm_vidc_inst *inst)
 
 	core_lock(core, __func__);
 	/*
+	 * In case of hw virtualization, set session state to error
+	 * and wait for pvm to perform cleanup.
+	 */
+	if (core->is_hw_virt) {
+		msm_vidc_change_state(inst, MSM_VIDC_ERROR, __func__);
+		list_move_tail(&inst->list, &core->dangling_instances);
+		goto unlock;
+	}
+
+	/*
 	 * All sessions will be removed from core list in core deinit,
 	 * do not deinit core from a session which is not present in
 	 * core list.
@@ -4984,17 +4994,6 @@ int msm_vidc_inst_timeout(struct msm_vidc_inst *inst)
 	/* mark video hw unresponsive */
 	msm_vidc_change_core_sub_state(core,
 		0, CORE_SUBSTATE_VIDEO_UNRESPONSIVE, __func__);
-
-	/*
-	 * In case of hw virtualization, call close_gvm
-	 * to perform deinit from pvm
-	 */
-	if (core->is_hw_virt) {
-#ifdef MSM_VIDC_HW_VIRT
-		virtio_video_msm_cmd_close_gvm();
-#endif
-		core->is_gvm_open = false;
-	}
 
 	/* call core deinit for a valid instance timeout case */
 	msm_vidc_core_deinit_locked(core, true);
@@ -5551,6 +5550,11 @@ void msm_vidc_destroy_buffers(struct msm_vidc_inst *inst)
 			call_mem_op(core, dma_buf_detach, core, buf->dmabuf, buf->attach);
 		if (buf->dbuf_get)
 			call_mem_op(core, dma_buf_put, inst, buf->dmabuf);
+		buf->attach = NULL;
+		buf->sg_table = NULL;
+		buf->dmabuf = NULL;
+		buf->dbuf_get = 0;
+		buf->device_addr = 0x0;
 		list_del_init(&buf->list);
 		msm_vidc_pool_free(inst, buf);
 	}
@@ -5570,6 +5574,11 @@ void msm_vidc_destroy_buffers(struct msm_vidc_inst *inst)
 				print_vidc_buffer(VIDC_ERR, "err ", "destroying: put dmabuf", inst, buf);
 				call_mem_op(core, dma_buf_put, inst, buf->dmabuf);
 			}
+			buf->attach = NULL;
+			buf->sg_table = NULL;
+			buf->dmabuf = NULL;
+			buf->dbuf_get = 0;
+			buf->device_addr = 0x0;
 			list_del_init(&buf->list);
 			msm_vidc_pool_free(inst, buf);
 		}
@@ -5661,6 +5670,7 @@ static void msm_vidc_close_helper(struct kref *kref)
 	if (inst->workq)
 		destroy_workqueue(inst->workq);
 	msm_vidc_destroy_buffers(inst);
+	msm_vidc_vb2_queue_deinit(inst);
 	msm_vidc_remove_dangling_session(inst);
 	msm_vidc_try_suspend(inst);
 	mutex_destroy(&inst->client_lock);

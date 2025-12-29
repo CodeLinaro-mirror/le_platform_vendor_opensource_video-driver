@@ -211,6 +211,14 @@ static int msm_vidc_memory_alloc_ext(struct msm_vidc_core *core, struct msm_vidc
 			goto error;
 		}
 		mem->kvaddr = mem->dmabuf_map.vaddr;
+#elif (LINUX_VERSION_CODE > KERNEL_VERSION(6,2,0))
+		rc = dma_buf_vmap_unlocked(mem->dmabuf, &mem->dmabuf_map);
+		if (rc) {
+			d_vpr_e("%s: kernel map failed\n", __func__);
+			rc = -EIO;
+			goto error;
+		}
+		mem->kvaddr = mem->dmabuf_map.vaddr;
 #else
 		rc = dma_buf_vmap(mem->dmabuf, &mem->dmabuf_map);
 		if (rc) {
