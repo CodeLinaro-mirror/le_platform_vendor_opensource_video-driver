@@ -2180,7 +2180,7 @@ static const struct msm_vidc_platform_data ravelin_data = {
 	.reg_prst_tbl = ravelin_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(ravelin_reg_preset_table),
 	.clock_source_scaling_ratio = 1,
-	.fwname = "venus_v7",
+	.fwname = "venus_v7.mbn",
 	.pas_id = 9,
 	.supports_mmrm = 0,
 
