@@ -355,6 +355,11 @@ static inline bool is_mmrm_supported(struct msm_vidc_core *core)
 	return !!core->platform->data.supports_mmrm;
 }
 
+static inline bool is_crc_enabled(struct msm_vidc_core *core)
+{
+	return core->debug_enable_crc;
+}
+
 int msm_vidc_init_platform_capabilities(struct msm_vidc_core *core);
 enum msm_vidc_hw_version msm_vidc_get_hw_version(void);
 int msm_vidc_read_efuse(struct msm_vidc_core *core);

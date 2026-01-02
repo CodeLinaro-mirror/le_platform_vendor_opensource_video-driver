@@ -870,3 +870,18 @@ int msm_buffer_extra_count_iris5(struct msm_vidc_inst *inst,
 	i_vpr_l(inst, "extra_count: type: %11s, count: %9u\n", buf_name(buffer_type), count);
 	return count;
 }
+
+int msm_vidc_adjust_partition_id_iris5(void *instance, struct v4l2_ctrl *ctrl)
+{
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	struct msm_vidc_core *core = inst->core;
+	s32 adjusted_value;
+
+	adjusted_value = inst->capabilities[PARTITION_ID].value;
+
+	if (is_crc_enabled(core))
+		adjusted_value = 7; //HFI_PARTITION_ID_7
+
+	msm_vidc_update_cap_value(inst, PARTITION_ID, adjusted_value, __func__);
+	return 0;
+}

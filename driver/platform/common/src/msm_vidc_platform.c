@@ -1018,6 +1018,7 @@ int msm_vidc_v4l2_to_hfi_enum(struct msm_vidc_inst *inst,
 	case AV1_TIER:
 	case BLUR_TYPES:
 	case LOG_VIDEO_ENCODE:
+	case PARTITION_ID:
 		*value = inst->capabilities[cap_id].value;
 		return 0;
 	case LAYER_TYPE:

@@ -345,11 +345,6 @@ exit:
 	return rc;
 }
 
-static inline bool is_crc_enabled(struct msm_vidc_core *core)
-{
-	return !!(core->hfi_debug_config & HFI_DEBUG_CONFIG_CRC);
-}
-
 static u32 msm_vidc_buffer_region_ext(struct msm_vidc_inst *inst,
 	enum msm_vidc_buffer_type buffer_type)
 {
