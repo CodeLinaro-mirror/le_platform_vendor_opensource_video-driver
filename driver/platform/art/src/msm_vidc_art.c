@@ -3231,7 +3231,7 @@ static const struct msm_vidc_platform_data art_data = {
 	.reg_prst_tbl = art_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(art_reg_preset_table),
 	.clock_source_scaling_ratio = 1,
-	.fwname = "vpu50_2v",
+	.fwname = "vpu50_2v.mbn",
 	.pas_id = 9,
 	.supports_mmrm = 0,
 

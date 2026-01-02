@@ -2036,7 +2036,7 @@ static const struct msm_vidc_platform_data x1e80100_data = {
 	.reg_prst_tbl = x1e80100_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(x1e80100_reg_preset_table),
 	.clock_source_scaling_ratio = 1,
-	.fwname = "./qcom/vpu/vpu30_p4",
+	.fwname = "./qcom/vpu/vpu30_p4.mbn",
 	.pas_id = 9,
 	.supports_mmrm = 0,
 
