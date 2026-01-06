@@ -488,6 +488,9 @@ static int calculate_vsp_min_freq_iris5(struct api_calculation_input codec_input
 	u32 freq_topcorner0_4bitrate = 533;
 	u32 freq_topcorner1_4bitrate = 444;
 
+	/* Codec index */
+	u32 index = 0;
+
 	if (codec_input.codec == CODEC_APV) {
 		codec_output->vsp_min_freq = 0;
 		return 0;
@@ -499,7 +502,6 @@ static int calculate_vsp_min_freq_iris5(struct api_calculation_input codec_input
 	 * Ignore fw_sw_vsp_offset, as this is baked into the reference bitrate tables.
 	 *  As a consequence remove x1000 multiplier as well.
 	 */
-	u32 codec = codec_input.codec;
 	/* UInt32 *bitratetable; */
 	u32 pixle_count = codec_input.frame_width *
 		codec_input.frame_height * codec_input.frame_rate;
@@ -517,11 +519,24 @@ static int calculate_vsp_min_freq_iris5(struct api_calculation_input codec_input
 	 */
 	vsp_hw_min_frequency = freq_topcorner1_4bitrate * input_bitrate_fp_iris5 * 1000;
 
+	if (codec_input.codec == CODEC_H264_CAVLC)
+		index = 0;
+	else if (codec_input.codec == CODEC_H264)
+		index = 1;
+	else if (codec_input.codec == CODEC_HEVC)
+		index = 2;
+	else if (codec_input.codec == CODEC_VP9)
+		index = 3;
+	else if (codec_input.codec == CODEC_AV1)
+		index = 4;
+	else if (codec_input.codec == CODEC_VVC)
+		index = 5;
+
 	if (codec_input.codec == CODEC_AV1 && bitrate_entry == 1)
 		vsp_hw_min_frequency = freq_topcorner0_4bitrate * input_bitrate_fp_iris5 * 1000;
 
 	if (codec_input.vsp_vpp_mode == CODEC_VSPVPP_MODE_2S) {
-		u32 corner_bitrate = bitrate_table_2stage_fp_iris5[codec][bitrate_entry];
+		u32 corner_bitrate = bitrate_table_2stage_fp_iris5[index][bitrate_entry];
 
 		if (codec_input.codec == CODEC_HEVC || codec_input.codec == CODEC_VVC) {
 			if (codec_input.hierachical_layer == CODEC_GOP_LOSSLESS) {
@@ -540,10 +555,10 @@ static int calculate_vsp_min_freq_iris5(struct api_calculation_input codec_input
 			corner_bitrate * fw_sw_vsp_offset);
 	} else {
 		vsp_hw_min_frequency = vsp_hw_min_frequency +
-			(bitrate_table_1stage_fp_iris5[codec][bitrate_entry] *
+			(bitrate_table_1stage_fp_iris5[index][bitrate_entry] *
 			fw_sw_vsp_offset - 1);
 		vsp_hw_min_frequency = DIV_ROUND_UP(vsp_hw_min_frequency,
-			(bitrate_table_1stage_fp_iris5[codec][bitrate_entry]) *
+			(bitrate_table_1stage_fp_iris5[index][bitrate_entry]) *
 				fw_sw_vsp_offset);
 	}
 
