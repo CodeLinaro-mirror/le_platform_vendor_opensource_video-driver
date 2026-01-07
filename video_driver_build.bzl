@@ -211,7 +211,7 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
             "CONFIG_MSM_VIDC_{}".format(lunch_target_chora.upper()),
         ]
         print("  config_options =", config_options)
-    elif target in [ "hamoa" ]:
+    elif target in [ "hamoa", "shikra" ]:
         dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
         print("dist_target_name: " + dist_target_name)
         config_options = [
