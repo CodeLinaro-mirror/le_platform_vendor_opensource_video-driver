@@ -1907,6 +1907,39 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)            \
 			size = bitstream_size; \
 		} while (0)
 
+#define HFI_BUFFER_BITSTREAM_ENC_APV_IRIS5(size, frame_width, frame_height, \
+				rc_type) \
+		do { \
+			HFI_U32 aligned_width, aligned_height, bitstream_size, yuv_size; \
+			HFI_U32 bits_per_pixel_numerator, bits_per_pixel_denominator; \
+			aligned_width = HFI_ALIGN(frame_width, 32); \
+			aligned_height = HFI_ALIGN(frame_height, 32); \
+			yuv_size = aligned_width * aligned_height * 2 * 2; \
+			yuv_size = HFI_ALIGN(yuv_size, HFI_ALIGNMENT_4096); \
+			bitstream_size = aligned_width * aligned_height; \
+			bits_per_pixel_numerator = 29; \
+			bits_per_pixel_denominator = 6; \
+			bitstream_size *= bits_per_pixel_numerator; \
+			bitstream_size = bitstream_size >> bits_per_pixel_denominator; \
+			/* FW HFICCB: 6346065 */ \
+			if (yuv_size < 7680 * 4320 * 4) { \
+				bitstream_size *= 3; \
+			} else { \
+				bits_per_pixel_numerator = 23; \
+				bits_per_pixel_denominator = 3; \
+				bitstream_size *= bits_per_pixel_numerator; \
+				bitstream_size = bitstream_size >> bits_per_pixel_denominator; \
+			} \
+			if ((rc_type == HFI_RC_OFF) || (yuv_size < (1280 * 720 * 4))) { \
+				bitstream_size = (bitstream_size << 1); \
+				if (yuv_size < 352 * 288 * 4) { \
+					bitstream_size = (bitstream_size << 2); \
+				} \
+			} \
+			bitstream_size = HFI_ALIGN(bitstream_size, HFI_ALIGNMENT_4096); \
+			size = bitstream_size; \
+		} while (0)
+
 #define IRIS_ENC_TILE_SIZE_INFO(tile_size, tile_count, last_tile_size, \
 		frame_width_coded, codec_standard, num_vpp_pipes, iris_tiling_version) \
 	do { \
@@ -2307,6 +2340,16 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)            \
 				work_mode, num_vpp_pipes, ring_buf_count, \
 				is_dual_core, is_lookahead, 0 /*min_alloc_se_lb_sao*/, \
 				is_ten_bit, chroma_fmt); \
+	}
+
+#define HFI_BUFFER_BIN_APVE_IRIS5(size, frame_width, frame_height, rc_type) \
+	{ \
+		HFI_U32 binstream_size, total_buf_count = 2; \
+		HFI_BUFFER_BITSTREAM_ENC_APV_IRIS5(binstream_size, frame_width, frame_height, \
+				rc_type); \
+		binstream_size = (binstream_size >> 1); \
+		binstream_size = binstream_size * total_buf_count; \
+		size = HFI_ALIGN(binstream_size, HFI_ALIGNMENT_4096); \
 	}
 
 #define SIZE_ENC_SLICE_INFO_BUF(num_lcu_in_frame) HFI_ALIGN((256 + \
