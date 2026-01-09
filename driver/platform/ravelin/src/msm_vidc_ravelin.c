@@ -1075,7 +1075,7 @@ static struct msm_platform_inst_capability instance_cap_data_ravelin[] = {
 		V4L2_MPEG_VIDEO_H264_LEVEL_4_2,
 		V4L2_CID_MPEG_VIDEO_H264_LEVEL,
 		HFI_PROP_LEVEL,
-		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
+		CAP_FLAG_VOLATILE | CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
 	{LEVEL, DEC, HEVC|HEIC,
 		V4L2_MPEG_VIDEO_HEVC_LEVEL_1,
@@ -1105,7 +1105,7 @@ static struct msm_platform_inst_capability instance_cap_data_ravelin[] = {
 		V4L2_MPEG_VIDEO_HEVC_LEVEL_4_1,
 		V4L2_CID_MPEG_VIDEO_HEVC_LEVEL,
 		HFI_PROP_LEVEL,
-		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
+		CAP_FLAG_VOLATILE | CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
 	/* TODO: Bring the VP9 Level upstream GKI change, and level cap here:
 	 *	go/videogki
