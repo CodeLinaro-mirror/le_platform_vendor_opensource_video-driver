@@ -2164,6 +2164,16 @@ static struct msm_platform_inst_capability instance_cap_data_art[] = {
 		V4L2_CID_MPEG_VIDC_HEIF_TILES,
 		HFI_PROP_HEIF_TILES,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
+
+	{LOG_VIDEO_ENCODE, ENC, HEVC | APV,
+		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
+		MSM_VIDC_LOG_VIDEO_TYPE_HDR,
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_NONE) |
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_HDR),
+		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
+		V4L2_CID_MPEG_VIDC_LOG_VIDEO_ENCODE,
+		HFI_PROP_LOG_VIDEO_ENCODE,
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 };
 
 
@@ -2179,7 +2189,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_art[
 	{PIX_FMTS, ENC, HEVC,
 		{PROFILE, MIN_FRAME_QP, MAX_FRAME_QP, I_FRAME_QP, P_FRAME_QP,
 			B_FRAME_QP, MIN_QUALITY, BLUR_TYPES, IR_PERIOD,
-			LTR_COUNT, CSC}},
+			LTR_COUNT, CSC, LOG_VIDEO_ENCODE}},
 
 	{PIX_FMTS, ENC, HEIC,
 		{PROFILE, CSC}},
@@ -2190,7 +2200,12 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_art[
 	{CODEC_MODE, ENC, CODECS_ALL,
 		{0}},
 
-	{PIX_FMTS, ENC | DEC, APV,
+	{PIX_FMTS, ENC, APV,
+		{LOG_VIDEO_ENCODE},
+		NULL,
+		NULL},
+
+	{PIX_FMTS, DEC, APV,
 		{0},
 		NULL,
 		NULL},
@@ -2359,13 +2374,14 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_art[
 			BIT_RATE, META_ROI_INFO, MIN_QUALITY, BITRATE_BOOST, VBV_DELAY,
 			PEAK_BITRATE, SLICE_MODE, CONTENT_ADAPTIVE_CODING,
 			BLUR_TYPES, LOWLATENCY_MODE, META_EVA_STATS,
-			META_TRANSCODING_STAT_INFO, OPEN_GOP, LOOKAHEAD_ENCODE_ENABLE},
+			META_TRANSCODING_STAT_INFO, OPEN_GOP, LOOKAHEAD_ENCODE_ENABLE,
+			LOG_VIDEO_ENCODE},
 		msm_vidc_adjust_bitrate_mode,
 		msm_vidc_set_u32_enum},
 
 	{BITRATE_MODE, ENC, APV,
 		{BIT_RATE, PEAK_BITRATE, META_EVA_STATS, TIME_DELTA_BASED_RC,
-			CONSTANT_QUALITY},
+			LOG_VIDEO_ENCODE, CONSTANT_QUALITY},
 		msm_vidc_adjust_bitrate_mode,
 		msm_vidc_set_u32_enum},
 
@@ -2943,6 +2959,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_art[
 		{0},
 		NULL,
 		msm_vidc_set_u32},
+
+	{LOG_VIDEO_ENCODE, ENC, HEVC | APV,
+		{0},
+		msm_vidc_adjust_log_mode,
+		msm_vidc_set_u32_enum},
 };
 
 /* Default UBWC config for LPDDR5 */
