@@ -3233,7 +3233,7 @@ static const struct msm_vidc_platform_data art_data = {
 	.clock_source_scaling_ratio = 1,
 	.fwname = "vpu50_2v.mbn",
 	.pas_id = 9,
-	.supports_mmrm = 0,
+	.supports_mmrm = 1,
 
 	/* caps related resorces */
 	.core_data = core_data_art,
