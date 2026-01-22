@@ -773,6 +773,7 @@ enum hfi_codec_mode_type {
 enum hfi_log_video_encode_mode {
 	HFI_LOG_VIDEO_TYPE_NONE    = 0x0,
 	HFI_LOG_VIDEO_TYPE_HDR  = 0x1,
+	HFI_LOG_VIDEO_TYPE_SDR  = 0x2,
 };
 #define HFI_PROP_LOG_VIDEO_ENCODE                               0x030001C0
 
