@@ -224,6 +224,7 @@ static const char *const mpeg_video_vidc_ir_type[] = {
 static const char *const log_video_mode_type[] = {
 	"Log_video_mode_none",
 	"Log_video_mode_hdr",
+	"Log_video_mode_sdr",
 	NULL,
 };
 

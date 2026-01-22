@@ -443,6 +443,7 @@ enum v4l2_mpeg_vidc_apv_level {
 enum v4l2_mpeg_vidc_log_encode_mode {
 	VIDC_LOG_VIDEO_TYPE_NONE     = 0x0,
 	VIDC_LOG_VIDEO_TYPE_HDR      = 0x1,
+	VIDC_LOG_VIDEO_TYPE_SDR      = 0x2,
 };
 
 /* Control to set input subcache id */

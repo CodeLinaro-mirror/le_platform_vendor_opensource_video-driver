@@ -25,7 +25,6 @@ module_entry(
         "driver/vidc/src/msm_vidc_memory.c",
         "driver/vidc/src/msm_vidc_memory_ext.c",
         "driver/vidc/src/msm_vidc_fence.c",
-        "driver/vidc/src/msm_vidc_synx.c",
         "driver/vidc/src/venus_hfi.c",
         "driver/vidc/src/venus_hfi_queue.c",
         "driver/vidc/src/hfi_packet.c",
@@ -35,13 +34,13 @@ module_entry(
         "driver/variant/common/src/msm_vidc_variant.c",
         ],
     config_srcs = {
-        "CONFIG_MSM_VIDC_X1E80100" : [
+        "CONFIG_MSM_VIDC_HAMOA" : [
             "driver/variant/iris3/src/msm_vidc_buffer_iris3.c",
             "driver/variant/iris3/src/msm_vidc_bus_iris3.c",
             "driver/variant/iris3/src/msm_vidc_clock_iris3.c",
             "driver/variant/iris3/src/msm_vidc_power_iris3.c",
             "driver/variant/iris3/src/msm_vidc_iris3.c",
-            "driver/platform/x1e80100/src/msm_vidc_x1e80100.c",
+            "driver/platform/hamoa/src/msm_vidc_hamoa.c",
         ],
         "CONFIG_MSM_VIDC_NIOBE" : [
             "driver/variant/iris3/src/msm_vidc_buffer_iris3.c",
@@ -122,14 +121,18 @@ module_entry(
             "driver/variant/ar50lt/src/msm_vidc_ar50lt.c",
             "driver/platform/ar50lt/src/msm_vidc_ravelin.c",
         ],
+        "CONFIG_MSM_VIDC_SYNX": [
+            "driver/vidc/src/msm_vidc_synx.c",
+        ],
     },
-    deps = [
+    deps = [],
+    config_deps = {
+        "CONFIG_MSM_VIDC_SYNX" : [
             "//vendor/qcom/opensource/mm-drivers:mm_drivers_headers",
             "//vendor/qcom/opensource/synx-kernel:synx_headers",
             "//vendor/qcom/opensource/synx-kernel:%b_modules",
             "//vendor/qcom/opensource/mm-drivers/hw_fence:%b_msm_hw_fence",
-    ],
-    config_deps = {
+        ],
         "CONFIG_MSM_MMRM" : [
             "//vendor/qcom/opensource/mmrm-driver:%b_mmrm_driver",
         ],
@@ -163,8 +166,8 @@ module_entry(
         "driver/variant/common/src/msm_vidc_variant.c",
         ],
     config_srcs = {
-        "CONFIG_MSM_VIDC_X1E80100" : [
-            "driver/platform/x1e80100/src/x1e80100.c",
+        "CONFIG_MSM_VIDC_HAMOA" : [
+            "driver/platform/hamoa/src/hamoa.c",
             "driver/variant/iris3/src/msm_vidc_buffer_iris3.c",
             "driver/variant/iris3/src/msm_vidc_power_iris3.c",
             "driver/variant/iris3/src/msm_vidc_bus_iris3.c",
@@ -251,13 +254,14 @@ module_entry(
             "driver/variant/ar50lt/src/msm_vidc_ar50lt.c",
         ],
     },
-    deps = [
+    deps = [],
+    config_deps = {
+        "CONFIG_MSM_VIDC_SYNX" : [
             "//vendor/qcom/opensource/mm-drivers:mm_drivers_headers",
             "//vendor/qcom/opensource/synx-kernel:synx_headers",
             "//vendor/qcom/opensource/synx-kernel:%b_modules",
             "//vendor/qcom/opensource/mm-drivers/hw_fence:%b_msm_hw_fence",
-    ],
-    config_deps = {
+        ],
         "CONFIG_MSM_MMRM" : [
             "//vendor/qcom/opensource/mmrm-driver:%b_mmrm_driver",
         ],

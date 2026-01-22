@@ -83,6 +83,7 @@ enum msm_vidc_metadata_bits {
 enum msm_vidc_log_encode_mode {
 	MSM_VIDC_LOG_VIDEO_TYPE_NONE    = 0x0,
 	MSM_VIDC_LOG_VIDEO_TYPE_HDR  = 0x1,
+	MSM_VIDC_LOG_VIDEO_TYPE_SDR  = 0x2,
 };
 
 #define MSM_VIDC_METADATA_SIZE             (4 * 4096) /* 16 KB */
@@ -1059,6 +1060,17 @@ struct msm_vidc_mem_list {
 	struct list_head            list; // list of "struct msm_vidc_mem"
 };
 
+struct msm_vidc_dma_buf_info  {
+	u32                       buffer_size;
+	u64                       device_addr;
+	unsigned long             dma_attrs;
+	refcount_t                refcount;
+	void                      *kvaddr;
+	struct vb2_vmarea_handler handler;
+	struct  msm_vidc_buffer   *buf;
+	struct  device            *dev;
+};
+
 struct msm_vidc_buffer {
 	struct list_head                   list;
 	struct msm_vidc_inst              *inst;
@@ -1087,6 +1099,7 @@ struct msm_vidc_buffer {
 	u32                                num_tx_fences;
 	u64                                rx_fences[MAX_FENCE_COUNT];
 	u64                                tx_fences[MAX_FENCE_COUNT];
+	struct msm_vidc_dma_buf_info       *dma_buf_info;
 };
 
 struct msm_vidc_buffers {

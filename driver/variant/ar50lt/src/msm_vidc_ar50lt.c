@@ -426,7 +426,7 @@ static int __power_off_ar50lt_controller(struct msm_vidc_core *core)
 	}
 
 	/* power down process */
-	rc = call_res_op(core, gdsc_on, core, "venus");
+	rc = call_res_op(core, gdsc_off, core, "venus");
 	if (rc) {
 		d_vpr_e("%s: disable regulator venus failed\n", __func__);
 		rc = 0;

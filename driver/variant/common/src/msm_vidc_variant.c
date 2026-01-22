@@ -412,6 +412,7 @@ static int msm_vidc_update_scaling_iris5p(struct msm_vidc_inst *inst)
 	u32 output_crop_width, output_crop_height;
 	u32 output_width, output_height;
 	u32 factor_w, factor_h, aspect_factor;
+	u32 max_ds_ratio;
 
 	input_width = inst->fmts[INPUT_PORT].fmt.pix_mp.width;
 	input_height = inst->fmts[INPUT_PORT].fmt.pix_mp.height;
@@ -449,15 +450,15 @@ static int msm_vidc_update_scaling_iris5p(struct msm_vidc_inst *inst)
 		output_height = output_crop_height;
 	}
 
-	/* disable downscaling if updated compose width and height not between 128 and 8192*/
-	if (output_width < 128 || output_width > 8192) {
-		i_vpr_h(inst, "%s: output_width %u must be between 128 and 8192\n",
+	/* disable downscaling if updated compose width and height not between 96 and 8192*/
+	if (output_width < 96 || output_width > 8192) {
+		i_vpr_h(inst, "%s: output_width %u must be between 96 and 8192\n",
 			__func__, output_width);
 		return -EINVAL;
 	}
 
-	if (output_height < 128 || output_height > 8192) {
-		i_vpr_h(inst, "%s: output_height %u must be between 128 and 8192\n",
+	if (output_height < 96 || output_height > 8192) {
+		i_vpr_h(inst, "%s: output_height %u must be between 96 and 8192\n",
 			__func__, output_height);
 		return -EINVAL;
 	}
@@ -471,20 +472,18 @@ static int msm_vidc_update_scaling_iris5p(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
-	/* disable downscaling if updated compose is beyond 1/8 of input */
-	if (output_width < input_width / 8 ||
-	    output_height < input_height / 8) {
-		i_vpr_h(inst, "%s: compose wxh %ux%u < 1/8 of input wxh %ux%u\n",
+	/*
+	 * As per systems team recommendation the max ds ratio supported is 4.27
+	 * disable downscaling if ds ratio is greater than 4.27
+	 * Multiply by 100 to avoid floating point operations.
+	 */
+	max_ds_ratio = 427; /* 4.27 * 100 */
+	if (output_width * max_ds_ratio < input_width * 100u ||
+		output_height * max_ds_ratio < input_height * 100u) {
+		i_vpr_h(inst,
+			"%s: ds ratio exceeds max limit. Compose wxh: %ux%u Input wxh: %ux%u\n",
 			__func__, output_width, output_height,
 			input_width, input_height);
-		return -EINVAL;
-	}
-
-	/* both input and output width (height) cannot be 8192 */
-	if ((output_width == 8192 && input_width == 8192) ||
-		(output_height == 8192 && input_height == 8192)) {
-		i_vpr_h(inst, "%s: both input and output width or height can not be 8192\n",
-			__func__);
 		return -EINVAL;
 	}
 
@@ -502,6 +501,7 @@ int msm_vidc_decide_scaling_iris5p(struct msm_vidc_inst *inst)
 {
 	u32 input_width = 0, input_height = 0;
 	u32 input_crop_width = 0, input_crop_height = 0;
+	u32 min_dim, max_dim;
 
 	/* check if scaling requested */
 	if (!inst->capabilities[SCALE_ENABLE].value)
@@ -577,31 +577,13 @@ int msm_vidc_decide_scaling_iris5p(struct msm_vidc_inst *inst)
 		goto exit;
 	}
 
-	/*
-	 * downscaling supported for input resolutions
-	 * between 128 and 8192 only
-	 */
-	if (input_width < 128 || input_width > 8192) {
-		i_vpr_h(inst, "%s: input_width %u must be between 128 and 8192\n",
-			__func__, input_width);
-		goto exit;
-	}
+	min_dim = min(input_crop_height, input_crop_width);
+	max_dim = max(input_crop_height, input_crop_width);
 
-	if (input_height < 128 || input_height > 8192) {
-		i_vpr_h(inst, "%s: input_height %u must be between 128 and 8192\n",
-			__func__, input_height);
-		goto exit;
-	}
-
-	if (input_crop_width < 128 || input_crop_width > 8192) {
-		i_vpr_h(inst, "%s: input_crop_width %u must be between 128 and 8192\n",
-			__func__, input_crop_width);
-		goto exit;
-	}
-
-	if (input_crop_height < 128 || input_crop_height > 8192) {
-		i_vpr_h(inst, "%s: input_crop_height %u must be between 128 and 8192\n",
-			__func__, input_crop_height);
+	/* disable downscaling if crop resolution below 96x96 */
+	if (min_dim < 96 || max_dim < 96) {
+		i_vpr_h(inst, "%s: input crop resolution %ux%u is below minimum 96x96\n",
+			__func__, input_crop_width, input_crop_height);
 		goto exit;
 	}
 
@@ -683,8 +665,8 @@ static int msm_vidc_init_codec_iris5p(struct msm_vidc_inst *inst,
 		codec_input->codec = CODEC_HEVC;
 		codec_input->lcu_size = 32;
 	} else if (inst->codec == MSM_VIDC_VVC) {
-		codec_input->codec = CODEC_HEVC;
-		codec_input->lcu_size = 32;
+		codec_input->codec = CODEC_VVC;
+		codec_input->lcu_size = 128;
 	} else if (inst->codec == MSM_VIDC_VP9) {
 		codec_input->codec = CODEC_VP9;
 		codec_input->lcu_size = 32;

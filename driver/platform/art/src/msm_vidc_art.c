@@ -356,27 +356,27 @@ static struct msm_platform_inst_capability instance_cap_data_art[] = {
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_INPUT,
 		0, MSM_VIDC_META_DISABLE,
 		V4L2_CID_MPEG_VIDC_METADATA_OUTPUT_TX_FENCE,
-		HFI_PROP_FENCE_OUTPUT,
+		HFI_PROP_TX_FENCE_ID_OUTPUT,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
 	{OUTPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | VVC | VP9 | AV1,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_OUTPUT_RX_FENCE_ENABLE,
-		HFI_PROP_FENCE_OUTPUT,
+		HFI_PROP_RX_FENCE_ID_OUTPUT,
 		CAP_FLAG_OUTPUT_PORT},
 
 	/* enable input rx fence feature */
 	{INPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | VVC | VP9 | AV1,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_ENABLE,
-		HFI_PROP_FENCE_INPUT,
+		HFI_PROP_RX_FENCE_ID_INPUT,
 		CAP_FLAG_INPUT_PORT},
 
-	/* enable input rx fence feature */
+	/* enable input tx fence feature */
 	{INPUT_TX_FENCE_ENABLE, DEC, H264 | HEVC | VVC | VP9 | AV1,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_INPUT_TX_FENCE_ENABLE,
-		HFI_PROP_FENCE_INPUT,
+		HFI_PROP_TX_FENCE_ID_INPUT,
 		CAP_FLAG_INPUT_PORT},
 
 	/*
@@ -419,7 +419,7 @@ static struct msm_platform_inst_capability instance_cap_data_art[] = {
 			BIT(MSM_VIDC_SYNX_V2_FENCE),
 		MSM_VIDC_FENCE_NONE,
 		V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_TYPE,
-		HFI_PROP_FENCE_TYPE,
+		HFI_PROP_RX_FENCE_TYPE,
 		CAP_FLAG_INPUT_PORT | CAP_FLAG_MENU},
 
 	/* Fence type for input tx buffer */
@@ -429,7 +429,7 @@ static struct msm_platform_inst_capability instance_cap_data_art[] = {
 			BIT(MSM_VIDC_SYNX_V2_FENCE),
 		MSM_VIDC_FENCE_NONE,
 		V4L2_CID_MPEG_VIDC_INPUT_TX_FENCE_TYPE,
-		HFI_PROP_FENCE_TYPE,
+		HFI_PROP_TX_FENCE_TYPE,
 		CAP_FLAG_INPUT_PORT | CAP_FLAG_MENU},
 
 	{OUTPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VVC | VP9 | AV1,
@@ -438,7 +438,7 @@ static struct msm_platform_inst_capability instance_cap_data_art[] = {
 			BIT(MSM_VIDC_SYNX_V2_FENCE),
 		MSM_VIDC_FENCE_NONE,
 		V4L2_CID_MPEG_VIDC_OUTPUT_RX_FENCE_TYPE,
-		HFI_PROP_FENCE_TYPE,
+		HFI_PROP_RX_FENCE_TYPE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
 	{OUTPUT_TX_FENCE_TYPE, DEC, H264 | HEVC | VVC | VP9 | AV1,
@@ -447,7 +447,7 @@ static struct msm_platform_inst_capability instance_cap_data_art[] = {
 			BIT(MSM_VIDC_SYNX_V2_FENCE),
 		MSM_VIDC_SW_FENCE,
 		V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_TYPE,
-		HFI_PROP_FENCE_TYPE,
+		HFI_PROP_TX_FENCE_TYPE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
 	{TS_REORDER, DEC, H264 | HEVC | VVC,
@@ -2164,6 +2164,17 @@ static struct msm_platform_inst_capability instance_cap_data_art[] = {
 		V4L2_CID_MPEG_VIDC_HEIF_TILES,
 		HFI_PROP_HEIF_TILES,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
+
+	{LOG_VIDEO_ENCODE, ENC, HEVC | APV,
+		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
+		MSM_VIDC_LOG_VIDEO_TYPE_SDR,
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_NONE) |
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_HDR) |
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_SDR),
+		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
+		V4L2_CID_MPEG_VIDC_LOG_VIDEO_ENCODE,
+		HFI_PROP_LOG_VIDEO_ENCODE,
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 };
 
 
@@ -2179,7 +2190,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_art[
 	{PIX_FMTS, ENC, HEVC,
 		{PROFILE, MIN_FRAME_QP, MAX_FRAME_QP, I_FRAME_QP, P_FRAME_QP,
 			B_FRAME_QP, MIN_QUALITY, BLUR_TYPES, IR_PERIOD,
-			LTR_COUNT, CSC}},
+			LTR_COUNT, CSC, LOG_VIDEO_ENCODE}},
 
 	{PIX_FMTS, ENC, HEIC,
 		{PROFILE, CSC}},
@@ -2190,7 +2201,12 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_art[
 	{CODEC_MODE, ENC, CODECS_ALL,
 		{0}},
 
-	{PIX_FMTS, ENC | DEC, APV,
+	{PIX_FMTS, ENC, APV,
+		{LOG_VIDEO_ENCODE},
+		NULL,
+		NULL},
+
+	{PIX_FMTS, DEC, APV,
 		{0},
 		NULL,
 		NULL},
@@ -2251,22 +2267,22 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_art[
 	{INPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VVC | VP9 | AV1,
 		{0},
 		msm_vidc_adjust_dec_input_rx_fence_type,
-		NULL},
+		msm_vidc_set_u32},
 
 	{INPUT_TX_FENCE_TYPE, DEC, H264 | HEVC | VVC | VP9 | AV1,
 		{0},
 		msm_vidc_adjust_dec_input_tx_fence_type,
-		NULL},
+		msm_vidc_set_u32},
 
 	{OUTPUT_TX_FENCE_TYPE, DEC, H264 | HEVC | VVC | VP9 | AV1,
 		{0},
 		msm_vidc_adjust_dec_output_tx_fence_type,
-		NULL},
+		msm_vidc_set_u32},
 
 	{OUTPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VVC | VP9 | AV1,
 		{0},
 		msm_vidc_adjust_dec_output_rx_fence_type,
-		NULL},
+		msm_vidc_set_u32},
 
 	{HFLIP, ENC, CODECS_ALL,
 		{0},
@@ -2359,13 +2375,14 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_art[
 			BIT_RATE, META_ROI_INFO, MIN_QUALITY, BITRATE_BOOST, VBV_DELAY,
 			PEAK_BITRATE, SLICE_MODE, CONTENT_ADAPTIVE_CODING,
 			BLUR_TYPES, LOWLATENCY_MODE, META_EVA_STATS,
-			META_TRANSCODING_STAT_INFO, OPEN_GOP, LOOKAHEAD_ENCODE_ENABLE},
+			META_TRANSCODING_STAT_INFO, OPEN_GOP, LOOKAHEAD_ENCODE_ENABLE,
+			LOG_VIDEO_ENCODE},
 		msm_vidc_adjust_bitrate_mode,
 		msm_vidc_set_u32_enum},
 
 	{BITRATE_MODE, ENC, APV,
 		{BIT_RATE, PEAK_BITRATE, META_EVA_STATS, TIME_DELTA_BASED_RC,
-			CONSTANT_QUALITY},
+			LOG_VIDEO_ENCODE, CONSTANT_QUALITY},
 		msm_vidc_adjust_bitrate_mode,
 		msm_vidc_set_u32_enum},
 
@@ -2943,6 +2960,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_art[
 		{0},
 		NULL,
 		msm_vidc_set_u32},
+
+	{LOG_VIDEO_ENCODE, ENC, HEVC | APV,
+		{0},
+		msm_vidc_adjust_log_mode,
+		msm_vidc_set_u32_enum},
 };
 
 /* Default UBWC config for LPDDR5 */
@@ -3128,12 +3150,16 @@ static const u32 art_vdec_input_properties_avc[] = {
 	HFI_PROP_NO_OUTPUT,
 	HFI_PROP_SUBFRAME_INPUT,
 	HFI_PROP_DPB_LIST,
+	HFI_PROP_TX_FENCE_ID_INPUT,
+	HFI_PROP_RX_FENCE_ID_INPUT,
 };
 
 static const u32 art_vdec_input_properties_hevc[] = {
 	HFI_PROP_NO_OUTPUT,
 	HFI_PROP_SUBFRAME_INPUT,
 	HFI_PROP_DPB_LIST,
+	HFI_PROP_TX_FENCE_ID_INPUT,
+	HFI_PROP_RX_FENCE_ID_INPUT,
 };
 
 static const u32 art_vdec_input_properties_vvc[] = {
@@ -3165,14 +3191,16 @@ static const u32 art_vdec_output_properties_avc[] = {
 	HFI_PROP_WORST_COMPLEXITY_FACTOR,
 	HFI_PROP_PICTURE_TYPE,
 	HFI_PROP_CABAC_SESSION,
-	HFI_PROP_FENCE_OUTPUT,
+	HFI_PROP_TX_FENCE_ID_OUTPUT,
+	HFI_PROP_RX_FENCE_ID_OUTPUT,
 };
 
 static const u32 art_vdec_output_properties_hevc[] = {
 	HFI_PROP_WORST_COMPRESSION_RATIO,
 	HFI_PROP_WORST_COMPLEXITY_FACTOR,
 	HFI_PROP_PICTURE_TYPE,
-	HFI_PROP_FENCE_OUTPUT,
+	HFI_PROP_TX_FENCE_ID_OUTPUT,
+	HFI_PROP_RX_FENCE_ID_OUTPUT,
 };
 
 static const u32 art_vdec_output_properties_vvc[] = {
@@ -3233,7 +3261,7 @@ static const struct msm_vidc_platform_data art_data = {
 	.clock_source_scaling_ratio = 1,
 	.fwname = "vpu50_2v.mbn",
 	.pas_id = 9,
-	.supports_mmrm = 0,
+	.supports_mmrm = 1,
 
 	/* caps related resorces */
 	.core_data = core_data_art,

@@ -265,7 +265,7 @@ static const struct msm_platform_core_capability core_data_ravelin[] = {
 	{MAX_MBPS_ALL_INTRA, 489600}, /* (1920x1088)/256 MBs@60fps */
 	{MAX_ENH_LAYER_COUNT, 5},
 	{NUM_VPP_PIPE, 1},
-	{SW_PC, 0},
+	{SW_PC, 1},
 	{FW_UNLOAD, 0},
 	{HW_RESPONSE_TIMEOUT, HW_RESPONSE_TIMEOUT_VALUE}, /* 1000 ms */
 	{SW_PC_DELAY,         SW_PC_DELAY_VALUE        }, /* 1500 ms (>HW_RESPONSE_TIMEOUT)*/
@@ -1210,6 +1210,12 @@ static struct msm_platform_inst_capability instance_cap_data_ravelin[] = {
 		HFI_PROP_DECODE_ORDER_OUTPUT,
 		CAP_FLAG_INPUT_PORT},
 
+	{OUTPUT_ORDER, DEC, H264 | HEVC | VP9,
+		0, 1, 1, 0,
+		0,
+		HFI_PROP_DECODE_ORDER_OUTPUT,
+		CAP_FLAG_INPUT_PORT},
+
 	{INPUT_BUF_HOST_MAX_COUNT, ENC | DEC, CODECS_ALL,
 		DEFAULT_MAX_HOST_BUF_COUNT, DEFAULT_MAX_HOST_BURST_BUF_COUNT,
 		1, DEFAULT_MAX_HOST_BUF_COUNT,
@@ -1274,7 +1280,8 @@ static struct msm_platform_inst_capability instance_cap_data_ravelin[] = {
 		V4L2_MPEG_MSM_VIDC_DISABLE, V4L2_MPEG_MSM_VIDC_ENABLE,
 		1, V4L2_MPEG_MSM_VIDC_DISABLE,
 		V4L2_CID_MPEG_VIDC_THUMBNAIL_MODE,
-		HFI_PROP_THUMBNAIL_MODE},
+		HFI_PROP_THUMBNAIL_MODE,
+		CAP_FLAG_INPUT_PORT},
 
 	{DEFAULT_HEADER, DEC, CODECS_ALL,
 		V4L2_MPEG_MSM_VIDC_DISABLE, V4L2_MPEG_MSM_VIDC_ENABLE,
@@ -1941,6 +1948,21 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_rave
 		msm_vidc_adjust_chroma_qp_index_offset,
 		msm_vidc_set_chroma_qp_index_offset},
 
+	{DISPLAY_DELAY_ENABLE, DEC, H264 | HEVC | VP9,
+		{OUTPUT_ORDER},
+		NULL,
+		NULL},
+
+	{DISPLAY_DELAY, DEC, H264 | HEVC | VP9,
+		{OUTPUT_ORDER},
+		NULL,
+		NULL},
+
+	{OUTPUT_ORDER, DEC, H264 | HEVC | VP9,
+		{0},
+		msm_vidc_adjust_output_order,
+		msm_vidc_set_u32},
+
 	{INPUT_BUF_HOST_MAX_COUNT, ENC | DEC, CODECS_ALL,
 		{0},
 		msm_vidc_adjust_input_buf_host_max_count,
@@ -1956,6 +1978,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_rave
 		msm_vidc_adjust_output_buf_host_max_count,
 		msm_vidc_set_u32},
 
+	{CONCEAL_COLOR_8BIT, DEC, CODECS_ALL,
+                {0},
+                NULL,
+                msm_vidc_set_conceal_color},
+
 	// TODO
 	{STAGE, DEC|ENC, CODECS_ALL,
 		{0},
@@ -1967,7 +1994,8 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_rave
 
 	{RAP_FRAME, DEC, CODECS_ALL,
 		{0},
-		NULL, NULL},
+		NULL,
+		msm_vidc_set_u32},
 
 	{PRIORITY, DEC|ENC, CODECS_ALL,
 		{0},
@@ -1983,6 +2011,16 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_rave
 	{META_ROI_INFO, ENC, H264|HEVC,
 		{IR_PERIOD, MIN_QUALITY},
 		msm_vidc_adjust_roi_info, NULL},
+
+	{THUMBNAIL_MODE, DEC, H264 | HEVC | VP9,
+		{OUTPUT_ORDER},
+		NULL,
+		msm_vidc_set_u32},
+
+	{THUMBNAIL_MODE, DEC, HEIC,
+		{0},
+		NULL,
+		msm_vidc_set_u32},
 
 	{BITRATE_MODE, ENC, HEIC,
 		{TIME_DELTA_BASED_RC, CONSTANT_QUALITY},
