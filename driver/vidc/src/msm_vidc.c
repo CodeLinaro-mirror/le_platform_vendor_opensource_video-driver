@@ -1048,6 +1048,7 @@ int msm_vidc_close(void *instance)
 	msm_vidc_print_stats(inst);
 	msm_vidc_session_close(inst);
 	msm_vidc_event_queue_deinit(inst);
+	msm_vidc_vb2_queue_deinit(inst);
 	msm_vidc_remove_session(inst);
 	inst_unlock(inst, __func__);
 	client_unlock(inst, __func__);
