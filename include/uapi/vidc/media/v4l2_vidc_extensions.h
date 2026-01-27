@@ -499,4 +499,7 @@ enum v4l2_mpeg_video_vidc_vvc_tier {
 	V4L2_MPEG_VIDEO_VIDC_VVC_TIER_HIGH = 1,
 };
 
+/* Control to enable/disable multiple slices encoding for multiple tiles */
+#define V4L2_CID_MPEG_VIDEO_VIDC_MULTI_SLICE_MULTI_TILE       (V4L2_CID_MPEG_VIDC_BASE + 0x6F)
+
 #endif

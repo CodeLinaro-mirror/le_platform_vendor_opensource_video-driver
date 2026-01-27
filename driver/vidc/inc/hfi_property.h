@@ -789,6 +789,8 @@ enum hfi_log_video_encode_mode {
 
 #define HFI_PROP_RX_FENCE_ID_INPUT                              HFI_PROP_FENCE_INPUT
 
+#define HFI_PROP_MULTI_SLICE_MULTI_TILE                         0x030001C5
+
 #define HFI_PROP_DOWNSCALE_CROP_RECTANGLE                       0x030001C6
 
 #define HFI_PROP_END                                            0x03FFFFFF
