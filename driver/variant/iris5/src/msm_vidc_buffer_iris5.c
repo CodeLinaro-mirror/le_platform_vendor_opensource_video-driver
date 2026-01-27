@@ -879,6 +879,9 @@ int msm_vidc_adjust_partition_id_iris5(void *instance, struct v4l2_ctrl *ctrl)
 
 	adjusted_value = inst->capabilities[PARTITION_ID].value;
 
+	if (inst->capabilities[SECURE_MODE].value)
+		adjusted_value = 1; //HFI_PARTITION_ID_1
+
 	if (is_crc_enabled(core))
 		adjusted_value = 7; //HFI_PARTITION_ID_7
 
