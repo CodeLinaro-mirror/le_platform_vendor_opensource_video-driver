@@ -760,6 +760,15 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		HFI_PROP_EARLY_NOTIFY_FENCE_COUNT,
 		CAP_FLAG_INPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
 
+	{MULTI_SLICE_MULTI_TILE_MODE, ENC, HEVC,
+		V4L2_MPEG_MSM_VIDC_DISABLE,
+		V4L2_MPEG_MSM_VIDC_ENABLE,
+		1,
+		V4L2_MPEG_MSM_VIDC_DISABLE,
+		V4L2_CID_MPEG_VIDEO_VIDC_MULTI_SLICE_MULTI_TILE,
+		HFI_PROP_MULTI_SLICE_MULTI_TILE,
+		CAP_FLAG_OUTPUT_PORT},
+
 	{HEADER_MODE, ENC, CODECS_ALL,
 		V4L2_MPEG_VIDEO_HEADER_MODE_SEPARATE,
 		V4L2_MPEG_VIDEO_HEADER_MODE_JOINED_WITH_1ST_FRAME,
@@ -2318,6 +2327,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sun[
 	{EARLY_NOTIFY_FENCE_COUNT, DEC, H264|HEVC|AV1,
 		{0},
 		msm_vidc_adjust_early_notify_fence_count,
+		msm_vidc_set_u32},
+
+	{MULTI_SLICE_MULTI_TILE_MODE, ENC, HEVC,
+		{0},
+		NULL,
 		msm_vidc_set_u32},
 
 	{HEADER_MODE, ENC, CODECS_ALL,
