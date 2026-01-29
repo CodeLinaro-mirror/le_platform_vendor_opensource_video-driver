@@ -3202,7 +3202,10 @@ static int msm_vidc_queue_buffer(struct msm_vidc_inst *inst, struct msm_vidc_buf
 		return rc;
 
 	/* if cache ops fails ignore the error */
-	rc = msm_vidc_qbuf_cache_operation(inst, buf);
+	msm_vidc_qbuf_cache_operation(inst, buf);
+
+	if (meta)
+		msm_vidc_qbuf_cache_operation(inst, meta);
 
 	if (msm_vidc_is_super_buffer(inst) && is_input_buffer(buf->type))
 		rc = venus_hfi_queue_super_buffer(inst, buf, meta);
