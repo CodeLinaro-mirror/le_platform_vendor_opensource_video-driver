@@ -65,6 +65,7 @@ static inline bool is_video_device(struct device *dev)
 		of_device_is_compatible(dev->of_node, "qcom,alor-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,art-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,x1e80100-vidc") ||
+		of_device_is_compatible(dev->of_node, "qcom,x1e80100-iris") ||
 		of_device_is_compatible(dev->of_node, "qcom,sa8775p-iris") ||
 		of_device_is_compatible(dev->of_node, "qcom,chora-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,msm-vidc-ravelin"));
@@ -169,6 +170,7 @@ static const struct of_device_id msm_vidc_dt_match[] = {
 	{.compatible = "qcom,tuna-vidc"},
 	{.compatible = "qcom,kera-vidc"},
 	{.compatible = "qcom,x1e80100-vidc"},
+	{.compatible = "qcom,x1e80100-iris"},
 	{.compatible = "qcom,sa8775p-iris"},
 	{.compatible = "qcom,msm-vidc-ravelin"},
 	{.compatible = "qcom,vidc,cb-ns-pxl"},
