@@ -347,8 +347,8 @@ static const struct msm_platform_core_capability core_data_chora_v1[] = {
 	{MAX_MBPF_HQ, 8160}, /* ((1920x1088)/256) */
 	{MAX_MBPS_HQ, 244800}, /* ((1920x1088)/256)@30fps */
 	{MAX_MBPF_B_FRAME, 8160},/* ((1920x1088)/256) */
-	{MAX_MBPS_B_FRAME, 489600}, /* ((1920x1088)/256) MBs@60fps */
-	{MAX_MBPS_ALL_INTRA, 489600}, /* ((1920x1088)/256)@60fps */
+	{MAX_MBPS_B_FRAME, 244800}, /* ((1920x1088)/256) MBs@60fps */
+	{MAX_MBPS_ALL_INTRA, 244800}, /* ((1920x1088)/256)@60fps */
 	{MAX_ENH_LAYER_COUNT, 5},
 	{NUM_VPP_PIPE, 1},
 	{SW_PC, 1},
@@ -846,7 +846,7 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v0[] = {
 		0},
 
 	{B_FRAME, ENC, H264 | HEVC,
-		0, 7, 1, 0,
+		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDEO_B_FRAMES,
 		HFI_PROP_MAX_B_FRAMES,
 		CAP_FLAG_OUTPUT_PORT},
@@ -2371,7 +2371,7 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v1[] = {
 		0},
 
 	{B_FRAME, ENC, H264 | HEVC,
-		0, 7, 1, 0,
+		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDEO_B_FRAMES,
 		HFI_PROP_MAX_B_FRAMES,
 		CAP_FLAG_OUTPUT_PORT},
