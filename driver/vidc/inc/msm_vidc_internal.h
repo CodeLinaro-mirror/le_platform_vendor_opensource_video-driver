@@ -456,6 +456,7 @@ enum msm_vidc_log_encode_mode {
 	CAP(HEIF_TILES)                           \
 	CAP(CORE_ID_MASK)                         \
 	CAP(LOG_VIDEO_ENCODE)                     \
+	CAP(PARTITION_ID)                         \
 	CAP(INST_CAP_MAX)                         \
 }
 

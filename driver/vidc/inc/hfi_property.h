@@ -770,6 +770,8 @@ enum hfi_codec_mode_type {
 
 #define HFI_PROP_HEIF_TILES                                     0x030001B3
 
+#define HFI_PROP_PARTITION_ID                                   0x030001B4
+
 enum hfi_log_video_encode_mode {
 	HFI_LOG_VIDEO_TYPE_NONE    = 0x0,
 	HFI_LOG_VIDEO_TYPE_HDR  = 0x1,

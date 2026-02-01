@@ -23,6 +23,7 @@
 #include "msm_vidc_synx.h"
 #include "resources_ext.h"
 #include "msm_vidc_iris5.h"
+#include "msm_vidc_buffer_iris5.h"
 #include "hfi_property.h"
 #include "hfi_command.h"
 #include "venus_hfi.h"
@@ -340,6 +341,12 @@ static struct msm_platform_inst_capability instance_cap_data_art[] = {
 	{CLIENT_ID, ENC | DEC, CODECS_ALL,
 		INVALID_CLIENT_ID, INT_MAX, 1, INVALID_CLIENT_ID,
 		V4L2_CID_MPEG_VIDC_CLIENT_ID},
+
+	{PARTITION_ID, ENC | DEC, CODECS_ALL,
+		0, 7, 1, 0,
+		0,
+		HFI_PROP_PARTITION_ID,
+		CAP_FLAG_NONE},
 
 	{SECURE_MODE, ENC | DEC, H264 | HEVC | VVC | VP9 | AV1 | APV,
 		0, 1, 1, 0,
@@ -2234,6 +2241,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_art[
 		{0},
 		NULL,
 		msm_vidc_set_ring_buffer_count},
+
+	{PARTITION_ID, ENC | DEC, CODECS_ALL,
+		{0},
+		msm_vidc_adjust_partition_id_iris5,
+		msm_vidc_set_u32},
 
 	{SECURE_MODE, ENC | DEC, H264 | HEVC | VVC | VP9 | AV1 | APV,
 		{0},
