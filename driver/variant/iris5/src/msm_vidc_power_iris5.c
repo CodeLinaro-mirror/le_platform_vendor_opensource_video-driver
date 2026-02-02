@@ -18,6 +18,77 @@
 
 #define VPP_MIN_FREQ_MARGIN_PERCENT                   5 /* to be tuned */
 
+static int msm_vidc_get_hier_layer_val_iris5p(struct msm_vidc_inst *inst)
+{
+	int hierachical_layer = CODEC_GOP_IPP;
+
+	if (is_encode_session(inst)) {
+		if (inst->capabilities[ALL_INTRA].value) {
+			/* no P and B frames case */
+			hierachical_layer = CODEC_GOP_IONLY;
+		} else if (inst->capabilities[B_FRAME].value == 0) {
+			/* no B frames case */
+			hierachical_layer = CODEC_GOP_IPP;
+		} else { /* P and B frames enabled case */
+			if (inst->capabilities[ENH_LAYER_COUNT].value == 0 ||
+				inst->capabilities[ENH_LAYER_COUNT].value == 1)
+				hierachical_layer = CODEC_GOP_IbP;
+			else if (inst->capabilities[ENH_LAYER_COUNT].value == 2)
+				hierachical_layer = CODEC_GOP_I1B2b1P;
+			else
+				hierachical_layer = CODEC_GOP_I3B4b1P;
+		}
+	}
+
+	return hierachical_layer;
+}
+
+static int msm_vidc_init_codec_iris5p(struct msm_vidc_inst *inst,
+		struct api_calculation_input *codec_input)
+{
+	if (is_encode_session(inst)) {
+		codec_input->decoder_or_encoder = CODEC_ENCODER;
+	} else if (is_decode_session(inst)) {
+		codec_input->decoder_or_encoder = CODEC_DECODER;
+	} else {
+		d_vpr_e("%s: invalid domain %d\n", __func__, inst->domain);
+		return -EINVAL;
+	}
+
+	if (inst->codec == MSM_VIDC_H264) {
+		codec_input->lcu_size = 16;
+		if (inst->capabilities[ENTROPY_MODE].value ==
+			V4L2_MPEG_VIDEO_H264_ENTROPY_MODE_CABAC) {
+			codec_input->codec = CODEC_H264;
+			codec_input->entropy_coding_mode = CODEC_ENTROPY_CODING_CABAC;
+		} else {
+			codec_input->codec = CODEC_H264_CAVLC;
+			codec_input->entropy_coding_mode = CODEC_ENTROPY_CODING_CAVLC;
+		}
+	} else if (inst->codec == MSM_VIDC_HEVC) {
+		codec_input->codec = CODEC_HEVC;
+		codec_input->lcu_size = 32;
+	} else if (inst->codec == MSM_VIDC_VVC) {
+		codec_input->codec = CODEC_VVC;
+		codec_input->lcu_size = 128;
+	} else if (inst->codec == MSM_VIDC_VP9) {
+		codec_input->codec = CODEC_VP9;
+		codec_input->lcu_size = 32;
+	} else if (inst->codec == MSM_VIDC_AV1) {
+		codec_input->codec = CODEC_AV1;
+		codec_input->lcu_size =
+			inst->capabilities[SUPER_BLOCK].value ? 128 : 64;
+	} else if (inst->codec == MSM_VIDC_APV) {
+		codec_input->codec = CODEC_APV;
+		codec_input->lcu_size = 16;
+	} else {
+		d_vpr_e("%s: invalid codec %d\n", __func__, inst->codec);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 bool is_vpp_cycles_close_to_freq_corner_iris5(struct msm_vidc_core *core,
 	u64 vpp_min_freq)
 {
@@ -57,6 +128,409 @@ bool is_vpp_cycles_close_to_freq_corner_iris5(struct msm_vidc_core *core,
 		return true;
 
 	return false;
+}
+
+static int msm_vidc_update_scaling_iris5p(struct msm_vidc_inst *inst)
+{
+	u32 input_width, input_height;
+	u32 output_crop_width, output_crop_height;
+	u32 output_width, output_height;
+	u32 factor_w, factor_h, aspect_factor;
+	u32 max_ds_ratio;
+
+	input_width = inst->fmts[INPUT_PORT].fmt.pix_mp.width;
+	input_height = inst->fmts[INPUT_PORT].fmt.pix_mp.height;
+
+	/*
+	 * Calculate aspect factor using width-based scaling.
+	 * As kernel don't support floating point so left
+	 * shifting the numerator by 16.
+	 */
+	aspect_factor = ((u64)inst->crop.width << 16) / inst->compose.width;
+
+	/* Calculate output crop dimensions and make them multiple of 4 */
+	output_crop_width = ((inst->compose.width + 4 - 1) >> 2) << 2;
+	output_crop_height =
+		(((((uint64_t)inst->crop.height << 16) / aspect_factor) + 4 - 1) >> 2) << 2;
+
+	bool crop_en_right  = (input_width  != inst->crop.width);
+	bool crop_en_bottom = (input_height != inst->crop.height);
+
+	/*
+	 * Adjust output width and height based on video hardware requirements.
+	 * round it down to the nearest even number using bitwise AND with 0xFFFE.
+	 */
+	if (crop_en_right) {
+		factor_w = (input_width * output_crop_width) / inst->crop.width;
+		output_width = factor_w & 0xFFFE;
+	} else {
+		output_width = output_crop_width;
+	}
+
+	if (crop_en_bottom) {
+		factor_h = (input_height * output_crop_height) / inst->crop.height;
+		output_height = factor_h & 0xFFFE;
+	} else {
+		output_height = output_crop_height;
+	}
+
+	/* disable downscaling if updated compose width and height not between 96 and 8192*/
+	if (output_width < 96 || output_width > 8192) {
+		i_vpr_h(inst, "%s: output_width %u must be between 96 and 8192\n",
+			__func__, output_width);
+		return -EINVAL;
+	}
+
+	if (output_height < 96 || output_height > 8192) {
+		i_vpr_h(inst, "%s: output_height %u must be between 96 and 8192\n",
+			__func__, output_height);
+		return -EINVAL;
+	}
+
+	/* disable downscaling if updated compose > input width/height */
+	if (output_width > input_width ||
+	    output_height > input_height) {
+		i_vpr_h(inst, "%s: compose wxh %ux%u > input wxh %ux%u\n",
+			__func__, output_width, output_height,
+			input_width, input_height);
+		return -EINVAL;
+	}
+
+	/*
+	 * As per systems team recommendation the max ds ratio supported is 4.27
+	 * disable downscaling if ds ratio is greater than 4.27
+	 * Multiply by 100 to avoid floating point operations.
+	 */
+	max_ds_ratio = 427; /* 4.27 * 100 */
+	if (output_width * max_ds_ratio < input_width * 100u ||
+		output_height * max_ds_ratio < input_height * 100u) {
+		i_vpr_h(inst,
+			"%s: ds ratio exceeds max limit. Compose wxh: %ux%u Input wxh: %ux%u\n",
+			__func__, output_width, output_height,
+			input_width, input_height);
+		return -EINVAL;
+	}
+
+	inst->compose.width = output_width;
+	inst->compose.height = output_height;
+	inst->crop.width =
+		(input_width  != inst->crop.width) ? output_crop_width : inst->compose.width;
+	inst->crop.height =
+		(input_height != inst->crop.height) ? output_crop_height : inst->compose.height;
+
+	return 0;
+}
+
+static int msm_vidc_init_codec_input_freq_iris5p(struct msm_vidc_inst *inst, u32 data_size,
+		struct api_calculation_input *codec_input)
+{
+	enum msm_vidc_port_type port;
+	u32 color_fmt, tile_rows_columns = 0;
+	int rc = 0;
+	u32 max_rate, frame_rate;
+	struct msm_vidc_core *core;
+
+	codec_input->chipset_gen = MSM_CANOE;
+
+	rc = msm_vidc_init_codec_iris5p(inst, codec_input);
+	if (rc)
+		return rc;
+
+	codec_input->pipe_num = inst->capabilities[PIPE].value;
+	codec_input->frame_rate = inst->max_rate;
+
+	port = is_decode_session(inst) ? INPUT_PORT : OUTPUT_PORT;
+	codec_input->frame_width = inst->fmts[port].fmt.pix_mp.width;
+	codec_input->frame_height = inst->fmts[port].fmt.pix_mp.height;
+
+	if (inst->capabilities[STAGE].value == MSM_VIDC_STAGE_1) {
+		codec_input->vsp_vpp_mode = CODEC_VSPVPP_MODE_1S;
+	} else if (inst->capabilities[STAGE].value == MSM_VIDC_STAGE_2) {
+		codec_input->vsp_vpp_mode = CODEC_VSPVPP_MODE_2S;
+	} else {
+		d_vpr_e("%s: invalid stage %lld\n", __func__,
+				inst->capabilities[STAGE].value);
+		return -EINVAL;
+	}
+
+	if (inst->capabilities[BIT_DEPTH].value == BIT_DEPTH_8)
+		codec_input->bitdepth = CODEC_BITDEPTH_8;
+	else
+		codec_input->bitdepth = CODEC_BITDEPTH_10;
+
+	codec_input->hierachical_layer =
+		msm_vidc_get_hier_layer_val_iris5p(inst);
+
+	if (is_decode_session(inst)) {
+		color_fmt = v4l2_colorformat_to_driver(inst,
+			inst->fmts[OUTPUT_PORT].fmt.pix_mp.pixelformat, __func__);
+
+		codec_input->linear_opb = is_linear_colorformat(color_fmt);
+
+		codec_input->bitrate_mbps =
+			(codec_input->frame_rate * data_size * 8) / 1000000;
+	} else {
+		color_fmt = v4l2_colorformat_to_driver(inst,
+			inst->fmts[INPUT_PORT].fmt.pix_mp.pixelformat, __func__);
+
+		codec_input->linear_ipb = is_linear_colorformat(color_fmt);
+
+		if (codec_input->bitdepth == CODEC_BITDEPTH_10)
+			codec_input->format_10bpp = __format_10bpp(color_fmt);
+
+		frame_rate = msm_vidc_get_frame_rate(inst);
+		max_rate = inst->max_rate;
+		codec_input->bitrate_mbps =
+			inst->capabilities[BIT_RATE].value / 1000000;
+
+		/*
+		 * In encoding cases, the bitrate should scale with the frame
+		 * rate, especially for HFR cases.
+		 * Otherwise, a lower bitrate may lead to a lower vsp frequency,
+		 * resulting in insufficient performance.
+		 */
+		if (frame_rate && max_rate > frame_rate)
+			codec_input->bitrate_mbps =
+				codec_input->bitrate_mbps * max_rate / frame_rate;
+
+	}
+
+	/* av1d commercial tile */
+	if (inst->codec == MSM_VIDC_AV1 && codec_input->lcu_size == 128) {
+		tile_rows_columns = inst->power.fw_av1_tile_rows *
+			inst->power.fw_av1_tile_columns;
+
+		/* check resolution and tile info */
+		codec_input->av1d_commer_tile_enable = 1;
+
+		if (res_is_less_than_or_equal_to(codec_input->frame_width,
+				codec_input->frame_height, 1920, 1088)) {
+			if (tile_rows_columns <= 2)
+				codec_input->av1d_commer_tile_enable = 0;
+		} else if (res_is_less_than_or_equal_to(codec_input->frame_width,
+				codec_input->frame_height, 4096, 2176)) {
+			if (tile_rows_columns <= 4)
+				codec_input->av1d_commer_tile_enable = 0;
+		} else if (res_is_less_than_or_equal_to(codec_input->frame_width,
+				codec_input->frame_height, 8192, 4320)) {
+			if (tile_rows_columns <= 16)
+				codec_input->av1d_commer_tile_enable = 0;
+		}
+	} else {
+		codec_input->av1d_commer_tile_enable = 0;
+	}
+
+	/* set as sanity mode, this regression mode has no effect on power calculations */
+	codec_input->regression_mode = REGRESSION_MODE_SANITY;
+
+	codec_input->video_adv_feature = VIDEO_ADV_FEATURE_NONE;
+	if (inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value)
+		codec_input->video_adv_feature = FEATURE_LOOKAHEAD_ENCODE;
+
+	if ((codec_input->codec == CODEC_APV) &&
+			(inst->capabilities[ROTATION].value ||
+			inst->capabilities[HFLIP].value ||
+			inst->capabilities[VFLIP].value))
+		codec_input->video_adv_feature = FEATURE_APV_ROTATION;
+
+	core = inst->core;
+	codec_input->vpu_ver = core->platform->data.vpu_ver;
+	return 0;
+}
+
+static int msm_vidc_init_codec_input_bus_iris5p(struct msm_vidc_inst *inst,
+	struct vidc_bus_vote_data *d, struct api_calculation_input *codec_input)
+{
+	u32 complexity_factor_int = 0, complexity_factor_frac = 0, tile_rows_columns = 0;
+	bool opb_compression_enabled = false;
+	int rc = 0;
+
+	if (!d)
+		return -EINVAL;
+
+	codec_input->chipset_gen = MSM_CANOE;
+
+	rc = msm_vidc_init_codec_iris5p(inst, codec_input);
+	if (rc)
+		return rc;
+
+	codec_input->lcu_size = d->lcu_size;
+	codec_input->pipe_num = d->num_vpp_pipes;
+	codec_input->frame_rate = d->fps;
+	codec_input->frame_width = d->input_width;
+	codec_input->frame_height = d->input_height;
+	codec_input->opb_frame_width = d->input_width;
+	codec_input->opb_frame_height = d->input_height;
+
+	/*
+	 * update opb_frame_width and opb_frame_height with downscale resolution
+	 * when downscale is enabled.
+	 */
+	if (inst->capabilities[SCALE_ENABLE].value) {
+		codec_input->opb_frame_width = inst->compose.width;
+		codec_input->opb_frame_height = inst->compose.height;
+	}
+
+	if (d->work_mode == MSM_VIDC_STAGE_1) {
+		codec_input->vsp_vpp_mode = CODEC_VSPVPP_MODE_1S;
+	} else if (d->work_mode == MSM_VIDC_STAGE_2) {
+		codec_input->vsp_vpp_mode = CODEC_VSPVPP_MODE_2S;
+	} else {
+		d_vpr_e("%s: invalid stage %d\n", __func__, d->work_mode);
+		return -EINVAL;
+	}
+
+	codec_input->hierachical_layer =
+		msm_vidc_get_hier_layer_val_iris5p(inst);
+
+	/*
+	 * If the calculated motion_vector_complexity is > 2 then set the
+	 * complexity_setting to be pwc(performance worst case) values.
+	 * If the motion_vector_complexity is < 2 then set the complexity_setting
+	 * to be average case values.
+	 */
+
+	complexity_factor_int = Q16_INT(d->complexity_factor);
+	complexity_factor_frac = Q16_FRAC(d->complexity_factor);
+
+	if (complexity_factor_int < COMPLEXITY_THRESHOLD ||
+		(complexity_factor_int == COMPLEXITY_THRESHOLD &&
+		complexity_factor_frac == 0))
+		codec_input->complexity_setting = COMPLEXITY_SETTING_AVG;
+	else
+		codec_input->complexity_setting = COMPLEXITY_SETTING_PWC;
+
+	codec_input->refframe_complexity = complexity_factor_int * 100 + complexity_factor_frac;
+
+	codec_input->ref_frame_complexity_factor = codec_input->refframe_complexity;
+
+	codec_input->status_llc_onoff = d->use_sys_cache;
+
+	if (__bpp(d->color_formats[0]) == 8) {
+		codec_input->bitdepth = CODEC_BITDEPTH_8;
+		codec_input->format_10bpp = 0;
+	} else {
+		codec_input->bitdepth = CODEC_BITDEPTH_10;
+		codec_input->format_10bpp =
+			__format_10bpp(d->color_formats[d->num_formats - 1]);
+	}
+
+	if (d->num_formats == 1) {
+		codec_input->split_opb = 0;
+		codec_input->linear_opb = !__ubwc(d->color_formats[0]);
+	} else if (d->num_formats == 2) {
+		codec_input->split_opb = 1;
+		codec_input->linear_opb = !__ubwc(d->color_formats[1]);
+	} else {
+		d_vpr_e("%s: invalid num_formats %d\n",
+			__func__, d->num_formats);
+		return -EINVAL;
+	}
+
+	codec_input->linear_ipb = 0;   /* set as ubwc ipb */
+
+	/* TODO Confirm if we always LOSSLESS mode ie lossy_ipb = 0*/
+	codec_input->lossy_ipb = 0;   /* set as lossless ipb */
+
+	/* TODO Confirm if no multiref */
+	codec_input->encoder_multiref = 0;  /* set as no multiref */
+	codec_input->bitrate_mbps = (d->bitrate / 1000000);
+
+	opb_compression_enabled = d->num_formats >= 2 && __ubwc(d->color_formats[1]);
+
+	/* video driver CR is in Q16 format, StaticModel CR in x100 format */
+	if (d->domain == MSM_VIDC_DECODER) {
+		codec_input->cr_dpb = ((Q16_INT(d->compression_ratio)*100) +
+			Q16_FRAC(d->compression_ratio));
+		codec_input->cr_opb = codec_input->cr_dpb;
+		if (codec_input->split_opb == 1) {
+			/* need to check the value if linear opb, currently set min cr */
+			codec_input->cr_opb = 100;
+		}
+	} else {
+		codec_input->cr_ipb = ((Q16_INT(d->input_cr)*100) + Q16_FRAC(d->input_cr));
+		codec_input->cr_rpb = ((Q16_INT(d->compression_ratio)*100) +
+			Q16_FRAC(d->compression_ratio));
+	}
+
+	/* disable by default, only enable for aurora depth map session */
+	codec_input->lumaonly_decode = 0;
+
+	/* set as custom regression mode, as are using cr,cf values from FW */
+	codec_input->regression_mode = REGRESSION_MODE_CUSTOM;
+
+	/* av1d commercial tile */
+	if (inst->codec == MSM_VIDC_AV1 && codec_input->lcu_size == 128) {
+		tile_rows_columns = inst->power.fw_av1_tile_rows *
+			inst->power.fw_av1_tile_columns;
+
+		/* check resolution and tile info */
+		codec_input->av1d_commer_tile_enable = 1;
+
+		if (res_is_less_than_or_equal_to(codec_input->frame_width,
+					codec_input->frame_height, 1920, 1088)) {
+			if (tile_rows_columns <= 2)
+				codec_input->av1d_commer_tile_enable = 0;
+		} else if (res_is_less_than_or_equal_to(codec_input->frame_width,
+					codec_input->frame_height, 4096, 2176)) {
+			if (tile_rows_columns <= 4)
+				codec_input->av1d_commer_tile_enable = 0;
+		} else if (res_is_less_than_or_equal_to(codec_input->frame_width,
+					codec_input->frame_height, 8192, 4320)) {
+			if (tile_rows_columns <= 16)
+				codec_input->av1d_commer_tile_enable = 0;
+		}
+	} else {
+		codec_input->av1d_commer_tile_enable = 0;
+	}
+
+	codec_input->video_adv_feature = VIDEO_ADV_FEATURE_NONE;
+	if (inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value)
+		codec_input->video_adv_feature = FEATURE_LOOKAHEAD_ENCODE;
+
+	/* Dump all the variables for easier debugging */
+	if (msm_vidc_debug & VIDC_BUS) {
+		struct dump dump[] = {
+		{"complexity_factor_int", "%d", complexity_factor_int},
+		{"complexity_factor_frac", "%d", complexity_factor_frac},
+		{"ref_frame_complexity_factor", "%d", codec_input->ref_frame_complexity_factor},
+		{"refframe_complexity", "%d", codec_input->refframe_complexity},
+		{"complexity_setting", "%d", codec_input->complexity_setting},
+		{"cr_dpb", "%d", codec_input->cr_dpb},
+		{"cr_opb", "%d", codec_input->cr_opb},
+		{"cr_ipb", "%d", codec_input->cr_ipb},
+		{"cr_rpb", "%d", codec_input->cr_rpb},
+		{"lcu size", "%d", codec_input->lcu_size},
+		{"pipe number", "%d", codec_input->pipe_num},
+		{"frame_rate", "%d", codec_input->frame_rate},
+		{"frame_width", "%d", codec_input->frame_width},
+		{"frame_height", "%d", codec_input->frame_height},
+		{"opb_frame_width", "%d", codec_input->opb_frame_width},
+		{"opb_frame_height", "%d", codec_input->opb_frame_height},
+		{"work_mode", "%d", d->work_mode},
+		{"encoder_or_decode", "%d", inst->domain},
+		{"chipset_gen", "%d", codec_input->chipset_gen},
+		{"codec_input", "%d", codec_input->codec},
+		{"entropy_coding_mode", "%d", codec_input->entropy_coding_mode},
+		{"hierachical_layer", "%d", codec_input->hierachical_layer},
+		{"status_llc_onoff", "%d", codec_input->status_llc_onoff},
+		{"bit_depth", "%d", codec_input->bitdepth},
+		{"format_10bpp", "%d", codec_input->format_10bpp},
+		{"split_opb", "%d", codec_input->split_opb},
+		{"linear_opb", "%d", codec_input->linear_opb},
+		{"linear_ipb", "%d", codec_input->linear_ipb},
+		{"lossy_ipb", "%d", codec_input->lossy_ipb},
+		{"encoder_multiref", "%d", codec_input->encoder_multiref},
+		{"bitrate_mbps", "%d", codec_input->bitrate_mbps},
+		{"lumaonly_decode", "%d", codec_input->lumaonly_decode},
+		{"av1d_commer_tile_enable", "%d", codec_input->av1d_commer_tile_enable},
+		{"regression_mode", "%d", codec_input->regression_mode},
+		{"video_adv_feature", "%d", codec_input->video_adv_feature},
+		};
+		__dump(dump, ARRAY_SIZE(dump));
+	}
+
+	return 0;
 }
 
 static int msm_vidc_calc_freq_iris5(struct msm_vidc_inst *inst,
@@ -423,5 +897,276 @@ int msm_vidc_ring_buf_count_iris5(struct msm_vidc_inst *inst, u32 data_size)
 	} else {
 		inst->capabilities[ENC_RING_BUFFER_COUNT].value = 0;
 	}
+	return 0;
+}
+
+int msm_vidc_decide_scaling_iris5p(struct msm_vidc_inst *inst)
+{
+	u32 input_width = 0, input_height = 0;
+	u32 input_crop_width = 0, input_crop_height = 0;
+	u32 min_dim, max_dim;
+
+	/* check if scaling requested */
+	if (!inst->capabilities[SCALE_ENABLE].value)
+		return 0;
+
+	/* decide downscaing after reconfig event */
+	if (!inst->fw_min_count)
+		return 0;
+
+	/* disable downscaling if scaling is not supported */
+	if (inst->capabilities[SCALE_FACTOR].max <= 1)
+		goto exit;
+
+	/* downscaling supported for AVC, HEVC, VVC, AV1, VP9 (not APV) */
+	if (inst->codec != MSM_VIDC_H264 &&
+	    inst->codec != MSM_VIDC_HEVC &&
+	    inst->codec != MSM_VIDC_VVC  &&
+	    inst->codec != MSM_VIDC_AV1  &&
+	    inst->codec != MSM_VIDC_VP9)
+		goto exit;
+
+	input_width = inst->fmts[INPUT_PORT].fmt.pix_mp.width;
+	input_height = inst->fmts[INPUT_PORT].fmt.pix_mp.height;
+	input_crop_width = inst->crop.width;
+	input_crop_height = inst->crop.height;
+
+	/* downscaling not supported if crop top or left offset are present */
+	if (inst->crop.top || inst->crop.left) {
+		i_vpr_e(inst, "%s: crop_top %u crop_left %u\n",
+			__func__, inst->crop.top, inst->crop.left);
+		goto exit;
+	}
+
+	/* disable downscaling if crop more than input */
+	if (inst->crop.width > input_width ||
+	    inst->crop.height > input_height) {
+		i_vpr_e(inst, "%s: crop %ux%u > compose %ux%u\n",
+			__func__, inst->crop.width, inst->crop.height,
+			inst->compose.width, inst->compose.height);
+		goto exit;
+	}
+
+	/* disable downscaling if compose not less than crop */
+	if (inst->compose.width >= inst->crop.width ||
+	    inst->compose.height >= inst->crop.height) {
+		i_vpr_h(inst, "%s: compose %ux%u >= crop %ux%u\n",
+			__func__, inst->compose.width, inst->compose.height,
+			inst->crop.width, inst->crop.height);
+		goto exit;
+	}
+
+	if (inst->compose.width == 0 || inst->compose.height == 0) {
+		i_vpr_e(inst, "%s: client set invalid ds width or height\n", __func__);
+		goto exit;
+	}
+
+	/*
+	 * downscaling not supported in below cases
+	 * low latency mode
+	 * film grain enabled
+	 * one pipe case
+	 * Linear OPB colorformat
+	 */
+	if (is_lowlatency_session(inst) ||
+	    inst->capabilities[FILM_GRAIN].value ||
+	    inst->capabilities[PIPE].value == MSM_VIDC_PIPE_1 ||
+	    is_linear_colorformat(inst->capabilities[PIX_FMTS].value)) {
+		i_vpr_h(inst, "%s: latency %u, linear %u, pipe %lld, film_grain %lld\n",
+			__func__, is_lowlatency_session(inst),
+			is_linear_colorformat(inst->capabilities[PIX_FMTS].value),
+			inst->capabilities[PIPE].value,
+			inst->capabilities[FILM_GRAIN].value);
+		goto exit;
+	}
+
+	min_dim = min(input_crop_height, input_crop_width);
+	max_dim = max(input_crop_height, input_crop_width);
+
+	/* disable downscaling if crop resolution below 96x96 */
+	if (min_dim < 96 || max_dim < 96) {
+		i_vpr_h(inst, "%s: input crop resolution %ux%u is below minimum 96x96\n",
+			__func__, input_crop_width, input_crop_height);
+		goto exit;
+	}
+
+	if (msm_vidc_update_scaling_iris5p(inst))
+		goto exit;
+
+	i_vpr_h(inst,
+		"%s: scaling enabled, input wxh: %dx%d, compose wxh: %dx%d, crop wxh: %dx%d\n",
+		__func__, input_width, input_height,
+		inst->compose.width, inst->compose.height,
+		inst->crop.width, inst->crop.height);
+
+	return 0;
+
+exit:
+	inst->compose.top = 0;
+	inst->compose.left = 0;
+	inst->compose.width = inst->crop.width;
+	inst->compose.height = inst->crop.height;
+	msm_vidc_update_cap_value(inst, SCALE_ENABLE, 0, __func__);
+
+	i_vpr_h(inst,
+		"%s: scaling disabled, input wxh: %dx%d, compose wxh: %dx%d, crop wxh: %dx%d\n",
+		__func__, input_width, input_height,
+		inst->compose.width, inst->compose.height,
+		inst->crop.width, inst->crop.height);
+
+	return 0;
+}
+
+int msm_vidc_decide_work_mode_iris5p(struct msm_vidc_inst *inst)
+{
+	u32 work_mode;
+	struct v4l2_format *inp_f;
+	u32 width, height;
+	bool res_ok = false;
+
+	work_mode = MSM_VIDC_STAGE_2;
+	inp_f = &inst->fmts[INPUT_PORT];
+
+	/* APV codec is only one stage for Canoe */
+	if (inst->codec == MSM_VIDC_APV) {
+		work_mode = MSM_VIDC_STAGE_1;
+		goto exit;
+	}
+
+	if (is_image_decode_session(inst))
+		work_mode = MSM_VIDC_STAGE_1;
+
+	if (is_image_session(inst))
+		goto exit;
+
+	if (is_decode_session(inst)) {
+		height = inp_f->fmt.pix_mp.height;
+		width = inp_f->fmt.pix_mp.width;
+		res_ok = res_is_less_than(width, height, 1280, 720);
+		if (inst->capabilities[CODED_FRAMES].value ==
+				CODED_FRAMES_INTERLACE ||
+			inst->capabilities[LOWLATENCY_MODE].value ||
+			res_ok) {
+			work_mode = MSM_VIDC_STAGE_1;
+		}
+	} else if (is_encode_session(inst)) {
+		height = inst->crop.height;
+		width = inst->crop.width;
+		res_ok = !res_is_greater_than(width, height, 4096, 2160);
+		if (res_ok &&
+			(inst->capabilities[LOWLATENCY_MODE].value)) {
+			work_mode = MSM_VIDC_STAGE_1;
+		}
+		if (inst->capabilities[SLICE_MODE].value ==
+			V4L2_MPEG_VIDEO_MULTI_SLICE_MODE_MAX_BYTES) {
+			work_mode = MSM_VIDC_STAGE_1;
+		}
+		if (inst->capabilities[LOSSLESS].value)
+			work_mode = MSM_VIDC_STAGE_2;
+
+		if (!inst->capabilities[GOP_SIZE].value)
+			work_mode = MSM_VIDC_STAGE_2;
+	} else {
+		i_vpr_e(inst, "%s: invalid session type\n", __func__);
+		return -EINVAL;
+	}
+
+exit:
+	if (work_mode >= inst->capabilities[STAGE].max)
+		work_mode = inst->capabilities[STAGE].max;
+
+	i_vpr_h(inst, "Configuring work mode = %u low latency = %llu, gop size = %llu\n",
+		work_mode, inst->capabilities[LOWLATENCY_MODE].value,
+		inst->capabilities[GOP_SIZE].value);
+	msm_vidc_update_cap_value(inst, STAGE, work_mode, __func__);
+
+	return 0;
+}
+
+int msm_vidc_decide_work_route_iris5p(struct msm_vidc_inst *inst)
+{
+	u32 work_route;
+	struct msm_vidc_core *core;
+
+	core = inst->core;
+	work_route = core->capabilities[NUM_VPP_PIPE].value;
+
+	/* APV codec is only one pipe for Canoe */
+	if (inst->codec == MSM_VIDC_APV) {
+		work_route = MSM_VIDC_PIPE_1;
+		goto exit;
+	}
+
+	if (is_image_session(inst))
+		goto exit;
+
+	if (is_decode_session(inst)) {
+		if (inst->capabilities[CODED_FRAMES].value ==
+				CODED_FRAMES_INTERLACE)
+			work_route = MSM_VIDC_PIPE_1;
+	} else if (is_encode_session(inst)) {
+		u32 slice_mode;
+
+		slice_mode = inst->capabilities[SLICE_MODE].value;
+
+		/* TODO Pipe=1 for legacy CBR*/
+		if (slice_mode == V4L2_MPEG_VIDEO_MULTI_SLICE_MODE_MAX_BYTES)
+			work_route = MSM_VIDC_PIPE_1;
+
+	} else {
+		i_vpr_e(inst, "%s: invalid session type\n", __func__);
+		return -EINVAL;
+	}
+
+exit:
+	i_vpr_h(inst, "Configuring work route = %u", work_route);
+	msm_vidc_update_cap_value(inst, PIPE, work_route, __func__);
+
+	return 0;
+}
+
+int msm_vidc_decide_quality_mode_iris5p(struct msm_vidc_inst *inst)
+{
+	struct msm_vidc_core *core;
+	u32 mbpf, mbps, max_hq_mbpf, max_hq_mbps;
+	u32 mode = MSM_VIDC_POWER_SAVE_MODE;
+
+	if (!is_encode_session(inst))
+		return 0;
+
+	/* image or lossless or all intra runs at quality mode */
+	if (is_image_session(inst) || inst->capabilities[LOSSLESS].value ||
+		inst->capabilities[ALL_INTRA].value) {
+		mode = MSM_VIDC_MAX_QUALITY_MODE;
+		goto decision_done;
+	}
+
+	/* for lesser complexity, make LP for all resolution */
+	if (inst->capabilities[COMPLEXITY].value < DEFAULT_COMPLEXITY) {
+		mode = MSM_VIDC_POWER_SAVE_MODE;
+		goto decision_done;
+	}
+
+	mbpf = msm_vidc_get_mbs_per_frame(inst);
+	mbps = mbpf * msm_vidc_get_fps(inst);
+	core = inst->core;
+	max_hq_mbpf = core->capabilities[MAX_MBPF_HQ].value;
+	max_hq_mbps = core->capabilities[MAX_MBPS_HQ].value;
+
+	if (!is_realtime_session(inst)) {
+		if (((inst->capabilities[COMPLEXITY].flags & CAP_FLAG_CLIENT_SET) &&
+			(inst->capabilities[COMPLEXITY].value >= DEFAULT_COMPLEXITY)) ||
+			mbpf <= max_hq_mbpf) {
+			mode = MSM_VIDC_MAX_QUALITY_MODE;
+			goto decision_done;
+		}
+	}
+
+	if (mbpf <= max_hq_mbpf && mbps <= max_hq_mbps)
+		mode = MSM_VIDC_MAX_QUALITY_MODE;
+
+decision_done:
+	msm_vidc_update_cap_value(inst, QUALITY_MODE, mode, __func__);
+
 	return 0;
 }
