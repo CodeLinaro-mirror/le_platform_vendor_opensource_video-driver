@@ -101,6 +101,9 @@
 		num_ref = num_ref + ltr_count;                                 \
 }
 
+#define MIN_HP_DUALCORE_REQUIREMENT(width, height, frame_rate) \
+	(width * height * frame_rate >= 7680 * 4320 * 60)
+
 extern struct msm_vidc_core *g_core;
 
 /*
@@ -1192,20 +1195,28 @@ int msm_vidc_adjust_session_core_id(void *instance, struct v4l2_ctrl *ctrl)
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *) instance;
 	u32 device_core_mask = HFI_CORE_ID_0;
 	struct msm_vidc_core *core = inst->core;
+	u32 width = 0, height = 0, frame_rate = 0;
+	struct v4l2_format *f = NULL;
 
+	frame_rate = inst->capabilities[FRAME_RATE].value >> 16;
+	f = &inst->fmts[OUTPUT_PORT];
+	width = f->fmt.pix_mp.width;
+	height = f->fmt.pix_mp.height;
 	/*
 	 * encoder supports multiple cores for a single session on specific
 	 * scenarios. certain gop structures can utilize both the cores
 	 * independently.
-	 * 1. Hierarchical-P
+	 * 1. Hierarchical-P, Layer count is 1 and 8k@60fps
 	 * 2. All Intra
 	 * 3. Lossless Encoding
 	 * if in one of these scenarios, set device_core_mask to the available
 	 * cores mask.
 	 */
 	if ((is_encode_session(inst)) && (inst->codec != MSM_VIDC_HEIC) &&
-		((inst->capabilities[LAYER_TYPE].value ==
-		V4L2_MPEG_VIDEO_HEVC_HIERARCHICAL_CODING_P) ||
+		(((inst->capabilities[LAYER_TYPE].value ==
+		V4L2_MPEG_VIDEO_HEVC_HIERARCHICAL_CODING_P) &&
+		(inst->capabilities[ENH_LAYER_COUNT].value == 1) &&
+		(MIN_HP_DUALCORE_REQUIREMENT(width, height, frame_rate)))  ||
 		(inst->capabilities[ALL_INTRA].value == 1) ||
 		(inst->capabilities[LOSSLESS].value == 1))) {
 		device_core_mask = (HFI_CORE_ID_0 | HFI_CORE_ID_1) &

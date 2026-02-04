@@ -1120,7 +1120,7 @@ static int __core_init_full_virtualization(struct msm_vidc_core *core)
 	int rc = 0;
 
 	if (core->full_virtualization_data.is_gvm_open)
-		return rc;
+		goto set_state;
 
 	d_vpr_h("%s: Hardware virtualization enabled. Calling open_gvm\n",
 		__func__);
@@ -1132,8 +1132,14 @@ static int __core_init_full_virtualization(struct msm_vidc_core *core)
 		d_vpr_e("%s: open_gvm failed\n", __func__);
 		return rc;
 	}
+
+	core->pvm_event_handler_thread = kthread_run(
+		msm_vidc_pvm_event_handler,
+		core, "msm_vidc_pvm_evt_handler");
+
 	core->full_virtualization_data.is_gvm_open = 1;
 
+set_state:
 	/* set up core state and substate */
 	msm_vidc_change_core_state(core, MSM_VIDC_CORE_INIT,
 		__func__);
@@ -1240,6 +1246,10 @@ int venus_hfi_core_deinit(struct msm_vidc_core *core, bool force)
 			virtio_video_msm_cmd_close_gvm();
 			core->full_virtualization_data.is_gvm_open = 0;
 			core->full_virtualization_data.gvm_deinit = 0;
+			if (core->pvm_event_handler_thread) {
+				kthread_stop(core->pvm_event_handler_thread);
+				core->pvm_event_handler_thread = NULL;
+			}
 
 			/* update core state and clear all substates */
 			msm_vidc_change_core_sub_state(core,
