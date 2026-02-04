@@ -328,6 +328,7 @@ static const struct msm_platform_core_capability core_data_chora_v0[] = {
 	{AV_SYNC_WINDOW_SIZE, 40},
 	{NON_FATAL_FAULTS, 1},
 	{ENC_AUTO_FRAMERATE, 0},
+	{SUPPORTS_MINIDUMP, 1},
 	};
 
 static const struct msm_platform_core_capability core_data_chora_v1[] = {
@@ -376,6 +377,7 @@ static const struct msm_platform_core_capability core_data_chora_v1[] = {
 	{AV_SYNC_WINDOW_SIZE, 40},
 	{NON_FATAL_FAULTS, 1},
 	{ENC_AUTO_FRAMERATE, 0},
+	{SUPPORTS_MINIDUMP, 1},
 	};
 
 static int msm_vidc_set_ring_buffer_count_chora(void *instance,
@@ -476,7 +478,8 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v0[] = {
 	{PIX_FMTS, ENC, HEVC,
 		MSM_VIDC_FMT_NV12C,
 		MSM_VIDC_FMT_NV21,
-		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV21 | MSM_VIDC_FMT_NV12C,
+		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV21 | MSM_VIDC_FMT_NV12C |
+		MSM_VIDC_FMT_P010 | MSM_VIDC_FMT_TP10C,
 		MSM_VIDC_FMT_NV12C},
 	{PIX_FMTS, ENC, VP9,
 		MSM_VIDC_FMT_NV12C,
@@ -1295,9 +1298,11 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v0[] = {
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 	{PROFILE, ENC, HEVC | HEIC,
 		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
-		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE,
+		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE,
 		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN) |
-		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE),
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE) |
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10) |
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE),
 		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
 		V4L2_CID_MPEG_VIDEO_HEVC_PROFILE,
 		HFI_PROP_PROFILE,
@@ -2001,7 +2006,8 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v1[] = {
 	{PIX_FMTS, ENC, HEVC,
 		MSM_VIDC_FMT_NV12C,
 		MSM_VIDC_FMT_NV21,
-		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV21 | MSM_VIDC_FMT_NV12C,
+		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV21 | MSM_VIDC_FMT_NV12C |
+		MSM_VIDC_FMT_P010 | MSM_VIDC_FMT_TP10C,
 		MSM_VIDC_FMT_NV12C},
 	{PIX_FMTS, ENC, VP9,
 		MSM_VIDC_FMT_NV12C,
@@ -2821,9 +2827,11 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v1[] = {
 
 	{PROFILE, ENC, HEVC | HEIC,
 		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
-		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE,
+		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE,
 		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN) |
-		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE),
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE) |
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10) |
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE),
 		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
 		V4L2_CID_MPEG_VIDEO_HEVC_PROFILE,
 		HFI_PROP_PROFILE,
@@ -3498,12 +3506,12 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_chor
 	 */
 
 	{PIX_FMTS, ENC, H264,
-		{IR_PERIOD, CSC, LTR_COUNT, META_ROI_INFO}},
+		{IR_PERIOD, CSC, LTR_COUNT}},
 
 	{PIX_FMTS, ENC, HEVC,
 		{PROFILE, MIN_FRAME_QP, MAX_FRAME_QP, I_FRAME_QP, P_FRAME_QP,
 			B_FRAME_QP, MIN_QUALITY, BLUR_TYPES, IR_PERIOD,
-			LTR_COUNT, CSC, META_ROI_INFO}},
+			LTR_COUNT, CSC}},
 
 	{PIX_FMTS, ENC, HEIC,
 		{PROFILE, CSC}},
@@ -4026,7 +4034,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_chor
 
 	{META_ROI_INFO, ENC, H264 | HEVC,
 		{MIN_QUALITY, IR_PERIOD, BLUR_TYPES},
-		msm_vidc_adjust_roi_info,
+		msm_vidc_adjust_roi_info_iris4,
 		NULL},
 
 	{GRID_ENABLE, ENC, HEIC,
