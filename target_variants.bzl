@@ -3,7 +3,6 @@ targets = [
     "art",
     "autogvm",
     "canoe",
-    "chora",
     "hamoa",
     "gen3auto",
     "sun",
