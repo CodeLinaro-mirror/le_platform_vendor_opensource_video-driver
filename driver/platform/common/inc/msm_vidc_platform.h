@@ -482,8 +482,6 @@ int msm_vidc_set_lookahead_encode_size(void *instance, enum msm_vidc_inst_capabi
 int msm_vidc_adjust_log_mode(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_bitdepth(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_req_sync_frame(void *instance, struct v4l2_ctrl *ctrl);
-int msm_vidc_adjust_min_quality_iris5p(void *instance, struct v4l2_ctrl *ctrl);
-int msm_vidc_adjust_bitrate_boost_iris5p(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_set_ring_buffer_count(void *instance,
 	enum msm_vidc_inst_capability_type cap_id);
 

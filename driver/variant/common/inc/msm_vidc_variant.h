@@ -18,12 +18,4 @@ int __read_register_with_poll_timeout(struct msm_vidc_core *core, u32 reg,
 int __set_registers(struct msm_vidc_core *core);
 int msm_vidc_mem_protect_video_regions_v1(struct msm_vidc_core *core);
 int msm_vidc_mem_protect_video_regions_v2(struct msm_vidc_core *core);
-int msm_vidc_decide_scaling_iris5p(struct msm_vidc_inst *inst);
-int msm_vidc_decide_quality_mode_iris5p(struct msm_vidc_inst *inst);
-int msm_vidc_decide_work_route_iris5p(struct msm_vidc_inst *inst);
-int msm_vidc_decide_work_mode_iris5p(struct msm_vidc_inst *inst);
-int msm_vidc_init_codec_input_freq_iris5p(struct msm_vidc_inst *inst, u32 data_size,
-		struct api_calculation_input *codec_input);
-int msm_vidc_init_codec_input_bus_iris5p(struct msm_vidc_inst *inst,
-	struct vidc_bus_vote_data *d, struct api_calculation_input *codec_input);
 #endif
