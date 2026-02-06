@@ -467,7 +467,10 @@ static int msm_venc_set_ring_buffer_count(struct msm_vidc_inst *inst)
 
 static int msm_venc_set_input_properties(struct msm_vidc_inst *inst)
 {
-	int i, j, rc = 0;
+	int i, j, num_input_set_prop = 0, rc = 0;
+	const u32 *input_set_prop;
+	struct msm_vidc_core *core;
+
 	static const struct msm_venc_prop_type_handle prop_type_handle_arr[] = {
 		{HFI_PROP_COLOR_FORMAT,               msm_venc_set_colorformat                 },
 		{HFI_PROP_RAW_RESOLUTION,             msm_venc_set_raw_resolution              },
@@ -478,10 +481,30 @@ static int msm_venc_set_input_properties(struct msm_vidc_inst *inst)
 	};
 
 	i_vpr_h(inst, "%s()\n", __func__);
-	for (i = 0; i < ARRAY_SIZE(msm_venc_input_set_prop); i++) {
+
+	core = inst->core;
+	if (!core->platform) {
+		i_vpr_e(inst, "%s: platform data not initialized\n", __func__);
+		return -EINVAL;
+	}
+
+	if (!core->platform->data.enc_input_prop ||
+	    core->platform->data.enc_input_prop_size == 0) {
+		input_set_prop = msm_venc_input_set_prop;
+		num_input_set_prop = ARRAY_SIZE(msm_venc_input_set_prop);
+		i_vpr_h(inst, "%s: default num_input_set_prop %d\n",
+			__func__, num_input_set_prop);
+	} else {
+		input_set_prop = core->platform->data.enc_input_prop;
+		num_input_set_prop = core->platform->data.enc_input_prop_size;
+		i_vpr_h(inst, "%s: num_input_set_prop %d\n",
+			__func__, num_input_set_prop);
+	}
+
+	for (i = 0; i < num_input_set_prop; i++) {
 		/* set session input properties */
 		for (j = 0; j < ARRAY_SIZE(prop_type_handle_arr); j++) {
-			if (prop_type_handle_arr[j].type == msm_venc_input_set_prop[i]) {
+			if (prop_type_handle_arr[j].type == input_set_prop[i]) {
 				rc = prop_type_handle_arr[j].handle(inst, INPUT_PORT);
 				if (rc)
 					goto exit;
@@ -492,7 +515,7 @@ static int msm_venc_set_input_properties(struct msm_vidc_inst *inst)
 		/* is property type unknown ? */
 		if (j == ARRAY_SIZE(prop_type_handle_arr))
 			i_vpr_e(inst, "%s: unknown property %#x\n", __func__,
-				msm_venc_input_set_prop[i]);
+				input_set_prop[i]);
 	}
 
 exit:
@@ -501,17 +524,41 @@ exit:
 
 static int msm_venc_set_output_properties(struct msm_vidc_inst *inst)
 {
-	int i, j, rc = 0;
+	int i, j, num_output_set_prop = 0, rc = 0;
+	const u32 *output_set_prop;
+	struct msm_vidc_core *core;
+
 	static const struct msm_venc_prop_type_handle prop_type_handle_arr[] = {
 		{HFI_PROP_BITSTREAM_RESOLUTION,       msm_venc_set_bitstream_resolution    },
 		{HFI_PROP_CROP_OFFSETS,               msm_venc_set_crop_offsets            },
 	};
 
 	i_vpr_h(inst, "%s()\n", __func__);
-	for (i = 0; i < ARRAY_SIZE(msm_venc_output_set_prop); i++) {
+
+	core = inst->core;
+	if (!core->platform) {
+		i_vpr_e(inst, "%s: platform data not initialized\n", __func__);
+		return -EINVAL;
+	}
+
+	if (!core->platform->data.enc_output_prop ||
+	    core->platform->data.enc_output_prop_size == 0) {
+		output_set_prop = msm_venc_output_set_prop;
+		num_output_set_prop = ARRAY_SIZE(msm_venc_output_set_prop);
+		i_vpr_h(inst, "%s: default num_output_set_prop %d\n",
+			__func__, num_output_set_prop);
+	} else {
+		output_set_prop = core->platform->data.enc_output_prop;
+		num_output_set_prop = core->platform->data.enc_output_prop_size;
+		i_vpr_h(inst, "%s: num_output_set_prop %d\n",
+			__func__, num_output_set_prop);
+
+	}
+
+	for (i = 0; i < num_output_set_prop; i++) {
 		/* set session output properties */
 		for (j = 0; j < ARRAY_SIZE(prop_type_handle_arr); j++) {
-			if (prop_type_handle_arr[j].type == msm_venc_output_set_prop[i]) {
+			if (prop_type_handle_arr[j].type == output_set_prop[i]) {
 				rc = prop_type_handle_arr[j].handle(inst, OUTPUT_PORT);
 				if (rc)
 					goto exit;
@@ -522,7 +569,7 @@ static int msm_venc_set_output_properties(struct msm_vidc_inst *inst)
 		/* is property type unknown ? */
 		if (j == ARRAY_SIZE(prop_type_handle_arr))
 			i_vpr_e(inst, "%s: unknown property %#x\n", __func__,
-				msm_venc_output_set_prop[i]);
+				output_set_prop[i]);
 	}
 
 exit:
