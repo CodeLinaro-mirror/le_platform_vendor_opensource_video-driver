@@ -1,5 +1,6 @@
 load("//build/kernel/kleaf:kernel.bzl", "ddk_module", "kernel_module_group")
 load("//build/bazel_common_rules/dist:dist.bzl", "copy_to_dist_dir")
+load(":target_variants.bzl", "targets")
 
 def _register_module_to_map(module_map, name, path, config_option, srcs, config_srcs, deps, config_deps):
     processed_config_srcs = {}
@@ -162,9 +163,12 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
     })
 
     auto_deps = []
+    headers = registry.hdrs + [":{}_headers".format(target)]
+
     if lunch_target != None:
         kernel_build = "{}_{}_{}".format(target, variant, lunch_target)
         print("kernel_build: " + kernel_build)
+        headers = registry.hdrs + [":{}_headers".format(lunch_target)]
         dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
         config_options = [
             "CONFIG_MSM_MMRM",
@@ -190,6 +194,20 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
             "//vendor/qcom/opensource/virtio-video:{}_msm_virtio_video".format(kernel_build),
             "//vendor/qcom/opensource/virtio-video:virtio_video_driver_headers",
         ]
+    elif target == "canoe":
+        lunch_target_chora = "chora"
+        dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
+        headers += [":{}_headers".format(lunch_target_chora)]
+        print("dist_target_name: " + dist_target_name)
+        config_options = [
+            "CONFIG_MSM_MMRM",
+            "CONFIG_MSM_VIDC_LLCC",
+            "CONFIG_MSM_VIDC_ANDROID",
+            "CONFIG_MSM_VIDC_MINIDUMP",
+            "CONFIG_MSM_VIDC_{}".format(target.upper()),
+            "CONFIG_MSM_VIDC_{}".format(lunch_target_chora.upper()),
+        ]
+        print("  config_options =", config_options)
     elif target in [ "hamoa" ]:
         dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
         print("dist_target_name: " + dist_target_name)
@@ -222,7 +240,6 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
 
     formatter = lambda s: s.replace("%b", kernel_build).replace("%t", target)
 
-    headers = registry.hdrs + [":{}_headers".format(target)]
     print(headers)
 
     all_module_rules = []
@@ -265,3 +282,15 @@ def define_consolidate_gki_modules(target, registry, modules, config_options = [
     define_target_variant_modules(target, "consolidate", registry, modules, config_options)
     define_target_variant_modules(target, "perf", registry, modules, config_options)
     define_target_variant_modules(target, "gki", registry, modules, config_options)
+
+def matching_la_variant(t):
+    for target in targets:
+        if t.startswith(target):
+            return target
+    return None
+
+def define_16k_aliases(t):
+    native.alias(
+        name = "{}_headers".format(t),
+        actual = "{}_headers".format(matching_la_variant(t)),
+    )

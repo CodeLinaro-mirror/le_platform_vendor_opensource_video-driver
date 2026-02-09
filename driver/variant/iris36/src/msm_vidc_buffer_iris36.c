@@ -321,16 +321,25 @@ static u32 msm_vidc_decoder_dpb_size_iris36(struct msm_vidc_inst *inst)
 static bool vidc_session_is_multicore(struct msm_vidc_inst *inst)
 {
 	bool is_multicore = false;
+	struct v4l2_format *format = NULL;
+	u32 width = 0, height = 0, frame_rate = 0;
+
+	frame_rate = inst->capabilities[FRAME_RATE].value >> 16;
+	format = &inst->fmts[OUTPUT_PORT];
+	width = format->fmt.pix_mp.width;
+	height = format->fmt.pix_mp.height;
 
 	/*
 	 * multi-core scheduling can be done for following scenarios:
 	 * 1, All intra encoding
 	 * 2, Lossless encoding
-	 * 3, Hierarchical-P encoding
+	 * 3, Hierarchical-P encoding, Layer count is 1 and 8k@60fps
 	 */
 	if ((is_encode_session(inst)) &&
-		((inst->capabilities[LAYER_TYPE].value ==
-		V4L2_MPEG_VIDEO_HEVC_HIERARCHICAL_CODING_P) ||
+		(((inst->capabilities[LAYER_TYPE].value ==
+		V4L2_MPEG_VIDEO_HEVC_HIERARCHICAL_CODING_P) &&
+		(inst->capabilities[ENH_LAYER_COUNT].value == 1) &&
+		(MIN_HP_DUALCORE_REQUIREMENT(width, height, frame_rate)))  ||
 		(inst->capabilities[ALL_INTRA].value == 1) ||
 		(inst->capabilities[LOSSLESS].value == 1))) {
 		is_multicore = true;

@@ -8,7 +8,6 @@
 
 #include <linux/soc/qcom/llcc-qcom.h>
 #include <soc/qcom/of_common.h>
-#include <soc/qcom/socinfo.h>
 
 #include <media/v4l2_vidc_extensions.h>
 #include "msm_vidc_alor.h"
@@ -73,6 +72,13 @@ static struct codec_info codec_data_alor[] = {
 		.vidc_codec  = MSM_VIDC_VP9,
 		.pixfmt_name = "VP9",
 	},
+#ifdef V4L2_PIX_FMT_VIDC_AV1
+	{
+		.v4l2_codec  = V4L2_PIX_FMT_VIDC_AV1,
+		.vidc_codec  = MSM_VIDC_AV1,
+		.pixfmt_name = "AV1",
+	},
+#endif
 	{
 		.v4l2_codec  = V4L2_PIX_FMT_AV1,
 		.vidc_codec  = MSM_VIDC_AV1,

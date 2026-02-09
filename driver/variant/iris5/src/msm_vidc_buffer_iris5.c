@@ -373,6 +373,8 @@ static u32 msm_vidc_encoder_bin_size_iris5(struct msm_vidc_inst *inst)
 			height, stage, num_vpp_pipes, profile, ring_buf_count,
 			0, lookahead_enable, true,
 			f->fmt.pix_mp.pixelformat);
+	} else if (inst->codec == MSM_VIDC_APV) {
+		HFI_BUFFER_BIN_APVE_IRIS5(size, width, height, inst->hfi_rc_type);
 	}
 
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
@@ -624,7 +626,7 @@ static u32 msm_vidc_encoder_output_size_iris5(struct msm_vidc_inst *inst)
 	codec = v4l2_codec_to_driver(inst, f->fmt.pix_mp.pixelformat, __func__);
 
 	if (codec == MSM_VIDC_APV) {
-		HFI_BUFFER_BITSTREAM_ENC_APVE(frame_size, f->fmt.pix_mp.width,
+		HFI_BUFFER_BITSTREAM_ENC_APV_IRIS5(frame_size, f->fmt.pix_mp.width,
 			f->fmt.pix_mp.height, hfi_rc_type);
 		return frame_size;
 	}
@@ -813,6 +815,16 @@ static int msm_buffer_delivery_mode_based_min_count_iris5(struct msm_vidc_inst *
 	return (total_num_slices * count);
 }
 
+static u32 msm_vidc_internal_buffer_count_iris5p(struct msm_vidc_inst *inst,
+	enum msm_vidc_buffer_type buffer_type)
+{
+	if (is_encode_session(inst) &&
+		inst->codec == MSM_VIDC_APV && buffer_type == MSM_VIDC_BUF_BIN)
+		return 1;
+
+	return msm_vidc_internal_buffer_count(inst, buffer_type);
+}
+
 int msm_buffer_min_count_iris5(struct msm_vidc_inst *inst,
 		enum msm_vidc_buffer_type buffer_type)
 {
@@ -829,6 +841,9 @@ int msm_buffer_min_count_iris5(struct msm_vidc_inst *inst,
 		count = msm_buffer_delivery_mode_based_min_count_iris5(inst, count);
 		break;
 	case MSM_VIDC_BUF_BIN:
+		/* BIN Buffer support added for APV Encoder from Iris-5 */
+		count = msm_vidc_internal_buffer_count_iris5p(inst, buffer_type);
+		break;
 	case MSM_VIDC_BUF_COMV:
 	case MSM_VIDC_BUF_NON_COMV:
 	case MSM_VIDC_BUF_LINE:
@@ -869,4 +884,22 @@ int msm_buffer_extra_count_iris5(struct msm_vidc_inst *inst,
 
 	i_vpr_l(inst, "extra_count: type: %11s, count: %9u\n", buf_name(buffer_type), count);
 	return count;
+}
+
+int msm_vidc_adjust_partition_id_iris5(void *instance, struct v4l2_ctrl *ctrl)
+{
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	struct msm_vidc_core *core = inst->core;
+	s32 adjusted_value;
+
+	adjusted_value = inst->capabilities[PARTITION_ID].value;
+
+	if (inst->capabilities[SECURE_MODE].value)
+		adjusted_value = 1; //HFI_PARTITION_ID_1
+
+	if (is_crc_enabled(core))
+		adjusted_value = 7; //HFI_PARTITION_ID_7
+
+	msm_vidc_update_cap_value(inst, PARTITION_ID, adjusted_value, __func__);
+	return 0;
 }

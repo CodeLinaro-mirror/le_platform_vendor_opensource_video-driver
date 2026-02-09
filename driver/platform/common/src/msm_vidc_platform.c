@@ -74,6 +74,10 @@
 #include "msm_vidc_ravelin.h"
 #include "msm_vidc_ar50lt.h"
 #endif
+#if defined(CONFIG_MSM_VIDC_QLI)
+#include "msm_vidc_hamoa.h"
+#include "msm_vidc_iris3.h"
+#endif
 
 #define CAP_TO_8BIT_QP(a) {          \
 	if ((a) < MIN_QP_8BIT)                 \
@@ -96,6 +100,9 @@
 	if (ltr_count)                                                         \
 		num_ref = num_ref + ltr_count;                                 \
 }
+
+#define MIN_HP_DUALCORE_REQUIREMENT(width, height, frame_rate) \
+	(width * height * frame_rate >= 7680 * 4320 * 60)
 
 extern struct msm_vidc_core *g_core;
 
@@ -216,7 +223,7 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.compat                     = "qcom,chora-vidc",
 		.get_platform_data          = msm_vidc_get_platform_data_chora,
 		.init_platform              = msm_vidc_init_platform_chora,
-		.init_vpu                  = msm_vidc_init_iris2,
+		.init_vpu                   = msm_vidc_init_iris2,
 	},
 #endif
 #if defined(CONFIG_MSM_VIDC_SUN)
@@ -248,6 +255,14 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 #if defined(CONFIG_MSM_VIDC_HAMOA)
 	{
 		.compat                     = "qcom,x1e80100-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_hamoa,
+		.init_platform              = msm_vidc_init_platform_hamoa,
+		.init_vpu                  = msm_vidc_init_iris3,
+	},
+#endif
+#if defined(CONFIG_MSM_VIDC_QLI)
+	{
+		.compat                     = "qcom,x1e80100-iris",
 		.get_platform_data          = msm_vidc_get_platform_data_hamoa,
 		.init_platform              = msm_vidc_init_platform_hamoa,
 		.init_vpu                  = msm_vidc_init_iris3,
@@ -1006,6 +1021,7 @@ int msm_vidc_v4l2_to_hfi_enum(struct msm_vidc_inst *inst,
 	case AV1_TIER:
 	case BLUR_TYPES:
 	case LOG_VIDEO_ENCODE:
+	case PARTITION_ID:
 		*value = inst->capabilities[cap_id].value;
 		return 0;
 	case LAYER_TYPE:
@@ -1179,20 +1195,28 @@ int msm_vidc_adjust_session_core_id(void *instance, struct v4l2_ctrl *ctrl)
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *) instance;
 	u32 device_core_mask = HFI_CORE_ID_0;
 	struct msm_vidc_core *core = inst->core;
+	u32 width = 0, height = 0, frame_rate = 0;
+	struct v4l2_format *f = NULL;
 
+	frame_rate = inst->capabilities[FRAME_RATE].value >> 16;
+	f = &inst->fmts[OUTPUT_PORT];
+	width = f->fmt.pix_mp.width;
+	height = f->fmt.pix_mp.height;
 	/*
 	 * encoder supports multiple cores for a single session on specific
 	 * scenarios. certain gop structures can utilize both the cores
 	 * independently.
-	 * 1. Hierarchical-P
+	 * 1. Hierarchical-P, Layer count is 1 and 8k@60fps
 	 * 2. All Intra
 	 * 3. Lossless Encoding
 	 * if in one of these scenarios, set device_core_mask to the available
 	 * cores mask.
 	 */
 	if ((is_encode_session(inst)) && (inst->codec != MSM_VIDC_HEIC) &&
-		((inst->capabilities[LAYER_TYPE].value ==
-		V4L2_MPEG_VIDEO_HEVC_HIERARCHICAL_CODING_P) ||
+		(((inst->capabilities[LAYER_TYPE].value ==
+		V4L2_MPEG_VIDEO_HEVC_HIERARCHICAL_CODING_P) &&
+		(inst->capabilities[ENH_LAYER_COUNT].value == 1) &&
+		(MIN_HP_DUALCORE_REQUIREMENT(width, height, frame_rate)))  ||
 		(inst->capabilities[ALL_INTRA].value == 1) ||
 		(inst->capabilities[LOSSLESS].value == 1))) {
 		device_core_mask = (HFI_CORE_ID_0 | HFI_CORE_ID_1) &
@@ -3950,163 +3974,6 @@ int msm_vidc_adjust_req_sync_frame(void *instance, struct v4l2_ctrl *ctrl)
 	value = inst->capabilities[REQUEST_I_FRAME].value ? 0 : 1;
 
 	msm_vidc_update_cap_value(inst, REQUEST_I_FRAME, value, __func__);
-	return 0;
-}
-
-int msm_vidc_adjust_min_quality_iris5p(void *instance, struct v4l2_ctrl *ctrl)
-{
-	s32 adjusted_value;
-	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
-	s64 rc_type = -1, enh_layer_count = -1, pix_fmts = -1;
-	u32 width, height, frame_rate;
-	struct v4l2_format *f;
-
-	adjusted_value = ctrl ? ctrl->val : inst->capabilities[MIN_QUALITY].value;
-
-	/*
-	 * Although MIN_QUALITY is static, one of its parents,
-	 * ENH_LAYER_COUNT is dynamic cap. Hence, dynamic call
-	 * may be made for MIN_QUALITY via ENH_LAYER_COUNT.
-	 * Therefore, below streaming check is required to avoid
-	 * runtime modification of MIN_QUALITY.
-	 */
-	if (inst->bufq[OUTPUT_PORT].vb2q->streaming)
-		return 0;
-
-	if (msm_vidc_get_parent_value(inst, MIN_QUALITY,
-				      BITRATE_MODE, &rc_type, __func__) ||
-	    msm_vidc_get_parent_value(inst, MIN_QUALITY,
-				      ENH_LAYER_COUNT, &enh_layer_count, __func__))
-		return -EINVAL;
-
-	/*
-	 * Min Quality is supported only for VBR rc type.
-	 * Hence, do not adjust or set to firmware for non VBR rc's
-	 */
-	if (rc_type != HFI_RC_VBR_CFR) {
-		adjusted_value = 0;
-		goto update_and_exit;
-	}
-
-	frame_rate = inst->capabilities[FRAME_RATE].value >> 16;
-	f = &inst->fmts[OUTPUT_PORT];
-	width = f->fmt.pix_mp.width;
-	height = f->fmt.pix_mp.height;
-
-	/*
-	 * Min Quality not supported for:
-	 * - HEVC 10bit
-	 * - HP encoding
-	 * - External Blur
-	 * - Resolution beyond 1080P
-	 * (It will fall back to CQCAC 25% or 0% (CAC) or CQCAC-OFF)
-	 */
-	if (inst->codec == MSM_VIDC_HEVC) {
-		if (msm_vidc_get_parent_value(inst, MIN_QUALITY,
-					      PIX_FMTS, &pix_fmts, __func__))
-			return -EINVAL;
-
-		if (is_10bit_colorformat(pix_fmts)) {
-			i_vpr_h(inst,
-				"%s: min quality is supported only for 8 bit\n",
-				__func__);
-			adjusted_value = 0;
-			goto update_and_exit;
-		}
-	}
-
-	if (res_is_greater_than(width, height, 1920, 1080)) {
-		i_vpr_h(inst, "%s: unsupported res, wxh %ux%u\n",
-			__func__, width, height);
-		adjusted_value = 0;
-		goto update_and_exit;
-	}
-
-	if (frame_rate > 60) {
-		i_vpr_h(inst, "%s: unsupported fps %u\n",
-			__func__, frame_rate);
-		adjusted_value = 0;
-		goto update_and_exit;
-	}
-
-	if (enh_layer_count > 0 && inst->hfi_layer_type != HFI_HIER_B) {
-		i_vpr_h(inst,
-			"%s: min quality not supported for HP encoding\n",
-			__func__);
-		adjusted_value = 0;
-		goto update_and_exit;
-	}
-
-	/* Above conditions are met. Hence enable min quality */
-	adjusted_value = MAX_SUPPORTED_MIN_QUALITY;
-
-update_and_exit:
-	msm_vidc_update_cap_value(inst, MIN_QUALITY, adjusted_value, __func__);
-
-	return 0;
-}
-
-int msm_vidc_adjust_bitrate_boost_iris5p(void *instance, struct v4l2_ctrl *ctrl)
-{
-	s32 adjusted_value;
-	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
-	s64 rc_type = -1;
-	u32 width, height, frame_rate;
-	struct v4l2_format *f;
-	u32 max_bitrate = 0, bitrate = 0;
-
-	adjusted_value = ctrl ? ctrl->val :
-		inst->capabilities[BITRATE_BOOST].value;
-
-	if (inst->bufq[OUTPUT_PORT].vb2q->streaming)
-		return 0;
-
-	if (msm_vidc_get_parent_value(inst, BITRATE_BOOST,
-		BITRATE_MODE, &rc_type, __func__))
-		return -EINVAL;
-
-	/*
-	 * Bitrate Boost are supported only for VBR rc type.
-	 * Hence, do not adjust or set to firmware for non VBR rc's
-	 */
-	if (rc_type != HFI_RC_VBR_CFR) {
-		adjusted_value = 0;
-		goto adjust;
-	}
-
-	frame_rate = inst->capabilities[FRAME_RATE].value >> 16;
-	f = &inst->fmts[OUTPUT_PORT];
-	width = f->fmt.pix_mp.width;
-	height = f->fmt.pix_mp.height;
-
-	/*
-	 * honor client set bitrate boost
-	 * if client did not set, keep max bitrate boost up to 4k@60fps
-	 * and remove bitrate boost after 4k@60fps
-	 */
-	if (inst->capabilities[BITRATE_BOOST].flags & CAP_FLAG_CLIENT_SET) {
-		/* accept client set bitrate boost value as is */
-	} else {
-		if (res_is_less_than_or_equal_to(width, height, 4096, 2176) &&
-			frame_rate <= 60)
-			adjusted_value = MAX_BITRATE_BOOST;
-		else
-			adjusted_value = 0;
-	}
-
-	max_bitrate = msm_vidc_get_max_bitrate(inst);
-	bitrate = inst->capabilities[BIT_RATE].value;
-	if (adjusted_value) {
-		if ((bitrate + bitrate / (100 / adjusted_value)) > max_bitrate) {
-			i_vpr_h(inst,
-				"%s: bitrate %d is beyond max bitrate %d, remove bitrate boost\n",
-				__func__, max_bitrate, bitrate);
-			adjusted_value = 0;
-		}
-	}
-adjust:
-	msm_vidc_update_cap_value(inst, BITRATE_BOOST, adjusted_value, __func__);
-
 	return 0;
 }
 

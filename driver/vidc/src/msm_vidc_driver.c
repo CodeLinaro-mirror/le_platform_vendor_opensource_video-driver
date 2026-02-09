@@ -3701,7 +3701,7 @@ int msm_vidc_vb2_buffer_done(struct msm_vidc_inst *inst,
 	return 0;
 }
 
-int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst)
+int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst, struct file *filp)
 {
 	struct video_device *vdev = get_video_device(inst);
 	int rc = 0;
@@ -3712,21 +3712,24 @@ int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
-	if (!inst->fh_filp) {
-		i_vpr_e(inst, "%s: fh_filp is NULL\n", __func__);
-		return -EINVAL;
-	}
-
 	v4l2_fh_init(&inst->fh, vdev);
 	inst->fh.ctrl_handler = &inst->ctrl_handler;
-
 #if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
-	v4l2_fh_add(&inst->fh, inst->fh_filp);
+	v4l2_fh_add(&inst->fh, filp);
 #else
 	v4l2_fh_add(&inst->fh);
 #endif
 
 	return rc;
+}
+
+void msm_vidc_v4l2_fh_del(struct msm_vidc_inst *inst, struct file *filp)
+{
+#if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
+	v4l2_fh_del(&inst->fh, filp);
+#else
+	v4l2_fh_del(&inst->fh);
+#endif
 }
 
 int msm_vidc_v4l2_fh_deinit(struct msm_vidc_inst *inst)
@@ -3738,12 +3741,6 @@ int msm_vidc_v4l2_fh_deinit(struct msm_vidc_inst *inst)
 		i_vpr_h(inst, "%s: already not inited\n", __func__);
 		return 0;
 	}
-
-#if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
-	v4l2_fh_del(&inst->fh, inst->fh_filp);
-#else
-	v4l2_fh_del(&inst->fh);
-#endif
 
 	inst->fh.ctrl_handler = NULL;
 	v4l2_fh_exit(&inst->fh);
@@ -4623,10 +4620,12 @@ int msm_vidc_pvm_event_handler(void *p)
 	struct msm_vidc_core *core = p;
 	struct virtio_video_msm_hw_event evt = {0};
 
-	while (core->full_virtualization_data.is_gvm_open) {
+	while (!kthread_should_stop() &&
+		core->full_virtualization_data.is_gvm_open) {
 		if (!virtio_video_queue_event_wait(&evt)) {
 			switch (evt.event_type) {
 			case GVM_SSR:
+				d_vpr_e("%s: Received event GVM_SSR\n", __func__);
 				core->ssr_dev = *(uint32_t *)evt.payload;
 				schedule_work(&core->full_virt_ssr_work);
 				break;
@@ -4996,6 +4995,7 @@ unlock:
 void msm_vidc_hw_virt_ssr_handler(struct work_struct *work)
 {
 	struct msm_vidc_core *core = NULL;
+	struct msm_vidc_inst *i = NULL, *temp = NULL;
 	struct hfi_packet pkt = {};
 
 	core = container_of(work, struct msm_vidc_core, full_virt_ssr_work);
@@ -5003,6 +5003,7 @@ void msm_vidc_hw_virt_ssr_handler(struct work_struct *work)
 		d_vpr_e("%s: invalid params %pK\n", __func__, core);
 		return;
 	}
+	d_vpr_e("%s: Handling SSR for device 0x%x\n", __func__, core->ssr_dev);
 
 	/* set gvm deinit flag for special case where PVM driver failed */
 	if (core->ssr_dev == GVM_SSR_DEVICE_DRIVER)
@@ -5012,6 +5013,10 @@ void msm_vidc_hw_virt_ssr_handler(struct work_struct *work)
 	pkt.type = HFI_SYS_ERROR_FATAL;
 
 	handle_system_error(core, &pkt);
+
+	/* clear dangling session list */
+	list_for_each_entry_safe(i, temp, &core->dangling_instances, list)
+		list_del_init(&i->list);
 }
 
 void msm_vidc_ssr_handler(struct work_struct *work)

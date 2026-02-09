@@ -328,6 +328,7 @@ static const struct msm_platform_core_capability core_data_chora_v0[] = {
 	{AV_SYNC_WINDOW_SIZE, 40},
 	{NON_FATAL_FAULTS, 1},
 	{ENC_AUTO_FRAMERATE, 0},
+	{SUPPORTS_MINIDUMP, 1},
 	};
 
 static const struct msm_platform_core_capability core_data_chora_v1[] = {
@@ -347,8 +348,8 @@ static const struct msm_platform_core_capability core_data_chora_v1[] = {
 	{MAX_MBPF_HQ, 8160}, /* ((1920x1088)/256) */
 	{MAX_MBPS_HQ, 244800}, /* ((1920x1088)/256)@30fps */
 	{MAX_MBPF_B_FRAME, 8160},/* ((1920x1088)/256) */
-	{MAX_MBPS_B_FRAME, 489600}, /* ((1920x1088)/256) MBs@60fps */
-	{MAX_MBPS_ALL_INTRA, 489600}, /* ((1920x1088)/256)@60fps */
+	{MAX_MBPS_B_FRAME, 244800}, /* ((1920x1088)/256) MBs@60fps */
+	{MAX_MBPS_ALL_INTRA, 244800}, /* ((1920x1088)/256)@60fps */
 	{MAX_ENH_LAYER_COUNT, 5},
 	{NUM_VPP_PIPE, 1},
 	{SW_PC, 1},
@@ -376,6 +377,7 @@ static const struct msm_platform_core_capability core_data_chora_v1[] = {
 	{AV_SYNC_WINDOW_SIZE, 40},
 	{NON_FATAL_FAULTS, 1},
 	{ENC_AUTO_FRAMERATE, 0},
+	{SUPPORTS_MINIDUMP, 1},
 	};
 
 static int msm_vidc_set_ring_buffer_count_chora(void *instance,
@@ -476,7 +478,8 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v0[] = {
 	{PIX_FMTS, ENC, HEVC,
 		MSM_VIDC_FMT_NV12C,
 		MSM_VIDC_FMT_NV21,
-		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV21 | MSM_VIDC_FMT_NV12C,
+		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV21 | MSM_VIDC_FMT_NV12C |
+		MSM_VIDC_FMT_P010 | MSM_VIDC_FMT_TP10C,
 		MSM_VIDC_FMT_NV12C},
 	{PIX_FMTS, ENC, VP9,
 		MSM_VIDC_FMT_NV12C,
@@ -846,7 +849,7 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v0[] = {
 		0},
 
 	{B_FRAME, ENC, H264 | HEVC,
-		0, 7, 1, 0,
+		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDEO_B_FRAMES,
 		HFI_PROP_MAX_B_FRAMES,
 		CAP_FLAG_OUTPUT_PORT},
@@ -1295,9 +1298,11 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v0[] = {
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 	{PROFILE, ENC, HEVC | HEIC,
 		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
-		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE,
+		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE,
 		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN) |
-		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE),
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE) |
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10) |
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE),
 		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
 		V4L2_CID_MPEG_VIDEO_HEVC_PROFILE,
 		HFI_PROP_PROFILE,
@@ -2001,7 +2006,8 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v1[] = {
 	{PIX_FMTS, ENC, HEVC,
 		MSM_VIDC_FMT_NV12C,
 		MSM_VIDC_FMT_NV21,
-		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV21 | MSM_VIDC_FMT_NV12C,
+		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV21 | MSM_VIDC_FMT_NV12C |
+		MSM_VIDC_FMT_P010 | MSM_VIDC_FMT_TP10C,
 		MSM_VIDC_FMT_NV12C},
 	{PIX_FMTS, ENC, VP9,
 		MSM_VIDC_FMT_NV12C,
@@ -2371,7 +2377,7 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v1[] = {
 		0},
 
 	{B_FRAME, ENC, H264 | HEVC,
-		0, 7, 1, 0,
+		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDEO_B_FRAMES,
 		HFI_PROP_MAX_B_FRAMES,
 		CAP_FLAG_OUTPUT_PORT},
@@ -2821,9 +2827,11 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v1[] = {
 
 	{PROFILE, ENC, HEVC | HEIC,
 		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
-		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE,
+		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE,
 		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN) |
-		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE),
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE) |
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10) |
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE),
 		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
 		V4L2_CID_MPEG_VIDEO_HEVC_PROFILE,
 		HFI_PROP_PROFILE,
@@ -3498,12 +3506,12 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_chor
 	 */
 
 	{PIX_FMTS, ENC, H264,
-		{IR_PERIOD, CSC, LTR_COUNT, META_ROI_INFO}},
+		{IR_PERIOD, CSC, LTR_COUNT}},
 
 	{PIX_FMTS, ENC, HEVC,
 		{PROFILE, MIN_FRAME_QP, MAX_FRAME_QP, I_FRAME_QP, P_FRAME_QP,
 			B_FRAME_QP, MIN_QUALITY, BLUR_TYPES, IR_PERIOD,
-			LTR_COUNT, CSC, META_ROI_INFO}},
+			LTR_COUNT, CSC}},
 
 	{PIX_FMTS, ENC, HEIC,
 		{PROFILE, CSC}},
@@ -4026,7 +4034,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_chor
 
 	{META_ROI_INFO, ENC, H264 | HEVC,
 		{MIN_QUALITY, IR_PERIOD, BLUR_TYPES},
-		msm_vidc_adjust_roi_info,
+		msm_vidc_adjust_roi_info_iris4,
 		NULL},
 
 	{GRID_ENABLE, ENC, HEIC,
@@ -4119,19 +4127,19 @@ static const struct clk_table chora_clk_table[] = {
 
 /* name, start, size, secure, dma_coherant, region, dma_mask */
 const struct context_bank_table chora_context_bank_table[] = {
-	{"qcom,vidc,cb-sec-non-pxl",	0x010000000, 0x24800000, 1, 0,
-		MSM_VIDC_SECURE_NONPIXEL,		0 },
-	{"qcom,vidc,cb-ns",				0x25800000, 0xba800000, 0, 1,
-		MSM_VIDC_NON_SECURE |
-		MSM_VIDC_NON_SECURE_BITSTREAM,	0 },
-	{"qcom,vidc,cb-ns-bitstream",	0x00100000, 0xffb00000, 0, 1,
-		MSM_VIDC_REGION_NONE,			0 },
-	{"qcom,vidc,cb-ns-pxl",			0x00100000, 0xdff00000, 0, 1,
-		MSM_VIDC_NON_SECURE_PIXEL,		0 },
-	{"qcom,vidc,cb-sec-pxl",		0x00500000, 0xdfb00000, 1, 0,
-		MSM_VIDC_SECURE_PIXEL,			0 },
-	{"qcom,vidc,cb-sec-bitstream",	0x00500000, 0xdfb00000, 1, 0,
-		MSM_VIDC_SECURE_BITSTREAM,		0 },
+    {"qcom,vidc,cb-sec-non-pxl",    0x01000000, 0x24800000, 1, 0,
+        MSM_VIDC_SECURE_NONPIXEL,      0 },
+    {"qcom,vidc,cb-ns",             0x25800000, 0xda400000, 0, 1,
+        MSM_VIDC_NON_SECURE |
+        MSM_VIDC_NON_SECURE_BITSTREAM, 0 },
+    {"qcom,vidc,cb-ns-bitstream",   0x00100000, 0xffb00000, 0, 1,
+        MSM_VIDC_REGION_NONE,          0 },
+    {"qcom,vidc,cb-ns-pxl",         0x00100000, 0xffb00000, 0, 1,
+        MSM_VIDC_NON_SECURE_PIXEL,     0 },
+    {"qcom,vidc,cb-sec-pxl",        0x00100000, 0xffb00000, 1, 0,
+        MSM_VIDC_SECURE_PIXEL,         0 },
+    {"qcom,vidc,cb-sec-bitstream",  0x00100000, 0xffb00000, 1, 0,
+        MSM_VIDC_SECURE_BITSTREAM,     0 },
 };
 
 /* register, value, mask */
@@ -4220,7 +4228,7 @@ static const u32 chora_msm_vidc_ssr_type[] = {
 
 static struct msm_vidc_efuse_data efuse_data_chora[] = {
 	/* IRIS_PLL_FMAX - max 4k@30 encode */
-	EFUSE_ENTRY(0x221C8118, 4, 0x100, 0x8, SKU_VERSION),
+	EFUSE_ENTRY(0x221C8120, 4, 0x10, 0x4, SKU_VERSION),
 };
 
 static const struct msm_vidc_platform_data chora_data_v0 = {
@@ -4243,7 +4251,7 @@ static const struct msm_vidc_platform_data chora_data_v0 = {
 	.fwname = "vpu20_1v.mbn",
 	.pas_id = 9,
 	.supports_mmrm = 0,
-	.vpu_ver = VPU_VERSION_IRIS2_1PIPE,
+	.vpu_ver = VPU_VERSION_IRIS2_1P,
 
 	/* caps related resorces */
 	.core_data = core_data_chora_v0,
@@ -4305,7 +4313,7 @@ static const struct msm_vidc_platform_data chora_data_v1 = {
 	.fwname = "vpu20_1v.mbn",
 	.pas_id = 9,
 	.supports_mmrm = 0,
-	.vpu_ver = VPU_VERSION_IRIS2_1PIPE,
+	.vpu_ver = VPU_VERSION_IRIS2_1P,
 
 	/* caps related resorces */
 	.core_data = core_data_chora_v1,

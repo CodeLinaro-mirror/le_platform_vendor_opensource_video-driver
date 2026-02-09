@@ -226,6 +226,7 @@ enum vpu_version {
 	VPU_VERSION_IRIS5_4P, // IRIS5 4 PIPE
 	VENUS_VERSION_AR50LT_V1,
 	VENUS_VERSION_AR50LT_V2,
+	VPU_VERSION_IRIS2_1P, //IRIS2 1 PIPE
 };
 
 struct msm_vidc_platform_data {
@@ -355,6 +356,11 @@ static inline bool is_mmrm_supported(struct msm_vidc_core *core)
 	return !!core->platform->data.supports_mmrm;
 }
 
+static inline bool is_crc_enabled(struct msm_vidc_core *core)
+{
+	return core->debug_enable_crc;
+}
+
 int msm_vidc_init_platform_capabilities(struct msm_vidc_core *core);
 enum msm_vidc_hw_version msm_vidc_get_hw_version(void);
 int msm_vidc_read_efuse(struct msm_vidc_core *core);
@@ -476,8 +482,6 @@ int msm_vidc_set_lookahead_encode_size(void *instance, enum msm_vidc_inst_capabi
 int msm_vidc_adjust_log_mode(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_bitdepth(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_req_sync_frame(void *instance, struct v4l2_ctrl *ctrl);
-int msm_vidc_adjust_min_quality_iris5p(void *instance, struct v4l2_ctrl *ctrl);
-int msm_vidc_adjust_bitrate_boost_iris5p(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_set_ring_buffer_count(void *instance,
 	enum msm_vidc_inst_capability_type cap_id);
 

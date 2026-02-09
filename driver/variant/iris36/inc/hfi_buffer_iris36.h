@@ -22,6 +22,9 @@ typedef u64     HFI_U64;
 #define  MAX(x, y) (((x) > (y)) ? (x) : (y))
 #endif
 
+#define MIN_HP_DUALCORE_REQUIREMENT(width, height, frame_rate) \
+	(width * height * frame_rate >= 7680 * 4320 * 60)
+
 #define HFI_ALIGNMENT_4096 (4096)
 
 #define BUF_SIZE_ALIGN_16 (16)

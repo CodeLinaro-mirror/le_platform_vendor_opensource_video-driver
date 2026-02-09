@@ -121,6 +121,7 @@ struct msm_vidc_core {
 	u32                                    ssr_dev;
 	struct msm_vidc_core_power             power;
 	struct msm_vidc_ssr                    ssr;
+	struct task_struct                    *pvm_event_handler_thread;
 	bool                                   debug_enable_crc;
 	u32                                    hfi_debug_config;
 	u32                                    skip_pc_count;
