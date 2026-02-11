@@ -76,6 +76,8 @@
 #endif
 #if defined(CONFIG_MSM_VIDC_QLI)
 #include "msm_vidc_hamoa.h"
+#include "msm_vidc_lemans.h"
+#include "msm_vidc_monaco.h"
 #include "msm_vidc_iris3.h"
 #endif
 
@@ -267,16 +269,22 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.init_platform              = msm_vidc_init_platform_hamoa,
 		.init_vpu                  = msm_vidc_init_iris3,
 	},
-#endif
-#if defined(CONFIG_MSM_VIDC_LEMANS)
 	{
-		.compat                     = "qcom,sa8255-vidc",
+		.compat                     = "qcom,sa8775p-iris",
 		.get_platform_data          = msm_vidc_get_platform_data_lemans,
 		.init_platform              = msm_vidc_init_platform_lemans,
 		.init_vpu                   = msm_vidc_init_iris3,
 	},
 	{
-		.compat                     = "qcom,sa8775p-iris",
+		.compat                     = "qcom,qcs8300-iris",
+		.get_platform_data          = msm_vidc_get_platform_data_monaco,
+		.init_platform              = msm_vidc_init_platform_monaco,
+		.init_vpu                   = msm_vidc_init_iris3,
+	},
+#endif
+#if defined(CONFIG_MSM_VIDC_LEMANS)
+	{
+		.compat                     = "qcom,sa8255-vidc",
 		.get_platform_data          = msm_vidc_get_platform_data_lemans,
 		.init_platform              = msm_vidc_init_platform_lemans,
 		.init_vpu                   = msm_vidc_init_iris3,
