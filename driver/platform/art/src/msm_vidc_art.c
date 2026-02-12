@@ -87,6 +87,13 @@ static const struct msm_platform_core_capability core_data_art[] = {
 	{MAX_IMAGE_MBPF, 1048576},  /* (16384x16384)/256 */
 	{MAX_MBPF_HQ, 8160}, /* ((1920x1088)/256) */
 	{MAX_MBPS_HQ, 489600}, /* ((1920x1088)/256)@60fps */
+	/*
+	 * MAX_CPLX_RT_MBPF_HQ and MAX_CPLX_RT_MBPS_HQ cap is set for True 4K@60 (aligned),
+	 * adaptable to 8K later.this will be used when client explicitly requesting quality mode,
+	 * by setting complexity >=DEFAULT_COMPLEXITY
+	 */
+	{MAX_CPLX_RT_MBPF_HQ, 34816}, /* ((4096x2176)/256) */
+	{MAX_CPLX_RT_MBPS_HQ, 2088960}, /* ((4096x2176)/256)@60fps */
 	{MAX_MBPF_B_FRAME, 32640}, /* 3840x2176/256 */
 	{MAX_MBPS_B_FRAME, 1958400}, /* 3840x2176/256 MBs@60fps */
 	{MAX_MBPS_ALL_INTRA, 1044480}, /* 4096x2176/256 MBs@30fps */
