@@ -60,6 +60,7 @@
 #endif
 #if defined(CONFIG_MSM_VIDC_SERAPH)
 #include "msm_vidc_seraph.h"
+#include "msm_vidc_pikachu.h"
 #include "msm_vidc_iris4.h"
 #endif
 #if defined(CONFIG_MSM_VIDC_NORDAU)
@@ -356,6 +357,12 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.get_platform_data          = msm_vidc_get_platform_data_seraph,
 		.init_platform              = msm_vidc_init_platform_seraph,
 		.init_vpu                  = msm_vidc_init_iris4,
+	},
+	{
+		.compat                     = "qcom,pikachu-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_pikachu,
+		.init_platform              = msm_vidc_init_platform_pikachu,
+		.init_vpu                   = msm_vidc_init_iris4,
 	},
 #endif
 #if defined(CONFIG_MSM_VIDC_NORDAU)

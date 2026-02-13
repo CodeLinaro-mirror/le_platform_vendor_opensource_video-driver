@@ -125,6 +125,7 @@ endif
 
 ifeq ($(CONFIG_MSM_VIDC_SERAPH), y)
 LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/seraph/inc \
+                  -I$(VIDEO_DRIVER_ABS_PATH)/platform/pikachu/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris4/inc
 endif
 
@@ -215,6 +216,7 @@ msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/art/src/msm_vidc_art.o \
 endif
 ifeq ($(CONFIG_MSM_VIDC_SERAPH), y)
 msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/seraph/src/msm_vidc_seraph.o \
+                  $(VIDEO_DRIVER_REL_PATH)/platform/pikachu/src/msm_vidc_pikachu.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris4/src/msm_vidc_buffer_iris4.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris4/src/msm_vidc_power_iris4.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris4/src/msm_vidc_bus_iris4.o \

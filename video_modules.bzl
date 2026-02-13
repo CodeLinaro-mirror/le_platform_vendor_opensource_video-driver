@@ -103,6 +103,7 @@ module_entry(
             "driver/variant/iris4/src/msm_vidc_power_iris4.c",
             "driver/variant/iris4/src/msm_vidc_iris4.c",
             "driver/platform/seraph/src/msm_vidc_seraph.c",
+            "driver/platform/pikachu/src/msm_vidc_pikachu.c",
         ],
         "CONFIG_MSM_VIDC_NORDAU" : [
             "driver/variant/iris36/src/msm_vidc_buffer_iris36.c",
@@ -236,6 +237,7 @@ module_entry(
         ],
         "CONFIG_MSM_VIDC_SERAPH" : [
             "driver/platform/seraph/src/seraph.c",
+            "driver/platform/pikachu/src/pikachu.c",
             "driver/variant/iris4/src/msm_vidc_buffer_iris4.c",
             "driver/variant/iris4/src/msm_vidc_power_iris4.c",
             "driver/variant/iris4/src/msm_vidc_bus_iris4.c",
