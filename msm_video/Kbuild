@@ -61,6 +61,11 @@ include $(VIDEO_ROOT)/config/ravelin_video.conf
 LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/ravelin_video.h
 endif
 
+ifeq ($(CONFIG_ARCH_SHIKRA), y)
+include $(VIDEO_ROOT)/config/shikra_video.conf
+LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/shikra_video.h
+endif
+
 ifeq ($(CONFIG_ARCH_SERAPH), y)
 include $(VIDEO_ROOT)/config/seraph_video.conf
 LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/seraph_video.h
@@ -110,6 +115,11 @@ endif
 
 ifeq ($(CONFIG_MSM_VIDC_RAVELIN), y)
 LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/ravelin/inc \
+                  -I$(VIDEO_DRIVER_ABS_PATH)/variant/ar50lt/inc
+endif
+
+ifeq ($(CONFIG_MSM_VIDC_SHIKRA), y)
+LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/shikra/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/variant/ar50lt/inc
 endif
 
@@ -222,6 +232,13 @@ msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/nordau/src/msm_vidc_nordau.o
 endif
 
 ifeq ($(CONFIG_MSM_VIDC_RAVELIN), y)
+msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/ravelin/src/msm_vidc_ravelin.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/ar50lt/src/msm_vidc_buffer_ar50lt.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/ar50lt/src/msm_vidc_power_ar50lt.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/ar50lt/src/msm_vidc_ar50lt.o
+endif
+
+ifeq ($(CONFIG_MSM_VIDC_SHIKRA), y)
 msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/ravelin/src/msm_vidc_ravelin.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/ar50lt/src/msm_vidc_buffer_ar50lt.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/ar50lt/src/msm_vidc_power_ar50lt.o \
