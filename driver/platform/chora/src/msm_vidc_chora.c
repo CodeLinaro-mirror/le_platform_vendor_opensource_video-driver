@@ -454,13 +454,13 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v0[] = {
 
 	{FRAME_WIDTH, DEC, CODECS_ALL, 96, 4096, 1, 1920},
 	{FRAME_WIDTH, ENC, CODECS_ALL, 128, 4096, 1, 1920},
+	{FRAME_HEIGHT, DEC, CODECS_ALL, 96, 4096, 1, 1080},
+	{FRAME_HEIGHT, ENC, CODECS_ALL, 128, 4096, 1, 1080},
 	{FRAME_WIDTH, ENC, HEIC, 128, 16384, 1, 16384},
 	{FRAME_HEIGHT, ENC, HEIC, 128, 16384, 1, 16384},
 	{LOSSLESS_FRAME_WIDTH, ENC, CODECS_ALL, 128, 4096, 1, 1920},
 	{SECURE_FRAME_WIDTH, DEC, CODECS_ALL, 96, 4096, 1, 1920},
 	{SECURE_FRAME_WIDTH, ENC, CODECS_ALL, 128, 4096, 1, 1920},
-	{FRAME_HEIGHT, DEC, CODECS_ALL, 96, 4096, 1, 1080},
-	{FRAME_HEIGHT, ENC, CODECS_ALL, 128, 4096, 1, 1080},
 	{LOSSLESS_FRAME_HEIGHT, ENC, CODECS_ALL, 128, 4096, 1, 1080},
 	{SECURE_FRAME_HEIGHT, DEC, CODECS_ALL, 96, 4096, 1, 1080},
 	{SECURE_FRAME_HEIGHT, ENC, CODECS_ALL, 128, 4096, 1, 1080},
@@ -947,12 +947,7 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v0[] = {
 		V4L2_CID_MPEG_VIDEO_LTR_COUNT,
 		HFI_PROP_LTR_COUNT,
 		CAP_FLAG_OUTPUT_PORT},
-/* {cap, domain, codec,
-	 *      min, max, step_or_mask, value,
-	 *      v4l2_id,
-	 *      hfi_id,
-	 *      flags}
-	 */
+
 	{USE_LTR, ENC, H264 | HEVC,
 		0,
 		((1 << MAX_LTR_FRAME_COUNT) - 1),
@@ -2019,13 +2014,13 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v1[] = {
 
 	{FRAME_WIDTH, DEC, CODECS_ALL, 96, 4096, 1, 1920},
 	{FRAME_WIDTH, ENC, CODECS_ALL, 128, 4096, 1, 1920},
+	{FRAME_HEIGHT, DEC, CODECS_ALL, 96, 4096, 1, 1080},
+	{FRAME_HEIGHT, ENC, CODECS_ALL, 128, 4096, 1, 1080},
 	{FRAME_WIDTH, ENC, HEIC, 128, 16384, 1, 16384},
 	{FRAME_HEIGHT, ENC, HEIC, 128, 16384, 1, 16384},
 	{LOSSLESS_FRAME_WIDTH, ENC, CODECS_ALL, 128, 4096, 1, 1920},
 	{SECURE_FRAME_WIDTH, DEC, CODECS_ALL, 96, 4096, 1, 1920},
 	{SECURE_FRAME_WIDTH, ENC, CODECS_ALL, 128, 4096, 1, 1920},
-	{FRAME_HEIGHT, DEC, CODECS_ALL, 96, 4096, 1, 1080},
-	{FRAME_HEIGHT, ENC, CODECS_ALL, 128, 4096, 1, 1080},
 	{LOSSLESS_FRAME_HEIGHT, ENC, CODECS_ALL, 128, 4096, 1, 1080},
 	{SECURE_FRAME_HEIGHT, DEC, CODECS_ALL, 96, 4096, 1, 1080},
 	{SECURE_FRAME_HEIGHT, ENC, CODECS_ALL, 128, 4096, 1, 1080},
@@ -2512,12 +2507,7 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v1[] = {
 		V4L2_CID_MPEG_VIDEO_LTR_COUNT,
 		HFI_PROP_LTR_COUNT,
 		CAP_FLAG_OUTPUT_PORT},
-/* {cap, domain, codec,
-	 *      min, max, step_or_mask, value,
-	 *      v4l2_id,
-	 *      hfi_id,
-	 *      flags}
-	 */
+
 	{USE_LTR, ENC, H264 | HEVC,
 		0,
 		((1 << MAX_LTR_FRAME_COUNT) - 1),
