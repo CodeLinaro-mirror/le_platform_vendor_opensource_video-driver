@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2024,2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include "msm_vidc_buffer_iris33_au.h"
@@ -13,6 +13,7 @@
 #include "msm_vidc_platform.h"
 #include "hfi_property.h"
 #include "hfi_buffer_iris33_au.h"
+#include "msm_vidc_iris33_au.h"
 
 static u32 msm_vidc_decoder_bin_size_iris33_au(struct msm_vidc_inst *inst)
 {
@@ -251,6 +252,7 @@ static u32 msm_vidc_decoder_persist_size_iris33_au(struct msm_vidc_inst *inst)
 {
 	u32 size = 0;
 	u32 rpu_enabled = 0;
+	u32 persist_comv_enable = inst->comv_bitstream_cb;
 
 	if (!inst) {
 		d_vpr_e("%s: invalid params\n", __func__);
@@ -265,7 +267,7 @@ static u32 msm_vidc_decoder_persist_size_iris33_au(struct msm_vidc_inst *inst)
 	} else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC) {
 		HFI_BUFFER_PERSIST_H265D(size, rpu_enabled);
 	} else if (inst->codec == MSM_VIDC_VP9) {
-		HFI_BUFFER_PERSIST_VP9D(size);
+		HFI_BUFFER_PERSIST_VP9D(size, persist_comv_enable);
 	} else if (inst->codec == MSM_VIDC_AV1) {
 		/*
 		 * When DRAP is enabled, COMV buffer is part of PERSIST buffer and
@@ -277,14 +279,47 @@ static u32 msm_vidc_decoder_persist_size_iris33_au(struct msm_vidc_inst *inst)
 		if (inst->capabilities->cap[DRAP].value)
 			HFI_BUFFER_PERSIST_AV1D(size,
 				inst->capabilities->cap[FRAME_WIDTH].max,
-				inst->capabilities->cap[FRAME_HEIGHT].max, 16);
+				inst->capabilities->cap[FRAME_HEIGHT].max, 16,
+				persist_comv_enable);
 		else
-			HFI_BUFFER_PERSIST_AV1D(size, 0, 0, 0);
+			HFI_BUFFER_PERSIST_AV1D(size, 0, 0, 0, persist_comv_enable);
 	} else if (inst->codec == MSM_VIDC_MPEG2) {
 		HFI_BUFFER_PERSIST_MP2D(size);
 	}
 
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
+	return size;
+}
+
+static u32 msm_vidc_decoder_persist_comv_size_iris33_au(struct msm_vidc_inst *inst)
+{
+	u32 size = 0;
+
+	if (!inst) {
+		d_vpr_e("%s: invalid params\n", __func__);
+		return size;
+	}
+
+	if (inst->codec == MSM_VIDC_VP9) {
+		HFI_BUFFER_PERSIST_COMV_VP9D(size);
+	} else if (inst->codec == MSM_VIDC_AV1) {
+		/*
+		 * When DRAP is enabled, COMV buffer is part of PERSIST buffer and
+		 * should not be allocated separately. PERSIST buffer should include
+		 * COMV buffer calculated with width, height, refcount.
+		 * When DRAP is disabled, COMV buffer should not be included in PERSIST
+		 * buffer.
+		 */
+		if (inst->capabilities->cap[DRAP].value)
+			HFI_BUFFER_PERSIST_COMV_AV1D(size,
+				inst->capabilities->cap[FRAME_WIDTH].max,
+				inst->capabilities->cap[FRAME_HEIGHT].max, 16);
+		else
+			HFI_BUFFER_PERSIST_COMV_AV1D(size, 0, 0, 0);
+	}
+
+	i_vpr_l(inst, "%s: size %d\n", __func__, size);
+
 	return size;
 }
 
@@ -357,42 +392,6 @@ static u32 msm_vidc_decoder_dpb_size_iris33_au(struct msm_vidc_inst *inst)
 	return size;
 }
 
-
-bool vidc_session_is_multicore(struct msm_vidc_inst *inst)
-{
-	bool is_multicore = false;
-	struct v4l2_format *format = NULL;
-	u32 width = 0, height = 0, frame_rate = 0;
-
-	if (!inst || !inst->capabilities) {
-		d_vpr_e("%s: invalid params\n", __func__);
-		return is_multicore;
-	}
-
-	frame_rate = inst->capabilities->cap[FRAME_RATE].value >> 16;
-	format = &inst->fmts[OUTPUT_PORT];
-	width = format->fmt.pix_mp.width;
-	height = format->fmt.pix_mp.height;
-	/*
-	 * multi-core scheduling can be done for following scenarios:
-	 * 1, All intra encoding
-	 * 2, Lossless encoding
-	 * 3, Hierarchical-P encoding, Layer count is 1 and 8k@60fps
-	 */
-	if ((is_encode_session(inst)) &&
-		(((inst->capabilities->cap[LAYER_TYPE].value ==
-		V4L2_MPEG_VIDEO_HEVC_HIERARCHICAL_CODING_P) &&
-		(inst->capabilities->cap[ENH_LAYER_COUNT].value == 1) &&
-		(MIN_HP_DUALCORE_REQUIREMENT( width, height, frame_rate))) ||
-		(inst->capabilities->cap[ALL_INTRA].value == 1) ||
-		(inst->capabilities->cap[LOSSLESS].value == 1))) {
-		is_multicore = true;
-	}
-	i_vpr_l(inst, "is_multicore: %d session", is_multicore);
-
-	return is_multicore;
-}
-
 /* encoder internal buffers */
 static u32 msm_vidc_encoder_bin_size_iris33_au(struct msm_vidc_inst *inst)
 {
@@ -407,7 +406,7 @@ static u32 msm_vidc_encoder_bin_size_iris33_au(struct msm_vidc_inst *inst)
 		return size;
 	}
 
-	is_dual_core = vidc_session_is_multicore(inst);
+	is_dual_core = msm_vidc_is_multicore_iris33_au(inst);
 	core = inst->core;
 	if (!core->capabilities) {
 		i_vpr_e(inst, "%s: invalid core capabilities\n", __func__);
@@ -437,7 +436,7 @@ static u32 msm_vidc_get_recon_buf_count(struct msm_vidc_inst *inst)
 	s32 n_bframe = 0, ltr_count = 0, hp_layers = 0, hb_layers = 0;
 	bool is_hybrid_hp = false;
 	u32 hfi_codec = 0;
-	bool is_dual_core = vidc_session_is_multicore(inst);
+	bool is_dual_core = msm_vidc_is_multicore_iris33_au(inst);
 
 	n_bframe = inst->capabilities->cap[B_FRAME].value;
 	ltr_count = inst->capabilities->cap[LTR_COUNT].value;
@@ -501,7 +500,7 @@ static u32 msm_vidc_encoder_non_comv_size_iris33_au(struct msm_vidc_inst *inst)
 		return size;
 	}
 
-	is_dual_core = vidc_session_is_multicore(inst);
+	is_dual_core = msm_vidc_is_multicore_iris33_au(inst);
 	profile = inst->capabilities->cap[PROFILE].value;
 	core = inst->core;
 	if (!core->capabilities) {
@@ -539,7 +538,7 @@ static u32 msm_vidc_encoder_line_size_iris33_au(struct msm_vidc_inst *inst)
 		return size;
 	}
 
-	is_dual_core = vidc_session_is_multicore(inst);
+	is_dual_core = msm_vidc_is_multicore_iris33_au(inst);
 	core = inst->core;
 	if (!core->capabilities || !inst->capabilities) {
 		i_vpr_e(inst, "%s: invalid capabilities\n", __func__);
@@ -705,6 +704,7 @@ int msm_buffer_size_iris33_au(struct msm_vidc_inst *inst,
 		{MSM_VIDC_BUF_PERSIST,         msm_vidc_decoder_persist_size_iris33_au      },
 		{MSM_VIDC_BUF_DPB,             msm_vidc_decoder_dpb_size_iris33_au          },
 		{MSM_VIDC_BUF_PARTIAL_DATA,    msm_vidc_decoder_partial_data_size_iris33_au },
+		{MSM_VIDC_BUF_PERSIST_COMV,    msm_vidc_decoder_persist_comv_size_iris33_au },
 	};
 	static const struct msm_vidc_buf_type_handle enc_buf_type_handle[] = {
 		{MSM_VIDC_BUF_INPUT,           msm_vidc_encoder_input_size                  },
@@ -883,6 +883,7 @@ int msm_buffer_min_count_iris33_au(struct msm_vidc_inst *inst,
 	case MSM_VIDC_BUF_ARP:
 	case MSM_VIDC_BUF_VPSS:
 	case MSM_VIDC_BUF_PARTIAL_DATA:
+	case MSM_VIDC_BUF_PERSIST_COMV:
 		count = msm_vidc_internal_buffer_count(inst, buffer_type);
 		break;
 	case MSM_VIDC_BUF_DPB:

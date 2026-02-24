@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #ifndef _MSM_VIDC_INST_H_
@@ -49,6 +49,7 @@ struct msm_vidc_allocations_info {
 	struct msm_vidc_allocations     persist;
 	struct msm_vidc_allocations     vpss;
 	struct msm_vidc_allocations     partial_data;
+	struct msm_vidc_allocations     persist_comv;
 };
 
 struct msm_vidc_mappings_info {
@@ -61,6 +62,7 @@ struct msm_vidc_mappings_info {
 	struct msm_vidc_mappings        persist;
 	struct msm_vidc_mappings        vpss;
 	struct msm_vidc_mappings        partial_data;
+	struct msm_vidc_mappings        persist_comv;
 };
 
 struct msm_vidc_buffers_info {
@@ -78,6 +80,7 @@ struct msm_vidc_buffers_info {
 	struct msm_vidc_buffers        persist;
 	struct msm_vidc_buffers        vpss;
 	struct msm_vidc_buffers        partial_data;
+	struct msm_vidc_buffers        persist_comv;
 };
 
 enum msm_vidc_state FOREACH_STATE(GENERATE_MSM_VIDC_ENUM);
@@ -130,6 +133,7 @@ struct msm_vidc_inst {
 	enum hfi_rate_control              hfi_rc_type;
 	enum hfi_layer_encoding_type       hfi_layer_type;
 	bool                               request;
+	bool                               comv_bitstream_cb;
 	struct buf_queue                   bufq[MAX_PORT];
 	struct msm_vidc_rectangle          crop;
 	struct msm_vidc_rectangle          compose;

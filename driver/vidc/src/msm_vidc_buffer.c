@@ -185,8 +185,7 @@ u32 msm_vidc_internal_buffer_count(struct msm_vidc_inst *inst,
 		else if (buffer_type == MSM_VIDC_BUF_LINE ||
 			buffer_type == MSM_VIDC_BUF_PERSIST) {
 			count = 1;
-		} else if (buffer_type == MSM_VIDC_BUF_COMV ||
-			buffer_type == MSM_VIDC_BUF_NON_COMV) {
+		} else if (buffer_type == MSM_VIDC_BUF_NON_COMV) {
 			if (inst->codec == MSM_VIDC_H264 ||
 				inst->codec == MSM_VIDC_HEVC ||
 				inst->codec == MSM_VIDC_HEIC ||
@@ -194,6 +193,23 @@ u32 msm_vidc_internal_buffer_count(struct msm_vidc_inst *inst,
 				count = 1;
 			else
 				count = 0;
+		} else if (buffer_type == MSM_VIDC_BUF_COMV) {
+			if (inst->codec == MSM_VIDC_H264 ||
+				inst->codec == MSM_VIDC_HEVC ||
+				inst->codec == MSM_VIDC_HEIC)
+				count = 1;
+			else if (inst->codec == MSM_VIDC_AV1) {
+				if (inst->comv_bitstream_cb) {
+					if (!inst->capabilities->cap[DRAP].value)
+						count = 1;
+				} else
+					count = 1;
+			}
+		} else if (buffer_type == MSM_VIDC_BUF_PERSIST_COMV) {
+			if (inst->comv_bitstream_cb)
+				if (inst->codec == MSM_VIDC_VP9 ||
+					inst->codec == MSM_VIDC_AV1)
+					count = 1;
 		} else {
 			i_vpr_e(inst, "%s: unsupported buffer type %s\n",
 				__func__, buf_name(buffer_type));

@@ -17,6 +17,9 @@
 #include "msm_vidc_variant.h"
 #include "venus_hfi.h"
 
+#define MEET_HP_DUALCORE_REQUIREMENT(width, height, frame_rate) \
+	(width * height * frame_rate <= 7680 * 4320 * 60)
+
 #define VIDEO_ARCH_LX 1
 
 #define VCODEC_BASE_OFFS_IRIS33_AU              0x00000000
@@ -39,6 +42,7 @@
 #define VCODEC_VPU_CPU_CS_SCIACMDARG2_IRIS33_AU             (VCODEC_CPU_CS_IRIS33_AU + 0x54)
 #define VCODEC_VPU_CPU_CS_SCIBCMD_IRIS33_AU                 (VCODEC_CPU_CS_IRIS33_AU + 0x5C)
 #define VCODEC_VPU_CPU_CS_SCIBCMDARG0_IRIS33_AU             (VCODEC_CPU_CS_IRIS33_AU + 0x60)
+#define VCODEC_VPU_CPU_CS_SCIBCMDARG3_IRIS33_AU             (VCODEC_CPU_CS_IRIS33_AU + 0x6c)
 #define VCODEC_VPU_CPU_CS_SCIBARG1_IRIS33_AU                (VCODEC_CPU_CS_IRIS33_AU + 0x64)
 #define VCODEC_VPU_CPU_CS_SCIBARG2_IRIS33_AU                (VCODEC_CPU_CS_IRIS33_AU + 0x68)
 
@@ -1058,6 +1062,45 @@ adjust:
 	return 0;
 }
 
+bool msm_vidc_is_multicore_iris33_au(struct msm_vidc_inst *inst)
+{
+	bool is_multicore = false;
+	struct v4l2_format *format = NULL;
+	u32 width = 0, height = 0, frame_rate = 0;
+
+	if (!inst || !inst->capabilities) {
+		d_vpr_e("%s: invalid params\n", __func__);
+		return is_multicore;
+	}
+
+	if (is_decode_session(inst) || is_image_session(inst)) {
+		goto exit;
+	}
+
+	frame_rate = inst->capabilities->cap[FRAME_RATE].value >> 16;
+	format = &inst->fmts[OUTPUT_PORT];
+	width = format->fmt.pix_mp.width;
+	height = format->fmt.pix_mp.height;
+	/*
+	 * multi-core scheduling can be done for following scenarios:
+	 * 1, All intra encoding
+	 * 2, Lossless encoding
+	 * 3, Hierarchical-P encoding, Layer count is 1 and at most 8k@60fps
+	 */
+	if (inst->capabilities->cap[ALL_INTRA].value ||
+		inst->capabilities->cap[LOSSLESS].value)
+		is_multicore = true;
+	else if (MEET_HP_DUALCORE_REQUIREMENT(width, height, frame_rate) &&
+			(inst->capabilities->cap[LAYER_TYPE].value ==
+				V4L2_MPEG_VIDEO_HEVC_HIERARCHICAL_CODING_P) &&
+			(inst->capabilities->cap[ENH_LAYER_COUNT].value == 1))
+		is_multicore = true;
+	i_vpr_l(inst, "is_multicore: %d session", is_multicore);
+
+exit:
+	return is_multicore;
+}
+
 static int __enable_intr_iris33_au(struct msm_vidc_core *vidc_core)
 {
 	/* Enable interrupt */
@@ -1065,6 +1108,14 @@ static int __enable_intr_iris33_au(struct msm_vidc_core *vidc_core)
 	return __write_register(vidc_core, CPU_CS_H2XSOFTINTEN_IRIS33_AU, 0x1);
 }
 
+
+static int __read_tz_ver_iris33_au(struct msm_vidc_core *vidc_core)
+{
+	/* Read tz version */
+	d_vpr_h("%s(): read tz version\n", __func__);
+	return __read_register(vidc_core,
+			VCODEC_VPU_CPU_CS_SCIBCMDARG3_IRIS33_AU, &vidc_core->tz_ver);
+}
 
 
 static struct msm_vidc_venus_ops iris33_au_ops = {
@@ -1077,6 +1128,7 @@ static struct msm_vidc_venus_ops iris33_au_ops = {
 	.watchdog = __watchdog_iris33_au,
 	.noc_error_info = __noc_error_info_iris33_au,
 	.enable_intr = __enable_intr_iris33_au,
+	.read_tz_ver = __read_tz_ver_iris33_au,
 };
 
 static struct msm_vidc_session_ops msm_session_ops = {

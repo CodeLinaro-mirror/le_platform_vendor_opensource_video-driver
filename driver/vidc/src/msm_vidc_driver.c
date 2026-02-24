@@ -895,6 +895,8 @@ struct msm_vidc_buffers *msm_vidc_get_buffers(
 		return &inst->buffers.dpb;
 	case MSM_VIDC_BUF_PERSIST:
 		return &inst->buffers.persist;
+	case MSM_VIDC_BUF_PERSIST_COMV:
+		return &inst->buffers.persist_comv;
 	case MSM_VIDC_BUF_VPSS:
 		return &inst->buffers.vpss;
 	case MSM_VIDC_BUF_PARTIAL_DATA:
@@ -927,6 +929,8 @@ struct msm_vidc_mappings *msm_vidc_get_mappings(
 		return &inst->mappings.dpb;
 	case MSM_VIDC_BUF_PERSIST:
 		return &inst->mappings.persist;
+	case MSM_VIDC_BUF_PERSIST_COMV:
+		return &inst->mappings.persist_comv;
 	case MSM_VIDC_BUF_VPSS:
 		return &inst->mappings.vpss;
 	case MSM_VIDC_BUF_PARTIAL_DATA:
@@ -961,6 +965,8 @@ struct msm_vidc_allocations *msm_vidc_get_allocations(
 		return &inst->allocations.vpss;
 	case MSM_VIDC_BUF_PARTIAL_DATA:
 		return &inst->allocations.partial_data;
+	case MSM_VIDC_BUF_PERSIST_COMV:
+		return &inst->allocations.persist_comv;
 	default:
 		i_vpr_e(inst, "%s: invalid driver buffer type %d\n",
 			func, buffer_type);
@@ -4190,6 +4196,7 @@ int msm_vidc_remove_session(struct msm_vidc_inst *inst)
 			list_move_tail(&i->list, &core->dangling_instances);
 			i_vpr_h(inst, "%s: removed session %#x\n",
 				__func__, i->session_id);
+			break;
 		}
 	}
 	list_for_each_entry(i, &core->instances, list)
@@ -4214,7 +4221,7 @@ static int msm_vidc_remove_dangling_session(struct msm_vidc_inst *inst)
 
 	core_lock(core, __func__);
 	list_for_each_entry_safe(i, temp, &core->dangling_instances, list) {
-		if (i->session_id == inst->session_id) {
+		if (i == inst) {
 			list_del_init(&i->list);
 			i_vpr_h(inst, "%s: removed dangling session %#x\n",
 				__func__, i->session_id);
@@ -4305,6 +4312,22 @@ int msm_vidc_session_set_core_id(struct msm_vidc_inst *inst)
 	return rc;
 }
 #endif
+
+int msm_vidc_session_set_persist_comv(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+
+	if (!inst) {
+		d_vpr_e("%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+
+	rc = venus_hfi_session_set_persist_comv(inst);
+	if (rc)
+		return rc;
+
+	return 0;
+}
 
 int msm_vidc_session_set_secure_mode(struct msm_vidc_inst *inst)
 {
@@ -4933,6 +4956,7 @@ int msm_vidc_core_init(struct msm_vidc_core *core)
 		msm_vidc_change_core_sub_state(core, 0,
 			CORE_SUBSTATE_POWER_ENABLE, __func__);
 		call_venus_op(core, enable_intr, core);
+		call_venus_op(g_core, read_tz_ver, g_core);
 
 	}
 
@@ -4964,6 +4988,15 @@ int msm_vidc_inst_timeout(struct msm_vidc_inst *inst)
 
 	core_lock(core, __func__);
 	/*
+	 * In case of hw virtualization, set session state to error
+	 * and wait for pvm to perform cleanup.
+	 */
+	if (core->is_hw_virt) {
+		msm_vidc_change_state(inst, MSM_VIDC_ERROR, __func__);
+		goto unlock;
+	}
+
+	/*
 	 * All sessions will be removed from core list in core deinit,
 	 * do not deinit core from a session which is not present in
 	 * core list.
@@ -4984,17 +5017,6 @@ int msm_vidc_inst_timeout(struct msm_vidc_inst *inst)
 	/* mark video hw unresponsive */
 	msm_vidc_change_core_sub_state(core,
 		0, CORE_SUBSTATE_VIDEO_UNRESPONSIVE, __func__);
-
-	/*
-	 * In case of hw virtualization, call close_gvm
-	 * to perform deinit from pvm
-	 */
-	if (core->is_hw_virt) {
-#ifdef MSM_VIDC_HW_VIRT
-		virtio_video_msm_cmd_close_gvm();
-#endif
-		core->is_gvm_open = false;
-	}
 
 	/* call core deinit for a valid instance timeout case */
 	msm_vidc_core_deinit_locked(core, true);
@@ -5192,7 +5214,6 @@ int msm_vidc_trigger_ssr(struct msm_vidc_core *core,
 void msm_vidc_hw_virt_ssr_handler(struct work_struct *work)
 {
 	struct msm_vidc_core *core = NULL;
-	struct msm_vidc_inst *i = NULL, *temp = NULL;
 	bool bug_on = false;
 
 	core = container_of(work, struct msm_vidc_core, hw_virt_ssr_work);
@@ -5207,10 +5228,6 @@ void msm_vidc_hw_virt_ssr_handler(struct work_struct *work)
 
 	core_lock(core, __func__);
 	msm_vidc_core_deinit_locked(core, true);
-
-	/* clear dangling session list */
-	list_for_each_entry_safe(i, temp, &core->dangling_instances, list)
-		list_del_init(&i->list);
 
 	if (core->ssr_dev == GVM_SSR_DEVICE_DRIVER) {
 		virtio_video_msm_cmd_close_gvm();

@@ -573,6 +573,8 @@ enum hfi_saliency_type {
 
 #define HFI_PROP_CORE_ID                                        0x030001A9
 
+#define HFI_PROP_PERSIST_COMV                                   0x030001C7
+
 #define HFI_PROP_END                                            0x03FFFFFF
 
 #define HFI_SESSION_ERROR_BEGIN                                 0x04000000

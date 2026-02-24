@@ -96,6 +96,7 @@ enum hfi_buffer_type {
 	HFI_BUFFER_NON_COMV       = 0x0000000B,
 	HFI_BUFFER_PERSIST        = 0x0000000C,
 	HFI_BUFFER_VPSS           = 0x0000000D,
+	HFI_BUFFER_PERSIST_COMV   = 0x00000013,
 };
 
 enum hfi_buffer_host_flags {

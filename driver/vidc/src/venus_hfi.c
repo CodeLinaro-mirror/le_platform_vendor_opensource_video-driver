@@ -34,6 +34,9 @@
 #ifdef MSM_VIDC_HW_VIRT
 #include "vidc_hw_virt.h"
 #endif
+#if defined(CONFIG_MSM_VIDC_IRIS33_AU)
+#include "msm_vidc_iris33_au.h"
+#endif
 
 #define update_offset(offset, val)		((offset) += (val))
 #define update_timestamp(ts, val) \
@@ -42,9 +45,6 @@
 		(ts) += (val); \
 		(ts) *= NSEC_PER_USEC; \
 	} while (0)
-
-#define MIN_HP_DUALCORE_REQUIREMENT(width, height, frame_rate) \
-	(width * height * frame_rate >= 7680 * 4320 * 60)
 
 extern struct msm_vidc_core *g_core;
 
@@ -1325,8 +1325,6 @@ int venus_hfi_session_set_core_id(struct msm_vidc_inst *inst)
 	int rc = 0;
 	struct msm_vidc_core *core = NULL;
 	u32 device_core_mask = HFI_CORE_0;
-	u32 width = 0, height = 0, frame_rate = 0;
-	struct v4l2_format *f = NULL;
 
 	if (!inst || !inst->core || !inst->packet) {
 		d_vpr_e("%s: invalid params\n", __func__);
@@ -1345,25 +1343,7 @@ int venus_hfi_session_set_core_id(struct msm_vidc_inst *inst)
 	if (rc)
 		goto unlock;
 
-	/* Encoder supports multiple cores for a single session on specific scenarios.
-	 * Certain GOP structures can utilize both the cores independently.
-	 * 1. Hierarchical-P, Layer count is 1 and 8k@60fps
-	 * 2. All Intra
-	 * 3. Lossless Encoding
-	 * If in one of these scenarios, set device_core_mask to the available cores mask.
-	 */
-	frame_rate = inst->capabilities->cap[FRAME_RATE].value >> 16;
-	f = &inst->fmts[OUTPUT_PORT];
-	width = f->fmt.pix_mp.width;
-	height = f->fmt.pix_mp.height;
-
-	if ((is_encode_session(inst)) &&
-		(((inst->capabilities->cap[LAYER_TYPE].value ==
-		V4L2_MPEG_VIDEO_HEVC_HIERARCHICAL_CODING_P) &&
-		(inst->capabilities->cap[ENH_LAYER_COUNT].value == 1) &&
-		(MIN_HP_DUALCORE_REQUIREMENT( width, height, frame_rate))) ||
-		(inst->capabilities->cap[ALL_INTRA].value == 1) ||
-	        (inst->capabilities->cap[LOSSLESS].value == 1))) {
+	if (msm_vidc_is_multicore_iris33_au(inst)) {
 		device_core_mask = core->device_core_mask;
 	} else {
 		if (core->device_core_mask & HFI_CORE_0)
@@ -1394,6 +1374,57 @@ unlock:
 	return rc;
 }
 #endif
+
+int venus_hfi_session_set_persist_comv(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	struct msm_vidc_core *core = NULL;
+
+	if (!inst || !inst->core || !inst->packet) {
+		d_vpr_e("%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+	core = inst->core;
+	core_lock(core, __func__);
+
+	if (!__valdiate_session(core, inst, __func__)) {
+		rc = -EINVAL;
+		goto unlock;
+	}
+
+	inst->comv_bitstream_cb = false;
+	if ((!inst->capabilities->cap[SECURE_MODE].value) &&
+		(inst->domain == MSM_VIDC_DECODER) &&
+		(TZ_SUPPORT_COMV_BITSTREAM_CB(core))) {
+		u32 enable_persist_comv = true;
+
+		inst->comv_bitstream_cb = true;
+
+		rc = hfi_create_header(inst->packet, inst->packet_size,
+				inst->session_id, core->header_id++);
+		if (rc)
+			goto unlock;
+
+		rc = hfi_create_packet(inst->packet, inst->packet_size,
+				HFI_PROP_PERSIST_COMV,
+				HFI_HOST_FLAGS_NONE,
+				HFI_PAYLOAD_U32,
+				HFI_PORT_NONE,
+				core->packet_id++,
+				&enable_persist_comv,
+				sizeof(u32));
+		if (rc)
+			goto unlock;
+
+		rc = __cmdq_write(inst->core, inst->packet);
+		if (rc)
+			goto unlock;
+		}
+
+unlock:
+	core_unlock(core, __func__);
+	return rc;
+}
 
 int venus_hfi_session_set_secure_mode(struct msm_vidc_inst *inst)
 {

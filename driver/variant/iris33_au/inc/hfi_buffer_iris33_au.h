@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2024,2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #ifndef __HFI_BUFFER_IRIS33_AU__
@@ -25,9 +25,6 @@ typedef HFI_U32 HFI_BOOL;
 #ifndef MAX
 #define  MAX(x, y) (((x) > (y)) ? (x) : (y))
 #endif
-
-#define MIN_HP_DUALCORE_REQUIREMENT(width, height, frame_rate) \
-	(width * height * frame_rate >= 7680 * 4320 * 60)
 
 #define HFI_ALIGNMENT_4096 (4096)
 
@@ -823,15 +820,27 @@ typedef HFI_U32 HFI_BOOL;
 #define MAX_SUPERFRAME_HEADER_LEN (34)
 #define CCE_TILE_OFFSET_SIZE HFI_ALIGN(32 * 4 * 4, BUFFER_ALIGNMENT_32_BYTES)
 
-#define HFI_BUFFER_PERSIST_VP9D(_size) \
-	(_size = HFI_ALIGN(VP9_NUM_PROBABILITY_TABLE_BUF * VP9_PROB_TABLE_SIZE, \
+#define HFI_BUFFER_PERSIST_VP9D(_size, persist_comv_enable) \
+	do { \
+		(_size = HFI_ALIGN(VP9_NUM_PROBABILITY_TABLE_BUF * VP9_PROB_TABLE_SIZE, \
+		VENUS_DMA_ALIGNMENT) + HFI_ALIGN(MAX_SUPERFRAME_HEADER_LEN, \
+		VENUS_DMA_ALIGNMENT) + HFI_ALIGN(VP9_UDC_HEADER_BUF_SIZE, \
+		VENUS_DMA_ALIGNMENT) + HFI_ALIGN(VP9_NUM_FRAME_INFO_BUF * \
+		CCE_TILE_OFFSET_SIZE, VENUS_DMA_ALIGNMENT) + \
+		HFI_ALIGN(VP9_NUM_FRAME_INFO_BUF * VP9_FRAME_INFO_BUF_SIZE, \
+		VENUS_DMA_ALIGNMENT) + HDR10_HIST_EXTRADATA_SIZE); \
+		if (!persist_comv_enable) { \
+			_size += HFI_ALIGN(HFI_IRIS3_VP9D_COMV_SIZE, \
+				VENUS_DMA_ALIGNMENT);  \
+		} \
+	} while (0)
+
+#define HFI_BUFFER_PERSIST_COMV_VP9D(_size) \
+	do { \
+	_size = HFI_ALIGN(2 * VP9_PROB_TABLE_SIZE, \
 	VENUS_DMA_ALIGNMENT) + HFI_ALIGN(HFI_IRIS3_VP9D_COMV_SIZE, \
-	VENUS_DMA_ALIGNMENT) + HFI_ALIGN(MAX_SUPERFRAME_HEADER_LEN, \
-	VENUS_DMA_ALIGNMENT) + HFI_ALIGN(VP9_UDC_HEADER_BUF_SIZE, \
-	VENUS_DMA_ALIGNMENT) + HFI_ALIGN(VP9_NUM_FRAME_INFO_BUF * \
-	CCE_TILE_OFFSET_SIZE, VENUS_DMA_ALIGNMENT) + \
-	HFI_ALIGN(VP9_NUM_FRAME_INFO_BUF * VP9_FRAME_INFO_BUF_SIZE, \
-	VENUS_DMA_ALIGNMENT) + HDR10_HIST_EXTRADATA_SIZE)
+	VENUS_DMA_ALIGNMENT); \
+	} while (0)
 
 #define HFI_BUFFER_LINE_MP2D(_size, frame_width, frame_height, \
 _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
@@ -1126,10 +1135,13 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 				(((8192 + 127) / 128) * ((4352 + 127) / 128) * \
 				AV1D_SIZE_BSE_COL_MV_128x128))
 
-#define HFI_BUFFER_PERSIST_AV1D(_size, max_width, max_height, total_ref_count) \
+#define HFI_BUFFER_PERSIST_AV1D(_size, max_width, max_height, total_ref_count, \
+		persist_comv_enable) \
 	do { \
-		HFI_U32 comv_size; \
-		HFI_BUFFER_COMV_AV1D(comv_size, max_width, max_height, total_ref_count); \
+		HFI_U32 comv_size = 0; \
+		if (!persist_comv_enable) { \
+			HFI_BUFFER_COMV_AV1D(comv_size, max_width, max_height, total_ref_count); \
+		} \
 		_size = \
 		HFI_ALIGN((SIZE_AV1D_SEQUENCE_HEADER * 2 + \
 		SIZE_AV1D_METADATA + \
@@ -1138,6 +1150,14 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 		2 * SIZE_AV1D_PROB_TABLE) + \
 		comv_size + HDR10_HIST_EXTRADATA_SIZE + \
 		SIZE_AV1D_METADATA * AV1D_NUM_HW_PIC_BUF), VENUS_DMA_ALIGNMENT); \
+	} while (0)
+
+#define HFI_BUFFER_PERSIST_COMV_AV1D(_size, max_width, max_height, total_ref_count) \
+	do { \
+		HFI_U32 comv_size; \
+		HFI_BUFFER_COMV_AV1D(comv_size, max_width, max_height, total_ref_count); \
+		_size = HFI_ALIGN((2 * (2 * SIZE_AV1D_PROB_TABLE) +  \
+			comv_size), VENUS_DMA_ALIGNMENT); \
 	} while (0)
 
 #define HFI_BUFFER_BITSTREAM_ENC(size, frame_width, frame_height, \

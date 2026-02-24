@@ -940,6 +940,12 @@ int msm_venc_streamon_output(struct msm_vidc_inst *inst)
 	if (rc)
 		goto error;
 
+#if defined(CONFIG_MSM_VIDC_IRIS33_AU)
+	rc = msm_vidc_session_set_core_id(inst);
+	if (rc)
+		goto error;
+#endif
+
 	rc = msm_venc_get_output_internal_buffers(inst);
 	if (rc)
 		goto error;

@@ -308,7 +308,7 @@ static struct msm_platform_core_capability core_data_nordau[] = {
 	{MAX_MBPS_HQ, 108000}, /* ((1280x720)/256)@30fps */
 	{MAX_MBPF_B_FRAME, 32640}, /* 3840x2176/256 */
 	{MAX_MBPS_B_FRAME, 1958400}, /* 3840x2176/256 MBs@60fps */
-	{MAX_MBPS_ALL_INTRA, 2088960}, /* 4096x2176/256 MBs@60fps */
+	{MAX_MBPS_ALL_INTRA, 8976000}, /* 3840x2176/256 MBs@275fps */
 	{MAX_ENH_LAYER_COUNT, 5},
 	{NUM_VPP_PIPE, 4},
 	{SW_PC, 1},
@@ -441,8 +441,8 @@ static struct msm_platform_inst_capability instance_cap_data_nordau[] = {
 	/* ((8192x8192)/256) */
 	{MBPF, DEC, HEIC, 64, 262144,  1, 262144 },
 
-	/* (4096 * 2304) / 256 */
-	{LOSSLESS_MBPF, ENC, H264|HEVC, 64, 36864, 1, 36864},
+	/* (1920 * 1080) / 256 */
+	{LOSSLESS_MBPF, ENC, H264|HEVC, 64, 8100, 1, 8100},
 
 	/* Batch Mode Decode */
 	/* TODO: update with new values based on updated voltage corner */

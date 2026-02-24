@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #ifndef _MSM_VIDC_INTERNAL_H_
@@ -74,6 +74,7 @@ enum msm_vidc_metadata_bits {
 #define CODED_FRAMES_PROGRESSIVE 0x0
 #define CODED_FRAMES_INTERLACE 0x1
 #define MAX_VP9D_INST_COUNT     6
+#define MAX_MPEG2D_INST_COUNT   1
 /* TODO: move below macros to waipio.c */
 #define MAX_ENH_LAYER_HB        3
 #define MAX_HEVC_VBR_ENH_LAYER_SLIDING_WINDOW         5
@@ -388,6 +389,7 @@ enum msm_vidc_metadata_bits {
 	BUF_TYPE(PERSIST)                         \
 	BUF_TYPE(VPSS)                            \
 	BUF_TYPE(PARTIAL_DATA)                    \
+	BUF_TYPE(PERSIST_COMV)                    \
 }
 
 #define FOREACH_ALLOW(ALLOW) {                    \

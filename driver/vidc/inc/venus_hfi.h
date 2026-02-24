@@ -59,6 +59,7 @@ int venus_hfi_session_set_secure_mode(struct msm_vidc_inst *inst);
 #if defined(CONFIG_MSM_VIDC_IRIS33_AU)
 int venus_hfi_session_set_core_id(struct msm_vidc_inst *inst);
 #endif
+int venus_hfi_session_set_persist_comv(struct msm_vidc_inst *inst);
 int venus_hfi_core_init(struct msm_vidc_core *core);
 int venus_hfi_core_deinit(struct msm_vidc_core *core, bool force);
 int venus_hfi_noc_error_info(struct msm_vidc_core *core);
