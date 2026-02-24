@@ -58,6 +58,7 @@ struct regulator_table {
 };
 
 enum clk_levels {
+	CLK_LEVEL_LOW_SVS_D3,
 	CLK_LEVEL_LOW_SVS_D2,
 	CLK_LEVEL_LOW_SVS_D1,
 	CLK_LEVEL_LOW_SVS,
