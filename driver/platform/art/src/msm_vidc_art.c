@@ -3049,9 +3049,9 @@ static const struct clk_table art_clk_table[] = {
 };
 
 static const int art_corner_idx_tbl[CLK_LEVEL_MAX] = {
-	[CLK_LEVEL_LOW_SVS_D3] = 9,
-	[CLK_LEVEL_LOW_SVS_D2] = 8,
-	[CLK_LEVEL_LOW_SVS_D1] = 7,
+	[CLK_LEVEL_LOW_SVS_D2] = 9,
+	[CLK_LEVEL_LOW_SVS_D1] = 8,
+	[CLK_LEVEL_LOW_SVS_D0] = 7,
 	[CLK_LEVEL_LOW_SVS] = 6,
 	[CLK_LEVEL_SVS] = 5,
 	[CLK_LEVEL_SVS_L1] = 4,
