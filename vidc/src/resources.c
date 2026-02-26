@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/sort.h>
@@ -412,7 +412,7 @@ static int __init_power_domains(struct msm_vidc_core *core)
 
 	/* print opp table entries */
 	for (cnt = 0; cnt < opp_count; cnt++)
-		d_vpr_e("%s: opp name %s\n", __func__, opp_tbl[cnt]);
+		d_vpr_h("%s: opp name %s\n", __func__, opp_tbl[cnt]);
 
 	/* populate opp power domains(for rails) */
 	rc = devm_pm_opp_attach_genpd(&core->pdev->dev, opp_tbl, &opp_vdevs);

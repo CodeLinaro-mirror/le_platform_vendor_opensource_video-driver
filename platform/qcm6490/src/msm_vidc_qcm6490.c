@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2022, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <dt-bindings/clock/qcom,gcc-sc7280.h>
@@ -2424,7 +2424,7 @@ static const struct msm_vidc_platform_data qcm6490_data = {
 #endif
     .pd_tbl = qcm6490_pd_table,
     .pd_tbl_size = ARRAY_SIZE(qcm6490_pd_table),
-    .fwname = "qcom/vpu-2.0/vpu20_1v",
+	.fwname = "qcom/vpu/vpu20_p1_gen2",
     .pas_id = 9,
     .supports_mmrm = 0,
 
