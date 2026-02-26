@@ -288,6 +288,10 @@ struct msm_vidc_platform_data {
 	unsigned int psc_av1_tbl_size;
 	const u32 *psc_mpeg2_tbl;
 	unsigned int psc_mpeg2_tbl_size;
+	const u32 *enc_input_prop;
+	unsigned int enc_input_prop_size;
+	const u32 *enc_output_prop;
+	unsigned int enc_output_prop_size;
 	const u32 *dec_input_prop_avc;
 	unsigned int dec_input_prop_size_avc;
 	const u32 *dec_input_prop_hevc;
