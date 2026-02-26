@@ -2969,6 +2969,27 @@ static struct msm_platform_inst_capability instance_cap_data_kera_v1[] = {
 		HFI_PROP_FENCE_OUTPUT,
 		CAP_FLAG_BITMASK | CAP_FLAG_META | CAP_FLAG_DYNAMIC_ALLOWED},
 
+	/* enable output rx fence feature */
+	{OUTPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | VP9 | AV1,
+		0, 1, 1, 0,
+		V4L2_CID_MPEG_VIDC_OUTPUT_RX_FENCE_ENABLE,
+		HFI_PROP_FENCE_OUTPUT,
+		CAP_FLAG_OUTPUT_PORT},
+
+	/* enable input rx fence feature */
+	{INPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | VP9 | AV1,
+		0, 1, 1, 0,
+		V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_ENABLE,
+		HFI_PROP_FENCE_INPUT,
+		CAP_FLAG_INPUT_PORT},
+
+	/* enable input rx fence feature */
+	{INPUT_TX_FENCE_ENABLE, DEC, H264 | HEVC | VP9 | AV1,
+		0, 1, 1, 0,
+		V4L2_CID_MPEG_VIDC_INPUT_TX_FENCE_ENABLE,
+		HFI_PROP_FENCE_INPUT,
+		CAP_FLAG_INPUT_PORT},
+
 	/*
 	 * Client to do set_ctrl with OUTPUT_TX_FENCE_ID to set fence_id
 	 * and then client will do get_ctrl with OUTPUT_TX_FENCE_FD to get
@@ -2985,6 +3006,12 @@ static struct msm_platform_inst_capability instance_cap_data_kera_v1[] = {
 		V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_FD,
 		0,
 		CAP_FLAG_VOLATILE},
+
+	{FENCE_INFO, DEC|ENC, CODECS_ALL,
+		0, sizeof(struct v4l2_vidc_fence_info), 1, 0,
+		V4L2_CID_MPEG_VIDC_FENCE_INFO,
+		0,
+		CAP_FLAG_BLOB | CAP_FLAG_DYNAMIC_ALLOWED},
 
 	/*
 	 * Client to do set_ctrl with INPUT_RX_FENCE_FD to set fence_fd.
@@ -3070,6 +3097,27 @@ static struct msm_platform_inst_capability instance_cap_data_kera_v1[] = {
 		V4L2_MPEG_MSM_VIDC_DISABLE,
 		V4L2_CID_MPEG_VIDEO_DECODER_SLICE_INTERFACE,
 		0},
+
+	{EARLY_NOTIFY_ENABLE, DEC, H264|HEVC|AV1,
+		V4L2_MPEG_MSM_VIDC_DISABLE,
+		V4L2_MPEG_MSM_VIDC_ENABLE,
+		1,
+		V4L2_MPEG_MSM_VIDC_DISABLE,
+		V4L2_CID_MPEG_VIDC_EARLY_NOTIFY_ENABLE,
+		HFI_PROP_EARLY_NOTIFY_ENABLE,
+		CAP_FLAG_INPUT_PORT},
+
+	{EARLY_NOTIFY_LINE_COUNT, DEC, H264|HEVC|AV1,
+		0, 8192, 256, 0,
+		V4L2_CID_MPEG_VIDC_EARLY_NOTIFY_LINE_COUNT,
+		HFI_PROP_EARLY_NOTIFY_LINE_COUNT,
+		CAP_FLAG_INPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
+
+	{EARLY_NOTIFY_FENCE_COUNT, DEC, H264|HEVC|AV1,
+		0, MAX_FENCE_COUNT, 1, 0,
+		0,
+		HFI_PROP_EARLY_NOTIFY_FENCE_COUNT,
+		CAP_FLAG_INPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
 
 	{HEADER_MODE, ENC, CODECS_ALL,
 		V4L2_MPEG_VIDEO_HEADER_MODE_SEPARATE,
@@ -3706,7 +3754,7 @@ static struct msm_platform_inst_capability instance_cap_data_kera_v1[] = {
 
 	{LEVEL, ENC, H264,
 		V4L2_MPEG_VIDEO_H264_LEVEL_1_0,
-		V4L2_MPEG_VIDEO_H264_LEVEL_5_1,
+		V4L2_MPEG_VIDEO_H264_LEVEL_5_2,
 		BIT(V4L2_MPEG_VIDEO_H264_LEVEL_1_0) |
 		BIT(V4L2_MPEG_VIDEO_H264_LEVEL_1B) |
 		BIT(V4L2_MPEG_VIDEO_H264_LEVEL_1_1) |
@@ -3722,15 +3770,16 @@ static struct msm_platform_inst_capability instance_cap_data_kera_v1[] = {
 		BIT(V4L2_MPEG_VIDEO_H264_LEVEL_4_1) |
 		BIT(V4L2_MPEG_VIDEO_H264_LEVEL_4_2) |
 		BIT(V4L2_MPEG_VIDEO_H264_LEVEL_5_0) |
-		BIT(V4L2_MPEG_VIDEO_H264_LEVEL_5_1),
-		V4L2_MPEG_VIDEO_H264_LEVEL_5_1,
+		BIT(V4L2_MPEG_VIDEO_H264_LEVEL_5_1) |
+		BIT(V4L2_MPEG_VIDEO_H264_LEVEL_5_2),
+		V4L2_MPEG_VIDEO_H264_LEVEL_5_2,
 		V4L2_CID_MPEG_VIDEO_H264_LEVEL,
 		HFI_PROP_LEVEL,
 		CAP_FLAG_VOLATILE | CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
 	{LEVEL, ENC, HEVC | HEIC,
 		V4L2_MPEG_VIDEO_HEVC_LEVEL_1,
-		V4L2_MPEG_VIDEO_HEVC_LEVEL_5,
+		V4L2_MPEG_VIDEO_HEVC_LEVEL_5_1,
 		BIT(V4L2_MPEG_VIDEO_HEVC_LEVEL_1) |
 		BIT(V4L2_MPEG_VIDEO_HEVC_LEVEL_2) |
 		BIT(V4L2_MPEG_VIDEO_HEVC_LEVEL_2_1) |
@@ -3738,8 +3787,9 @@ static struct msm_platform_inst_capability instance_cap_data_kera_v1[] = {
 		BIT(V4L2_MPEG_VIDEO_HEVC_LEVEL_3_1) |
 		BIT(V4L2_MPEG_VIDEO_HEVC_LEVEL_4) |
 		BIT(V4L2_MPEG_VIDEO_HEVC_LEVEL_4_1) |
-		BIT(V4L2_MPEG_VIDEO_HEVC_LEVEL_5),
-		V4L2_MPEG_VIDEO_HEVC_LEVEL_5,
+		BIT(V4L2_MPEG_VIDEO_HEVC_LEVEL_5) |
+		BIT(V4L2_MPEG_VIDEO_HEVC_LEVEL_5_1),
+		V4L2_MPEG_VIDEO_HEVC_LEVEL_5_1,
 		V4L2_CID_MPEG_VIDEO_HEVC_LEVEL,
 		HFI_PROP_LEVEL,
 		CAP_FLAG_VOLATILE | CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
@@ -3938,8 +3988,8 @@ static struct msm_platform_inst_capability instance_cap_data_kera_v1[] = {
 		HFI_PROP_8X8_TRANSFORM,
 		CAP_FLAG_OUTPUT_PORT},
 
-	{CHROMA_QP_INDEX_OFFSET, ENC, HEVC,
-		MIN_CHROMA_QP_OFFSET, MAX_CHROMA_QP_OFFSET,
+	{CHROMA_QP_INDEX_OFFSET, ENC, HEVC | H264,
+		MIN_CHROMA_QP_OFFSET, MAX_CHROMA_QP_OFFSET_MASK,
 		1, MAX_CHROMA_QP_OFFSET,
 		V4L2_CID_MPEG_VIDEO_H264_CHROMA_QP_INDEX_OFFSET,
 		HFI_PROP_CHROMA_QP_OFFSET,
@@ -4087,6 +4137,11 @@ static struct msm_platform_inst_capability instance_cap_data_kera_v1[] = {
 	{ENC_IP_CR, ENC, CODECS_ALL,
 		0, S32_MAX, 1, 0,
 		V4L2_CID_MPEG_VIDC_COMPRESSION_RATIO,
+		0, CAP_FLAG_DYNAMIC_ALLOWED},
+
+	{INPUT_EXTRA_METADATA_OFFSET, DEC, CODECS_ALL,
+		0, INT_MAX, 1, 0,
+		V4L2_CID_MPEG_VIDC_INPUT_EXTRA_METADATA_OFFSET,
 		0, CAP_FLAG_DYNAMIC_ALLOWED},
 
 	{FILM_GRAIN, DEC, AV1,
@@ -4655,7 +4710,7 @@ static const struct msm_vidc_platform_data kera_data_v0 = {
 	.reg_prst_tbl_size = ARRAY_SIZE(kera_reg_preset_table),
 	.dev_reg_tbl = kera_device_region_table,
 	.dev_reg_tbl_size = ARRAY_SIZE(kera_device_region_table),
-	.clock_source_scaling_ratio = 1,
+	.clock_source_scaling_ratio = 3,
 	.fwname = "vpu30_2v.mbn",
 	.pas_id = 9,
 	.supports_mmrm = 0,
@@ -4731,6 +4786,7 @@ static const struct msm_vidc_platform_data kera_data_v1 = {
 	.reg_prst_tbl_size = ARRAY_SIZE(kera_reg_preset_table),
 	.dev_reg_tbl = kera_device_region_table,
 	.dev_reg_tbl_size = ARRAY_SIZE(kera_device_region_table),
+	.clock_source_scaling_ratio = 3,
 	.fwname = "vpu30_2v.mbn",
 	.pas_id = 9,
 	.supports_mmrm = 0,
