@@ -243,6 +243,8 @@ static int msm_vidc_init_codec_input_freq_iris5p(struct msm_vidc_inst *inst, u32
 	codec_input->frame_width = inst->fmts[port].fmt.pix_mp.width;
 	codec_input->frame_height = inst->fmts[port].fmt.pix_mp.height;
 
+	codec_input->quality_mode = inst->capabilities[QUALITY_MODE].value;
+
 	if (inst->capabilities[STAGE].value == MSM_VIDC_STAGE_1) {
 		codec_input->vsp_vpp_mode = CODEC_VSPVPP_MODE_1S;
 	} else if (inst->capabilities[STAGE].value == MSM_VIDC_STAGE_2) {
@@ -1153,12 +1155,26 @@ int msm_vidc_decide_quality_mode_iris5p(struct msm_vidc_inst *inst)
 	max_hq_mbpf = core->capabilities[MAX_MBPF_HQ].value;
 	max_hq_mbps = core->capabilities[MAX_MBPS_HQ].value;
 
-	if (!is_realtime_session(inst)) {
-		if (((inst->capabilities[COMPLEXITY].flags & CAP_FLAG_CLIENT_SET) &&
-			(inst->capabilities[COMPLEXITY].value >= DEFAULT_COMPLEXITY)) ||
-			mbpf <= max_hq_mbpf) {
+	if ((inst->capabilities[COMPLEXITY].flags & CAP_FLAG_CLIENT_SET) &&
+			(inst->capabilities[COMPLEXITY].value >= DEFAULT_COMPLEXITY)) {
+		if ((inst->capabilities[PRIORITY].flags & CAP_FLAG_CLIENT_SET) &&
+				!is_realtime_session(inst)) {
+			/*
+			 * Allow high quality mode for all resolutions
+			 * if client set complexity >= DEFAULT_COMPLEXITY and session
+			 * should be non-realtime (priority)
+			 */
 			mode = MSM_VIDC_MAX_QUALITY_MODE;
+			i_vpr_h(inst, "%s: Setting high quality mode for NRT session\n", __func__);
 			goto decision_done;
+		} else {
+			/*
+			 * Allow high quality mode up to MAX_CPLX_RT_MBPF(S)_HQ
+			 * if client set complexity >= DEFAULT_COMPLEXITY and priority is
+			 * not set
+			 */
+			max_hq_mbpf = core->capabilities[MAX_CPLX_RT_MBPF_HQ].value;
+			max_hq_mbps = core->capabilities[MAX_CPLX_RT_MBPS_HQ].value;
 		}
 	}
 

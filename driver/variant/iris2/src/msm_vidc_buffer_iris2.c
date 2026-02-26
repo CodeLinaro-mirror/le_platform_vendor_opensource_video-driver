@@ -15,6 +15,7 @@
 #include "msm_media_info.h"
 #include "msm_vidc_control.h"
 #include "msm_vidc_internal.h"
+#include <media/v4l2_vidc_extensions.h>
 
 static u32 msm_vidc_decoder_bin_size_iris2(struct msm_vidc_inst *inst)
 {
@@ -242,7 +243,7 @@ static u32 msm_vidc_decoder_dpb_size_iris2(struct msm_vidc_inst *inst)
 	return size;
 }
 
-u32 msm_vidc_encoder_output_size(struct msm_vidc_inst *inst)
+static u32 msm_vidc_encoder_output_size(struct msm_vidc_inst *inst)
 {
 	u32 frame_size;
 	u32 mbs_per_frame;
@@ -291,7 +292,8 @@ u32 msm_vidc_encoder_output_size(struct msm_vidc_inst *inst)
 
 skip_calc:
 	/* multiply by 10/8 (1.25) to get size for 10 bit case */
-	if (f->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_HEVC)
+	if (f->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_HEVC ||
+	f->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_VIDC_HEIC)
 		frame_size = frame_size + (frame_size >> 2);
 
 	return ALIGN(frame_size, SZ_4K);

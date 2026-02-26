@@ -143,6 +143,8 @@ struct api_calculation_input {
 	/* PWC, AVG/POWER */
 	u32 complexity_setting;
 
+	u32 quality_mode;
+
 	u32 status_llc_onoff;
 	u32 bitdepth;
 	u32 linear_opb;

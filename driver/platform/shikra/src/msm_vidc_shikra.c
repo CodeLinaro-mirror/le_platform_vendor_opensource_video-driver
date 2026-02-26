@@ -13,7 +13,7 @@
 #include <media/v4l2_vidc_extensions.h>
 #include <media/videobuf2-core.h>
 #include "msm_vidc_ar50lt.h"
-#include "msm_vidc_ravelin.h"
+#include "msm_vidc_shikra.h"
 #include "msm_vidc_inst.h"
 #include "msm_vidc_platform.h"
 #include "msm_vidc_debug.h"
@@ -33,12 +33,12 @@
 #define DEFAULT_BITRATE         20000000
 #define MINIMUM_FPS             1
 #define MAXIMUM_FPS             120
-#define MIN_QP_10BIT_RAVELIN	-12
-#define MIN_QP_8BIT_RAVELIN	0
+#define MIN_QP_10BIT_SHIKRA	    -12
+#define MIN_QP_8BIT_SHIKRA	    0
 #define MAX_QP                  51
 #define DEFAULT_QP              20
 #define MAX_CONSTANT_QUALITY    100
-#define MAX_BITRATE_BOOST_RAVELIN  15
+#define MAX_BITRATE_BOOST_SHIKRA  15
 #define MIN_SLICE_BYTE_SIZE     512
 #define MAX_SLICE_BYTE_SIZE       \
 		((MAX_BITRATE) >> 3)
@@ -54,7 +54,7 @@
 #define CODECS_ALL     (H264|HEVC|VP9|HEIC)
 
 
-static struct codec_info codec_data_ravelin[] = {
+static struct codec_info codec_data_shikra[] = {
 	{
 		.v4l2_codec  = V4L2_PIX_FMT_H264,
 		.vidc_codec  = MSM_VIDC_H264,
@@ -77,7 +77,7 @@ static struct codec_info codec_data_ravelin[] = {
 	},
 };
 
-static struct color_format_info color_format_data_ravelin[] = {
+static struct color_format_info color_format_data_shikra[] = {
 	{
 		.v4l2_color_format = V4L2_PIX_FMT_NV12,
 		.vidc_color_format = MSM_VIDC_FMT_NV12,
@@ -95,7 +95,7 @@ static struct color_format_info color_format_data_ravelin[] = {
 	},
 };
 
-static struct color_primaries_info color_primaries_data_ravelin[] = {
+static struct color_primaries_info color_primaries_data_shikra[] = {
 	{
 		.v4l2_color_primaries  = V4L2_COLORSPACE_DEFAULT,
 		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_RESERVED,
@@ -142,7 +142,7 @@ static struct color_primaries_info color_primaries_data_ravelin[] = {
 	},
 };
 
-static struct transfer_char_info transfer_char_data_ravelin[] = {
+static struct transfer_char_info transfer_char_data_shikra[] = {
 	{
 		.v4l2_transfer_char  = V4L2_XFER_FUNC_DEFAULT,
 		.vidc_transfer_char  = MSM_VIDC_TRANSFER_RESERVED,
@@ -201,7 +201,7 @@ static struct transfer_char_info transfer_char_data_ravelin[] = {
 	},
 };
 
-static struct matrix_coeff_info matrix_coeff_data_ravelin[] = {
+static struct matrix_coeff_info matrix_coeff_data_shikra[] = {
 	{
 		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_DEFAULT,
 		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_RESERVED,
@@ -244,7 +244,7 @@ static struct matrix_coeff_info matrix_coeff_data_ravelin[] = {
 	},
 };
 
-static const struct msm_platform_core_capability core_data_ravelin[] = {
+static const struct msm_platform_core_capability core_data_shikra[] = {
 	/* {type, value} */
 	{ENC_CODECS, H264|HEVC|HEIC},
 	{DEC_CODECS, H264|HEVC|VP9|HEIC},
@@ -281,7 +281,7 @@ static const struct msm_platform_core_capability core_data_ravelin[] = {
 		V4L2_CAP_META_CAPTURE | V4L2_CAP_META_OUTPUT | V4L2_CAP_STREAMING},
 };
 
-static struct msm_platform_inst_capability instance_cap_data_ravelin[] = {
+static struct msm_platform_inst_capability instance_cap_data_shikra[] = {
 	/* {cap, domain, codec,
 	 *      min, max, step_or_mask, value,
 	 *      v4l2_id,
@@ -688,8 +688,8 @@ static struct msm_platform_inst_capability instance_cap_data_ravelin[] = {
 		CAP_FLAG_OUTPUT_PORT},
 
 	{BITRATE_BOOST, ENC, H264|HEVC,
-		0, MAX_BITRATE_BOOST_RAVELIN,
-		MAX_BITRATE_BOOST_RAVELIN, 0,
+		0, MAX_BITRATE_BOOST_SHIKRA,
+		MAX_BITRATE_BOOST_SHIKRA, 0,
 		V4L2_CID_MPEG_VIDC_QUALITY_BITRATE_BOOST,
 		HFI_PROP_BITRATE_BOOST,
 		CAP_FLAG_OUTPUT_PORT},
@@ -712,114 +712,114 @@ static struct msm_platform_inst_capability instance_cap_data_ravelin[] = {
 			CAP_FLAG_DYNAMIC_ALLOWED},
 
 	{MIN_FRAME_QP, ENC, H264,
-		MIN_QP_8BIT_RAVELIN, MAX_QP, 1, MIN_QP_8BIT_RAVELIN,
+		MIN_QP_8BIT_SHIKRA, MAX_QP, 1, MIN_QP_8BIT_SHIKRA,
 		V4L2_CID_MPEG_VIDEO_H264_MIN_QP,
 		HFI_PROP_MIN_QP_PACKED,
 		CAP_FLAG_OUTPUT_PORT},
 
 	{MIN_FRAME_QP, ENC, HEVC|HEIC,
-		MIN_QP_10BIT_RAVELIN, MAX_QP, 1, MIN_QP_10BIT_RAVELIN,
+		MIN_QP_10BIT_SHIKRA, MAX_QP, 1, MIN_QP_10BIT_SHIKRA,
 		V4L2_CID_MPEG_VIDEO_HEVC_MIN_QP,
 		HFI_PROP_MIN_QP_PACKED,
 		CAP_FLAG_OUTPUT_PORT},
 
 	{I_FRAME_MIN_QP, ENC, H264,
-		MIN_QP_8BIT_RAVELIN, MAX_QP, 1, MIN_QP_8BIT_RAVELIN,
+		MIN_QP_8BIT_SHIKRA, MAX_QP, 1, MIN_QP_8BIT_SHIKRA,
 		V4L2_CID_MPEG_VIDEO_H264_I_FRAME_MIN_QP},
 
 	{I_FRAME_MIN_QP, ENC, HEVC|HEIC,
-		MIN_QP_10BIT_RAVELIN, MAX_QP, 1, MIN_QP_10BIT_RAVELIN,
+		MIN_QP_10BIT_SHIKRA, MAX_QP, 1, MIN_QP_10BIT_SHIKRA,
 		V4L2_CID_MPEG_VIDEO_HEVC_I_FRAME_MIN_QP},
 
 	{P_FRAME_MIN_QP, ENC, H264,
-		MIN_QP_8BIT_RAVELIN, MAX_QP, 1, MIN_QP_8BIT_RAVELIN,
+		MIN_QP_8BIT_SHIKRA, MAX_QP, 1, MIN_QP_8BIT_SHIKRA,
 		V4L2_CID_MPEG_VIDEO_H264_P_FRAME_MIN_QP},
 
 	{P_FRAME_MIN_QP, ENC, HEVC|HEIC,
-		MIN_QP_10BIT_RAVELIN, MAX_QP, 1, MIN_QP_10BIT_RAVELIN,
+		MIN_QP_10BIT_SHIKRA, MAX_QP, 1, MIN_QP_10BIT_SHIKRA,
 		V4L2_CID_MPEG_VIDEO_HEVC_P_FRAME_MIN_QP},
 
 	{B_FRAME_MIN_QP, ENC, H264,
-		MIN_QP_8BIT_RAVELIN, MAX_QP, 1, MIN_QP_8BIT_RAVELIN,
+		MIN_QP_8BIT_SHIKRA, MAX_QP, 1, MIN_QP_8BIT_SHIKRA,
 		V4L2_CID_MPEG_VIDEO_H264_B_FRAME_MIN_QP},
 
 	{B_FRAME_MIN_QP, ENC, HEVC|HEIC,
-		MIN_QP_10BIT_RAVELIN, MAX_QP, 1, MIN_QP_10BIT_RAVELIN,
+		MIN_QP_10BIT_SHIKRA, MAX_QP, 1, MIN_QP_10BIT_SHIKRA,
 		V4L2_CID_MPEG_VIDEO_HEVC_B_FRAME_MIN_QP},
 
 	{MAX_FRAME_QP, ENC, H264,
-		MIN_QP_8BIT_RAVELIN, MAX_QP, 1, MAX_QP,
+		MIN_QP_8BIT_SHIKRA, MAX_QP, 1, MAX_QP,
 		V4L2_CID_MPEG_VIDEO_H264_MAX_QP,
 		HFI_PROP_MAX_QP_PACKED,
 		CAP_FLAG_OUTPUT_PORT},
 
 	{MAX_FRAME_QP, ENC, HEVC|HEIC,
-		MIN_QP_10BIT_RAVELIN, MAX_QP, 1, MAX_QP,
+		MIN_QP_10BIT_SHIKRA, MAX_QP, 1, MAX_QP,
 		V4L2_CID_MPEG_VIDEO_HEVC_MAX_QP,
 		HFI_PROP_MAX_QP_PACKED,
 		CAP_FLAG_OUTPUT_PORT},
 
 	{I_FRAME_MAX_QP, ENC, H264,
-		MIN_QP_8BIT_RAVELIN, MAX_QP, 1, MAX_QP,
+		MIN_QP_8BIT_SHIKRA, MAX_QP, 1, MAX_QP,
 		V4L2_CID_MPEG_VIDEO_H264_I_FRAME_MAX_QP},
 
 	{I_FRAME_MAX_QP, ENC, HEVC|HEIC,
-		MIN_QP_10BIT_RAVELIN, MAX_QP, 1, MAX_QP,
+		MIN_QP_10BIT_SHIKRA, MAX_QP, 1, MAX_QP,
 		V4L2_CID_MPEG_VIDEO_HEVC_I_FRAME_MAX_QP},
 
 	{P_FRAME_MAX_QP, ENC, H264,
-		MIN_QP_8BIT_RAVELIN, MAX_QP, 1, MAX_QP,
+		MIN_QP_8BIT_SHIKRA, MAX_QP, 1, MAX_QP,
 		V4L2_CID_MPEG_VIDEO_H264_P_FRAME_MAX_QP},
 
 	{P_FRAME_MAX_QP, ENC, HEVC|HEIC,
-		MIN_QP_10BIT_RAVELIN, MAX_QP, 1, MAX_QP,
+		MIN_QP_10BIT_SHIKRA, MAX_QP, 1, MAX_QP,
 		V4L2_CID_MPEG_VIDEO_HEVC_P_FRAME_MAX_QP},
 
 	{B_FRAME_MAX_QP, ENC, H264,
-		MIN_QP_8BIT_RAVELIN, MAX_QP, 1, MAX_QP,
+		MIN_QP_8BIT_SHIKRA, MAX_QP, 1, MAX_QP,
 		V4L2_CID_MPEG_VIDEO_H264_B_FRAME_MAX_QP},
 
 	{B_FRAME_MAX_QP, ENC, HEVC|HEIC,
-		MIN_QP_10BIT_RAVELIN, MAX_QP, 1, MAX_QP,
+		MIN_QP_10BIT_SHIKRA, MAX_QP, 1, MAX_QP,
 		V4L2_CID_MPEG_VIDEO_HEVC_B_FRAME_MAX_QP},
 
 	{I_FRAME_QP, ENC, HEVC,
-		MIN_QP_10BIT_RAVELIN, MAX_QP, 1, DEFAULT_QP,
+		MIN_QP_10BIT_SHIKRA, MAX_QP, 1, DEFAULT_QP,
 		V4L2_CID_MPEG_VIDEO_HEVC_I_FRAME_QP,
 		HFI_PROP_QP_PACKED,
 		CAP_FLAG_OUTPUT_PORT|CAP_FLAG_INPUT_PORT|
 			CAP_FLAG_DYNAMIC_ALLOWED},
 
 	{I_FRAME_QP, ENC, H264,
-		MIN_QP_8BIT_RAVELIN, MAX_QP, 1, DEFAULT_QP,
+		MIN_QP_8BIT_SHIKRA, MAX_QP, 1, DEFAULT_QP,
 		V4L2_CID_MPEG_VIDEO_H264_I_FRAME_QP,
 		HFI_PROP_QP_PACKED,
 		CAP_FLAG_OUTPUT_PORT|CAP_FLAG_INPUT_PORT|
 			CAP_FLAG_DYNAMIC_ALLOWED},
 
 	{P_FRAME_QP, ENC, HEVC,
-		MIN_QP_10BIT_RAVELIN, MAX_QP, 1, DEFAULT_QP,
+		MIN_QP_10BIT_SHIKRA, MAX_QP, 1, DEFAULT_QP,
 		V4L2_CID_MPEG_VIDEO_HEVC_P_FRAME_QP,
 		HFI_PROP_QP_PACKED,
 		CAP_FLAG_OUTPUT_PORT|CAP_FLAG_INPUT_PORT|
 			CAP_FLAG_DYNAMIC_ALLOWED},
 
 	{P_FRAME_QP, ENC, H264,
-		MIN_QP_8BIT_RAVELIN, MAX_QP, 1, DEFAULT_QP,
+		MIN_QP_8BIT_SHIKRA, MAX_QP, 1, DEFAULT_QP,
 		V4L2_CID_MPEG_VIDEO_H264_P_FRAME_QP,
 		HFI_PROP_QP_PACKED,
 		CAP_FLAG_OUTPUT_PORT|CAP_FLAG_INPUT_PORT|
 			CAP_FLAG_DYNAMIC_ALLOWED},
 
 	{B_FRAME_QP, ENC, HEVC,
-		MIN_QP_10BIT_RAVELIN, MAX_QP, 1, DEFAULT_QP,
+		MIN_QP_10BIT_SHIKRA, MAX_QP, 1, DEFAULT_QP,
 		V4L2_CID_MPEG_VIDEO_HEVC_B_FRAME_QP,
 		HFI_PROP_QP_PACKED,
 		CAP_FLAG_OUTPUT_PORT|CAP_FLAG_INPUT_PORT|
 			CAP_FLAG_DYNAMIC_ALLOWED},
 
 	{B_FRAME_QP, ENC, H264,
-		MIN_QP_8BIT_RAVELIN, MAX_QP, 1, DEFAULT_QP,
+		MIN_QP_8BIT_SHIKRA, MAX_QP, 1, DEFAULT_QP,
 		V4L2_CID_MPEG_VIDEO_H264_B_FRAME_QP,
 		HFI_PROP_QP_PACKED,
 		CAP_FLAG_OUTPUT_PORT|CAP_FLAG_INPUT_PORT|
@@ -1596,7 +1596,7 @@ static struct msm_platform_inst_capability instance_cap_data_ravelin[] = {
 };
 
 
-static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_ravelin[] = {
+static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_shikra[] = {
 	/* {cap, domain, codec,
 	 *      children,
 	 *      adjust, set}
@@ -1980,9 +1980,9 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_rave
 		msm_vidc_set_u32},
 
 	{CONCEAL_COLOR_8BIT, DEC, CODECS_ALL,
-                {0},
-                NULL,
-                msm_vidc_set_conceal_color},
+		{0},
+		NULL,
+		msm_vidc_set_conceal_color},
 
 	// TODO
 	{STAGE, DEC|ENC, CODECS_ALL,
@@ -2069,33 +2069,33 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_rave
 		msm_vidc_set_signal_color_info},
 };
 
-static struct msm_vidc_format_capability format_data_ravelin = {
-	.codec_info = codec_data_ravelin,
-	.codec_info_size = ARRAY_SIZE(codec_data_ravelin),
-	.color_format_info = color_format_data_ravelin,
-	.color_format_info_size = ARRAY_SIZE(color_format_data_ravelin),
-	.color_prim_info = color_primaries_data_ravelin,
-	.color_prim_info_size = ARRAY_SIZE(color_primaries_data_ravelin),
-	.transfer_char_info = transfer_char_data_ravelin,
-	.transfer_char_info_size = ARRAY_SIZE(transfer_char_data_ravelin),
-	.matrix_coeff_info = matrix_coeff_data_ravelin,
-	.matrix_coeff_info_size = ARRAY_SIZE(matrix_coeff_data_ravelin),
+static struct msm_vidc_format_capability format_data_shikra = {
+	.codec_info = codec_data_shikra,
+	.codec_info_size = ARRAY_SIZE(codec_data_shikra),
+	.color_format_info = color_format_data_shikra,
+	.color_format_info_size = ARRAY_SIZE(color_format_data_shikra),
+	.color_prim_info = color_primaries_data_shikra,
+	.color_prim_info_size = ARRAY_SIZE(color_primaries_data_shikra),
+	.transfer_char_info = transfer_char_data_shikra,
+	.transfer_char_info_size = ARRAY_SIZE(transfer_char_data_shikra),
+	.matrix_coeff_info = matrix_coeff_data_shikra,
+	.matrix_coeff_info_size = ARRAY_SIZE(matrix_coeff_data_shikra),
 };
 
 /* name, min_kbps, max_kbps */
-static const struct bw_table ravelin_bw_table[] = {
+static const struct bw_table shikra_bw_table[] = {
 	{ "venus-cnoc",  1000, 1000     },
 	{ "venus-ddr",   1000, 6500000 },
 };
 
 /* name, hw_trigger, hw_enable */
-static struct regulator_table ravelin_regulator_table[] = {
+static struct regulator_table shikra_regulator_table[] = {
 	{ "venus", 0 },
 	{ "venus-core0", 1 },
 };
 
 /* name, clock id, scaling */
-static const struct clk_table ravelin_clk_table[] = {
+static const struct clk_table shikra_clk_table[] = {
 	{ "core_clk",        GCC_VIDEO_VENUS_CTL_CLK,         0},
 	{ "bus_clk",         GCC_VENUS_CTL_AXI_CLK,           0},
 	{ "core0_clk",       GCC_VIDEO_VCODEC0_SYS_CLK,       0},
@@ -2106,7 +2106,7 @@ static const struct clk_table ravelin_clk_table[] = {
 };
 
 /* name, start, size, secure, dma_coherant, region, dma_mask */
-const struct context_bank_table ravelin_context_bank_table[] = {
+const struct context_bank_table shikra_context_bank_table[] = {
 	{"qcom,vidc,cb-ns",             0x25800000, 0xba800000, 0, 1,
 		MSM_VIDC_NON_SECURE |
 		MSM_VIDC_NON_SECURE_PIXEL |
@@ -2120,12 +2120,12 @@ const struct context_bank_table ravelin_context_bank_table[] = {
 };
 
 /* register, value, mask */
-static const struct reg_preset_table ravelin_reg_preset_table[] = {
+static const struct reg_preset_table shikra_reg_preset_table[] = {
 	{ 0xB0080, 0x0, 0x03},
 };
 
 /* decoder properties */
-static const u32 ravelin_vdec_psc_avc[] = {
+static const u32 shikra_vdec_psc_avc[] = {
 	HFI_PROP_BITSTREAM_RESOLUTION,
 	HFI_PROP_CROP_OFFSETS,
 	HFI_PROP_CODED_FRAMES,
@@ -2136,7 +2136,7 @@ static const u32 ravelin_vdec_psc_avc[] = {
 	HFI_PROP_SIGNAL_COLOR_INFO,
 };
 
-static const u32 ravelin_vdec_psc_hevc[] = {
+static const u32 shikra_vdec_psc_hevc[] = {
 	HFI_PROP_BITSTREAM_RESOLUTION,
 	HFI_PROP_CROP_OFFSETS,
 	HFI_PROP_LUMA_CHROMA_BIT_DEPTH,
@@ -2147,7 +2147,7 @@ static const u32 ravelin_vdec_psc_hevc[] = {
 	HFI_PROP_SIGNAL_COLOR_INFO,
 };
 
-static const u32 ravelin_vdec_psc_vp9[] = {
+static const u32 shikra_vdec_psc_vp9[] = {
 	HFI_PROP_BITSTREAM_RESOLUTION,
 	HFI_PROP_CROP_OFFSETS,
 	HFI_PROP_LUMA_CHROMA_BIT_DEPTH,
@@ -2156,22 +2156,22 @@ static const u32 ravelin_vdec_psc_vp9[] = {
 	HFI_PROP_LEVEL,
 };
 
-static const u32 ravelin_vdec_input_properties_avc[] = {
+static const u32 shikra_vdec_input_properties_avc[] = {
 	HFI_PROP_NO_OUTPUT,
 	HFI_PROP_SUBFRAME_INPUT,
 };
 
-static const u32 ravelin_vdec_input_properties_hevc[] = {
+static const u32 shikra_vdec_input_properties_hevc[] = {
 	HFI_PROP_NO_OUTPUT,
 	HFI_PROP_SUBFRAME_INPUT,
 };
 
-static const u32 ravelin_vdec_input_properties_vp9[] = {
+static const u32 shikra_vdec_input_properties_vp9[] = {
 	HFI_PROP_NO_OUTPUT,
 	HFI_PROP_SUBFRAME_INPUT,
 };
 
-static const u32 ravelin_vdec_output_properties_avc[] = {
+static const u32 shikra_vdec_output_properties_avc[] = {
 	HFI_PROP_WORST_COMPRESSION_RATIO,
 	HFI_PROP_WORST_COMPLEXITY_FACTOR,
 	HFI_PROP_PICTURE_TYPE,
@@ -2180,7 +2180,7 @@ static const u32 ravelin_vdec_output_properties_avc[] = {
 	HFI_PROP_DPB_LIST,
 };
 
-static const u32 ravelin_vdec_output_properties_hevc[] = {
+static const u32 shikra_vdec_output_properties_hevc[] = {
 	HFI_PROP_WORST_COMPRESSION_RATIO,
 	HFI_PROP_WORST_COMPLEXITY_FACTOR,
 	HFI_PROP_PICTURE_TYPE,
@@ -2189,7 +2189,7 @@ static const u32 ravelin_vdec_output_properties_hevc[] = {
 	HFI_PROP_DPB_LIST,
 };
 
-static const u32 ravelin_vdec_output_properties_vp9[] = {
+static const u32 shikra_vdec_output_properties_vp9[] = {
 	HFI_PROP_WORST_COMPRESSION_RATIO,
 	HFI_PROP_WORST_COMPLEXITY_FACTOR,
 	HFI_PROP_PICTURE_TYPE,
@@ -2198,101 +2198,85 @@ static const u32 ravelin_vdec_output_properties_vp9[] = {
 	HFI_PROP_DPB_LIST,
 };
 
-static const u32 ravelin_venc_input_prop[] = {
-       HFI_PROP_COLOR_FORMAT,
-       HFI_PROP_RAW_RESOLUTION,
-       HFI_PROP_LINEAR_STRIDE_SCANLINE,
-       HFI_PROP_SIGNAL_COLOR_INFO,
-};
-
-static const u32 ravelin_venc_output_prop[] = {
-       HFI_PROP_BITSTREAM_RESOLUTION,
-       HFI_PROP_CROP_OFFSETS,
-};
-
-static const u32 ravelin_msm_vidc_ssr_type[] = {
+static const u32 shikra_msm_vidc_ssr_type[] = {
 	HFI_SSR_TYPE_SW_ERR_FATAL,
 };
 
-static const struct msm_vidc_platform_data ravelin_data = {
+static const struct msm_vidc_platform_data shikra_data = {
 	/* resources dependent on other module */
-	.bw_tbl = ravelin_bw_table,
-	.bw_tbl_size = ARRAY_SIZE(ravelin_bw_table),
-	.regulator_tbl = ravelin_regulator_table,
-	.regulator_tbl_size = ARRAY_SIZE(ravelin_regulator_table),
-	.clk_tbl = ravelin_clk_table,
-	.clk_tbl_size = ARRAY_SIZE(ravelin_clk_table),
+	.bw_tbl = shikra_bw_table,
+	.bw_tbl_size = ARRAY_SIZE(shikra_bw_table),
+	.regulator_tbl = shikra_regulator_table,
+	.regulator_tbl_size = ARRAY_SIZE(shikra_regulator_table),
+	.clk_tbl = shikra_clk_table,
+	.clk_tbl_size = ARRAY_SIZE(shikra_clk_table),
 
 	/* populate context bank */
-	.context_bank_tbl = ravelin_context_bank_table,
-	.context_bank_tbl_size = ARRAY_SIZE(ravelin_context_bank_table),
+	.context_bank_tbl = shikra_context_bank_table,
+	.context_bank_tbl_size = ARRAY_SIZE(shikra_context_bank_table),
 
 	/* platform specific resources */
-	.reg_prst_tbl = ravelin_reg_preset_table,
-	.reg_prst_tbl_size = ARRAY_SIZE(ravelin_reg_preset_table),
+	.reg_prst_tbl = shikra_reg_preset_table,
+	.reg_prst_tbl_size = ARRAY_SIZE(shikra_reg_preset_table),
 	.clock_source_scaling_ratio = 1,
-	.fwname = "venus_v7.mbn",
+	.fwname = "venus_v7",
 	.pas_id = 9,
 	.supports_mmrm = 0,
 
 	/* caps related resorces */
-	.core_data = core_data_ravelin,
-	.core_data_size = ARRAY_SIZE(core_data_ravelin),
-	.inst_cap_data = instance_cap_data_ravelin,
-	.inst_cap_data_size = ARRAY_SIZE(instance_cap_data_ravelin),
-	.inst_cap_dependency_data = instance_cap_dependency_data_ravelin,
-	.inst_cap_dependency_data_size = ARRAY_SIZE(instance_cap_dependency_data_ravelin),
+	.core_data = core_data_shikra,
+	.core_data_size = ARRAY_SIZE(core_data_shikra),
+	.inst_cap_data = instance_cap_data_shikra,
+	.inst_cap_data_size = ARRAY_SIZE(instance_cap_data_shikra),
+	.inst_cap_dependency_data = instance_cap_dependency_data_shikra,
+	.inst_cap_dependency_data_size = ARRAY_SIZE(instance_cap_dependency_data_shikra),
 	.csc_data.vpe_csc_custom_bias_coeff = vpe_csc_custom_bias_coeff,
 	.csc_data.vpe_csc_custom_matrix_coeff = vpe_csc_custom_matrix_coeff,
 	.csc_data.vpe_csc_custom_limit_coeff = vpe_csc_custom_limit_coeff,
 	.ubwc_config = NULL,
-	.format_data = &format_data_ravelin,
+	.format_data = &format_data_shikra,
 
 	/* decoder properties related*/
-	.psc_avc_tbl = ravelin_vdec_psc_avc,
-	.psc_avc_tbl_size = ARRAY_SIZE(ravelin_vdec_psc_avc),
-	.psc_hevc_tbl = ravelin_vdec_psc_hevc,
-	.psc_hevc_tbl_size = ARRAY_SIZE(ravelin_vdec_psc_hevc),
-	.psc_vp9_tbl = ravelin_vdec_psc_vp9,
-	.psc_vp9_tbl_size = ARRAY_SIZE(ravelin_vdec_psc_vp9),
+	.psc_avc_tbl = shikra_vdec_psc_avc,
+	.psc_avc_tbl_size = ARRAY_SIZE(shikra_vdec_psc_avc),
+	.psc_hevc_tbl = shikra_vdec_psc_hevc,
+	.psc_hevc_tbl_size = ARRAY_SIZE(shikra_vdec_psc_hevc),
+	.psc_vp9_tbl = shikra_vdec_psc_vp9,
+	.psc_vp9_tbl_size = ARRAY_SIZE(shikra_vdec_psc_vp9),
 
-	.dec_input_prop_avc =  ravelin_vdec_input_properties_avc,
-	.dec_input_prop_hevc = ravelin_vdec_input_properties_hevc,
-	.dec_input_prop_vp9 =  ravelin_vdec_input_properties_vp9,
-	.dec_input_prop_size_avc = ARRAY_SIZE(ravelin_vdec_input_properties_avc),
-	.dec_input_prop_size_hevc = ARRAY_SIZE(ravelin_vdec_input_properties_hevc),
-	.dec_input_prop_size_vp9 = ARRAY_SIZE(ravelin_vdec_input_properties_vp9),
-	.dec_output_prop_avc = ravelin_vdec_output_properties_avc,
-	.dec_output_prop_hevc = ravelin_vdec_output_properties_hevc,
-	.dec_output_prop_vp9 = ravelin_vdec_output_properties_vp9,
-	.dec_output_prop_size_avc = ARRAY_SIZE(ravelin_vdec_output_properties_avc),
-	.dec_output_prop_size_hevc = ARRAY_SIZE(ravelin_vdec_output_properties_hevc),
-	.dec_output_prop_size_vp9 = ARRAY_SIZE(ravelin_vdec_output_properties_vp9),
-	.enc_input_prop = ravelin_venc_input_prop,
-	.enc_input_prop_size = ARRAY_SIZE(ravelin_venc_input_prop),
-	.enc_output_prop = ravelin_venc_output_prop,
-	.enc_output_prop_size = ARRAY_SIZE(ravelin_venc_output_prop),
+	.dec_input_prop_avc =  shikra_vdec_input_properties_avc,
+	.dec_input_prop_hevc = shikra_vdec_input_properties_hevc,
+	.dec_input_prop_vp9 =  shikra_vdec_input_properties_vp9,
+	.dec_input_prop_size_avc = ARRAY_SIZE(shikra_vdec_input_properties_avc),
+	.dec_input_prop_size_hevc = ARRAY_SIZE(shikra_vdec_input_properties_hevc),
+	.dec_input_prop_size_vp9 = ARRAY_SIZE(shikra_vdec_input_properties_vp9),
+	.dec_output_prop_avc = shikra_vdec_output_properties_avc,
+	.dec_output_prop_hevc = shikra_vdec_output_properties_hevc,
+	.dec_output_prop_vp9 = shikra_vdec_output_properties_vp9,
+	.dec_output_prop_size_avc = ARRAY_SIZE(shikra_vdec_output_properties_avc),
+	.dec_output_prop_size_hevc = ARRAY_SIZE(shikra_vdec_output_properties_hevc),
+	.dec_output_prop_size_vp9 = ARRAY_SIZE(shikra_vdec_output_properties_vp9),
 
-	.msm_vidc_ssr_type = ravelin_msm_vidc_ssr_type,
-	.msm_vidc_ssr_type_size = ARRAY_SIZE(ravelin_msm_vidc_ssr_type),
+	.msm_vidc_ssr_type = shikra_msm_vidc_ssr_type,
+	.msm_vidc_ssr_type_size = ARRAY_SIZE(shikra_msm_vidc_ssr_type),
 	.vpu_ver = VENUS_VERSION_AR50LT_V2,
 };
 
-int msm_vidc_get_platform_data_ravelin(struct msm_vidc_core *core)
+int msm_vidc_get_platform_data_shikra(struct msm_vidc_core *core)
 {
 
-	d_vpr_h("%s: initialize ravelin data\n", __func__);
-	core->platform->data = ravelin_data;
+	d_vpr_h("%s: initialize shikra data\n", __func__);
+	core->platform->data = shikra_data;
 
 	return 0;
 }
 
-int msm_vidc_init_platform_ravelin(struct msm_vidc_core *core)
+int msm_vidc_init_platform_shikra(struct msm_vidc_core *core)
 {
 	int rc = 0;
 	static struct msm_vidc_memory_ops mem_ops_ext_ar50lt;
 
-	d_vpr_h("%s: initialize ravelin ops\n", __func__);
+	d_vpr_h("%s: initialize shikra ops\n", __func__);
 	core->mem_ops = get_mem_ops_ext();
 
 	memcpy(&mem_ops_ext_ar50lt, core->mem_ops, sizeof(struct msm_vidc_memory_ops));

@@ -705,17 +705,8 @@ static int calculate_vpp_min_freq_iris5(struct api_calculation_input codec_input
 		vppvsp1stage_fw_overhead = ENCODER_VPPVSP1STAGE_FW_OVERHEAD_IRIS5;
 		worker_fw_overhead = ENCODER_WORKER_FW_OVERHEAD_IRIS5;
 
-		if (codec_input.frame_width * codec_input.frame_height <= 1920 * 1088) {
-			if (codec_input.pipe_num > 1) {
-				if (codec_input.frame_width * codec_input.frame_height *
-					codec_input.frame_rate <= 1920 * 1088 * 60)
-					hq_mode = 1;
-			} else {
-				if (codec_input.frame_width * codec_input.frame_height *
-					codec_input.frame_rate <= 1920 * 1088 * 30)
-					hq_mode = 1;
-			}
-		}
+		if (codec_input.quality_mode == MSM_VIDC_MAX_QUALITY_MODE)
+			hq_mode = 1;
 
 		codec_output->enc_hqmode = hq_mode;
 

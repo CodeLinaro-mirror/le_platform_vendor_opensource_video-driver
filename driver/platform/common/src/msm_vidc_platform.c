@@ -76,7 +76,15 @@
 #endif
 #if defined(CONFIG_MSM_VIDC_QLI)
 #include "msm_vidc_hamoa.h"
+#include "msm_vidc_lemans.h"
+#include "msm_vidc_monaco.h"
+#include "msm_vidc_kodiak.h"
 #include "msm_vidc_iris3.h"
+#include "msm_vidc_iris2.h"
+#endif
+#if defined(CONFIG_MSM_VIDC_SHIKRA)
+#include "msm_vidc_shikra.h"
+#include "msm_vidc_ar50lt.h"
 #endif
 
 #define CAP_TO_8BIT_QP(a) {          \
@@ -267,16 +275,28 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.init_platform              = msm_vidc_init_platform_hamoa,
 		.init_vpu                  = msm_vidc_init_iris3,
 	},
-#endif
-#if defined(CONFIG_MSM_VIDC_LEMANS)
 	{
-		.compat                     = "qcom,sa8255-vidc",
+		.compat                     = "qcom,sa8775p-iris",
 		.get_platform_data          = msm_vidc_get_platform_data_lemans,
 		.init_platform              = msm_vidc_init_platform_lemans,
 		.init_vpu                   = msm_vidc_init_iris3,
 	},
 	{
-		.compat                     = "qcom,sa8775p-iris",
+		.compat                     = "qcom,qcs8300-iris",
+		.get_platform_data          = msm_vidc_get_platform_data_monaco,
+		.init_platform              = msm_vidc_init_platform_monaco,
+		.init_vpu                   = msm_vidc_init_iris3,
+	},
+	{
+		.compat                     = "qcom,sc7280-venus",
+		.get_platform_data          = msm_vidc_get_platform_data_kodiak,
+		.init_platform              = msm_vidc_init_platform_kodiak,
+		.init_vpu                   = msm_vidc_init_iris2,
+	},
+#endif
+#if defined(CONFIG_MSM_VIDC_LEMANS)
+	{
+		.compat                     = "qcom,sa8255-vidc",
 		.get_platform_data          = msm_vidc_get_platform_data_lemans,
 		.init_platform              = msm_vidc_init_platform_lemans,
 		.init_vpu                   = msm_vidc_init_iris3,
@@ -351,6 +371,14 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.compat                     = "qcom,msm-vidc-ravelin",
 		.get_platform_data          = msm_vidc_get_platform_data_ravelin,
 		.init_platform              = msm_vidc_init_platform_ravelin,
+		.init_vpu                   = msm_vidc_init_ar50lt,
+	},
+#endif
+#if defined(CONFIG_MSM_VIDC_SHIKRA)
+	{
+		.compat                     = "qcom,msm-vidc-shikra",
+		.get_platform_data          = msm_vidc_get_platform_data_shikra,
+		.init_platform              = msm_vidc_init_platform_shikra,
 		.init_vpu                   = msm_vidc_init_ar50lt,
 	},
 #endif

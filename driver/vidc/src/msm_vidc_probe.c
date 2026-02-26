@@ -67,7 +67,10 @@ static inline bool is_video_device(struct device *dev)
 		of_device_is_compatible(dev->of_node, "qcom,x1e80100-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,x1e80100-iris") ||
 		of_device_is_compatible(dev->of_node, "qcom,sa8775p-iris") ||
+		of_device_is_compatible(dev->of_node, "qcom,qcs8300-iris") ||
+		of_device_is_compatible(dev->of_node, "qcom,sc7280-venus") ||
 		of_device_is_compatible(dev->of_node, "qcom,chora-vidc") ||
+		of_device_is_compatible(dev->of_node, "qcom,msm-vidc-shikra") ||
 		of_device_is_compatible(dev->of_node, "qcom,msm-vidc-ravelin"));
 }
 
@@ -172,7 +175,10 @@ static const struct of_device_id msm_vidc_dt_match[] = {
 	{.compatible = "qcom,x1e80100-vidc"},
 	{.compatible = "qcom,x1e80100-iris"},
 	{.compatible = "qcom,sa8775p-iris"},
+	{.compatible = "qcom,qcs8300-iris"},
+	{.compatible = "qcom,sc7280-venus"},
 	{.compatible = "qcom,msm-vidc-ravelin"},
+	{.compatible = "qcom,msm-vidc-shikra"},
 	{.compatible = "qcom,vidc,cb-ns-pxl"},
 	{.compatible = "qcom,vidc,cb-ns"},
 	{.compatible = "qcom,vidc,cb-ns-bitstream"},
