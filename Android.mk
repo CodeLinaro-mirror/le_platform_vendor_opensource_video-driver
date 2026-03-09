@@ -28,25 +28,26 @@ KBUILD_OPTIONS := VIDEO_ROOT=$(VIDEO_BLD_DIR)
 KBUILD_OPTIONS += $(VIDEO_SELECT)
 KBUILD_OPTIONS += TARGET_BOARD_PLATFORM=$(TARGET_BOARD_PLATFORM)
 
-ifneq ($(TARGET_BOARD_PLATFORM),canoe)
-ifneq ($(TARGET_BOARD_PLATFORM),hamoa)
-ifneq ($(TARGET_BOARD_PLATFORM),shikra)
-ifneq ($(TARGET_BOARD_PLATFORM),parrot)
+NO_SYNX_PLATFORMS := canoe hamoa malabar parrot gen5 shikra
+NO_MMRM_PLATFORMS := canoe hamoa malabar gen5 shikra
+
+# Add hw-fence symvers and synx-driver-symvers for all platforms except the NO_SYNX_PLATFORMS ones
+ifeq ($(filter $(TARGET_BOARD_PLATFORM),$(NO_SYNX_PLATFORMS)),)
 KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS+=$(shell pwd)/$(call intermediates-dir-for,DLKM,hw-fence-module-symvers)/Module.symvers
-endif
-ifneq ($(TARGET_BOARD_PLATFORM), gen5)
-KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS=$(shell pwd)/$(call intermediates-dir-for,DLKM,mmrm-module-symvers)/Module.symvers
-ifneq ($(TARGET_BOARD_PLATFORM),parrot)
 KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS+=$(shell pwd)/$(call intermediates-dir-for,DLKM,synx-driver-symvers)/synx-driver-symvers
 endif
+
+# Add mmrm-module-symvers for all platforms except the NO_MMRM_PLATFORMS
+ifeq ($(filter $(TARGET_BOARD_PLATFORM),$(NO_MMRM_PLATFORMS)),)
+KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS+=$(shell pwd)/$(call intermediates-dir-for,DLKM,mmrm-module-symvers)/Module.symvers
 endif
-else
+
+ifeq ($(TARGET_BOARD_PLATFORM), gen5)
 ifeq ($(ENABLE_HYP), true)
-KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS=$(PWD)/$(call intermediates-dir-for,DLKM,virtio-video-symvers)/Module.symvers
+KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS+=$(PWD)/$(call intermediates-dir-for,DLKM,virtio-video-symvers)/Module.symvers
 endif
 endif
-endif
-endif
+
 ###########################################################
 
 DLKM_DIR   := device/qcom/common/dlkm
@@ -69,31 +70,27 @@ LOCAL_MODULE_DDK_BUILD    := true
 LOCAL_MODULE_DDK_SUBTARGET_REGEX := "video.*"
 LOCAL_MODULE_KO_DIRS      := msm_video/msm_video.ko
 
-ifneq ($(TARGET_BOARD_PLATFORM),canoe)
-ifneq ($(TARGET_BOARD_PLATFORM),hamoa)
-ifneq ($(TARGET_BOARD_PLATFORM),shikra)
-ifneq ($(TARGET_BOARD_PLATFORM),parrot)
-LOCAL_REQUIRED_MODULES    += hw-fence-module-symvers
-endif
-ifneq ($(TARGET_BOARD_PLATFORM), gen5)
-LOCAL_REQUIRED_MODULES    := mmrm-module-symvers
-ifneq ($(TARGET_BOARD_PLATFORM),parrot)
-LOCAL_REQUIRED_MODULES    += synx-driver-symvers
-endif
-LOCAL_ADDITIONAL_DEPENDENCIES := $(call intermediates-dir-for,DLKM,mmrm-module-symvers)/Module.symvers
-ifneq ($(TARGET_BOARD_PLATFORM),parrot)
+NO_SYNX_PLATFORMS := canoe hamoa malabar parrot gen5 shikra
+NO_MMRM_PLATFORMS := canoe hamoa malabar gen5 shikra
+
+# Add hw-fence symvers and synx-driver-symvers for all platforms except the NO_SYNX_PLATFORMS ones
+ifeq ($(filter $(TARGET_BOARD_PLATFORM),$(NO_SYNX_PLATFORMS)),)
+LOCAL_REQUIRED_MODULES        += hw-fence-module-symvers
+LOCAL_ADDITIONAL_DEPENDENCIES += $(call intermediates-dir-for,DLKM,hw-fence-module-symvers)/Module.symvers
+LOCAL_REQUIRED_MODULES        += synx-driver-symvers
 LOCAL_ADDITIONAL_DEPENDENCIES += $(call intermediates-dir-for,DLKM,synx-driver-symvers)/synx-driver-symvers
 endif
-else
+
+# Add mmrm-module-symvers for all platforms except the NO_MMRM_PLATFORMS
+ifeq ($(filter $(TARGET_BOARD_PLATFORM),$(NO_MMRM_PLATFORMS)),)
+LOCAL_REQUIRED_MODULES        += mmrm-module-symvers
+LOCAL_ADDITIONAL_DEPENDENCIES += $(call intermediates-dir-for,DLKM,mmrm-module-symvers)/Module.symvers
+endif
+
+ifeq ($(TARGET_BOARD_PLATFORM), gen5)
 ifeq ($(ENABLE_HYP), true)
-LOCAL_REQUIRED_MODULES := virtio-video-symvers
+LOCAL_REQUIRED_MODULES        += virtio-video-symvers
 LOCAL_ADDITIONAL_DEPENDENCIES += $(call intermediates-dir-for,DLKM,virtio-video-symvers)/Module.symvers
-endif
-endif
-ifneq ($(TARGET_BOARD_PLATFORM),parrot)
-LOCAL_ADDITIONAL_DEPENDENCIES += $(call intermediates-dir-for,DLKM,hw-fence-module-symvers)/Module.symvers
-endif
-endif
 endif
 endif
 include $(DLKM_DIR)/Build_external_kernelmodule.mk

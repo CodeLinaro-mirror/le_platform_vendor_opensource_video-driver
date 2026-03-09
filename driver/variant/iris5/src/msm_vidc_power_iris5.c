@@ -89,7 +89,7 @@ static int msm_vidc_init_codec_iris5p(struct msm_vidc_inst *inst,
 	return 0;
 }
 
-bool is_vpp_cycles_close_to_freq_corner_iris5(struct msm_vidc_core *core,
+static bool is_vpp_cycles_close_to_freq_corner_iris5(struct msm_vidc_core *core,
 	u64 vpp_min_freq)
 {
 	u64 margin_freq = 0, freq;
