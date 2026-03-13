@@ -2089,9 +2089,9 @@ static const struct bw_table shikra_bw_table[] = {
 };
 
 /* name, hw_trigger, hw_enable */
-static struct regulator_table shikra_regulator_table[] = {
-	{ "venus", 0 },
-	{ "venus-core0", 1 },
+static struct pd_table shikra_pd_table[] = {
+	{ "venus",          0, 1 },
+	{ "venus-core0",    1, 1 },
 };
 
 /* name, clock id, scaling */
@@ -2206,8 +2206,8 @@ static const struct msm_vidc_platform_data shikra_data = {
 	/* resources dependent on other module */
 	.bw_tbl = shikra_bw_table,
 	.bw_tbl_size = ARRAY_SIZE(shikra_bw_table),
-	.regulator_tbl = shikra_regulator_table,
-	.regulator_tbl_size = ARRAY_SIZE(shikra_regulator_table),
+	.pd_tbl = shikra_pd_table,
+	.pd_tbl_size = ARRAY_SIZE(shikra_pd_table),
 	.clk_tbl = shikra_clk_table,
 	.clk_tbl_size = ARRAY_SIZE(shikra_clk_table),
 
