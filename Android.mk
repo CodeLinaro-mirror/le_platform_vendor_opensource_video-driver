@@ -28,8 +28,8 @@ KBUILD_OPTIONS := VIDEO_ROOT=$(VIDEO_BLD_DIR)
 KBUILD_OPTIONS += $(VIDEO_SELECT)
 KBUILD_OPTIONS += TARGET_BOARD_PLATFORM=$(TARGET_BOARD_PLATFORM)
 
-NO_SYNX_PLATFORMS := canoe hamoa malabar parrot gen5 shikra
-NO_MMRM_PLATFORMS := canoe hamoa malabar gen5 shikra
+NO_SYNX_PLATFORMS := canoe hamoa hamoa_la malabar parrot gen5 shikra
+NO_MMRM_PLATFORMS := canoe hamoa hamoa_la malabar gen5 shikra
 
 # Add hw-fence symvers and synx-driver-symvers for all platforms except the NO_SYNX_PLATFORMS ones
 ifeq ($(filter $(TARGET_BOARD_PLATFORM),$(NO_SYNX_PLATFORMS)),)
@@ -70,8 +70,8 @@ LOCAL_MODULE_DDK_BUILD    := true
 LOCAL_MODULE_DDK_SUBTARGET_REGEX := "video.*"
 LOCAL_MODULE_KO_DIRS      := msm_video/msm_video.ko
 
-NO_SYNX_PLATFORMS := canoe hamoa malabar parrot gen5 shikra
-NO_MMRM_PLATFORMS := canoe hamoa malabar gen5 shikra
+NO_SYNX_PLATFORMS := canoe hamoa hamoa_la malabar parrot gen5 shikra
+NO_MMRM_PLATFORMS := canoe hamoa hamoa_la malabar gen5 shikra
 
 # Add hw-fence symvers and synx-driver-symvers for all platforms except the NO_SYNX_PLATFORMS ones
 ifeq ($(filter $(TARGET_BOARD_PLATFORM),$(NO_SYNX_PLATFORMS)),)

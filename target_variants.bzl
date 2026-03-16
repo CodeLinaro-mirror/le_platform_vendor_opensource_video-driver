@@ -4,6 +4,7 @@ targets = [
     "autogvm",
     "canoe",
     "hamoa",
+    "hamoa_la",
     "gen3auto",
     "shikra",
     "sun",

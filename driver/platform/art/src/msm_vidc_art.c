@@ -3382,5 +3382,7 @@ int msm_vidc_init_platform_art(struct msm_vidc_core *core)
 	if (rc)
 		return rc;
 
+	msm_vidc_enable_bugon = MSM_VIDC_BUG_ON_NOC | MSM_VIDC_BUG_ON_WD_TIMEOUT;
+
 	return rc;
 }
