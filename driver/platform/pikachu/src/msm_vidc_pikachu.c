@@ -2942,25 +2942,24 @@ static const struct clk_rst_table pikachu_clk_reset_table[] = {
 
 /* name, llcc_id */
 static const struct subcache_table pikachu_subcache_table[] = {
-	{ "vidsc0",     LLCC_VIDSC0,   },
-	{ "vidvsp",     LLCC_VIDVSP    },
+	{ "vidsc0", LLCC_VIDSC0, V4L2_MPEG_VIDSC_NONE, 0, },
 };
 
 /* name, start, size, secure, dma_coherant, region, dma_mask */
 const struct context_bank_table pikachu_context_bank_table[] = {
-	{"qcom,vidc,cb-sec-non-pxl",    0x01000000, 0x24800000, 1, 0,
-		MSM_VIDC_SECURE_NONPIXEL,      0 },
-	{"qcom,vidc,cb-ns",             0x25800000, 0xda400000, 0, 1,
+	{"qcom,vidc,cb-sec-non-pxl",   0x01000000, 0x32000000, 1, 0,
+		MSM_VIDC_SECURE_NONPIXEL,  0 },
+	{"qcom,vidc,cb-ns",            0x33000000, 0xbd000000, 0, 1,
 		MSM_VIDC_NON_SECURE |
 		MSM_VIDC_NON_SECURE_BITSTREAM, 0 },
-	{"qcom,vidc,cb-ns-bitstream",   0x00100000, 0xffb00000, 0, 1,
-		MSM_VIDC_REGION_NONE,          0 },
-	{"qcom,vidc,cb-ns-pxl",         0x00100000, 0xffb00000, 0, 1,
-		MSM_VIDC_NON_SECURE_PIXEL,     0 },
-	{"qcom,vidc,cb-sec-pxl",        0x00100000, 0xffb00000, 1, 0,
-		MSM_VIDC_SECURE_PIXEL,         0 },
-	{"qcom,vidc,cb-sec-bitstream",  0x00100000, 0xffb00000, 1, 0,
-		MSM_VIDC_SECURE_BITSTREAM,     0 },
+	{"qcom,vidc,cb-ns-bitstream",  0x00500000, 0xefb00000, 0, 1,
+		MSM_VIDC_REGION_NONE, 0 },
+	{"qcom,vidc,cb-ns-pxl",        0x00500000, 0xefb00000, 0, 1,
+		MSM_VIDC_NON_SECURE_PIXEL, 0 },
+	{"qcom,vidc,cb-sec-bitstream", 0x00500000, 0xefb00000, 1, 0,
+		MSM_VIDC_SECURE_BITSTREAM, 0 },
+	{"qcom,vidc,cb-sec-pxl",       0x00500000, 0xefb00000, 1, 0,
+		MSM_VIDC_SECURE_PIXEL,     0 },
 };
 
 /* register, value, mask */
