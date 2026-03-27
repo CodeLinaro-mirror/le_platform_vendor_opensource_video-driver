@@ -324,6 +324,13 @@ int get_hfi_buffer(struct msm_vidc_inst *inst,
 	}
 
 	memset(buf, 0, sizeof(struct hfi_buffer));
+
+	if (buffer->device_addr == INVALID_BUFFER_DEV_ADDR) {
+		d_vpr_e("%s: Triggering s2\n", __func__);
+		buf->type = HFI_BUFFER_RAW;
+		buf->base_address = buffer->device_addr;
+		return 0;
+	}
 	buf->type = hfi_buf_type_from_driver(inst->domain, buffer->type);
 	buf->index = buffer->index;
 	buf->base_address = buffer->device_addr;

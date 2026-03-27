@@ -16,6 +16,7 @@ extern struct msm_vidc_core *g_core;
 
 #define MAX_SSR_STRING_LEN         64
 #define MAX_STABILITY_STRING_LEN   64
+#define MAX_S2_STRING_LEN          64
 #define MAX_DEBUG_LEVEL_STRING_LEN 15
 #define MSM_VIDC_MIN_STATS_DELAY_MS     200
 #define MSM_VIDC_MAX_STATS_DELAY_MS     10000
@@ -377,7 +378,57 @@ static const struct file_operations stability_fops = {
 	.write = trigger_stability_write,
 };
 
-struct dentry* msm_vidc_debugfs_init_drv(void)
+static ssize_t trigger_s2_write(struct file *filp, const char __user *buf,
+	size_t count, loff_t *ppos)
+{
+	unsigned long s2_trigger_val = 0;
+	int rc = 0;
+	struct msm_vidc_core *core = filp->private_data;
+	size_t size = MAX_S2_STRING_LEN;
+	char kbuf[MAX_S2_STRING_LEN + 1] = { 0 };
+
+	if (!core) {
+		d_vpr_e("%s: invalid params %pK\n", __func__, core);
+		return 0;
+	}
+
+	if (!buf) {
+		d_vpr_e("%s: invalid buffer\n", __func__);
+		return -EINVAL;
+	}
+
+	if (!count) {
+		d_vpr_e("%s: invalid count 0\n", __func__);
+		goto exit;
+	}
+
+	if (count < size)
+		size = count;
+
+	if (copy_from_user(kbuf, buf, size)) {
+		d_vpr_e("%s: User memory fault\n", __func__);
+		rc = -EFAULT;
+		goto exit;
+	}
+
+	rc = kstrtoul(kbuf, 0, &s2_trigger_val);
+	if (rc) {
+		d_vpr_e("%s: returning error err %d\n", __func__, rc);
+		rc = -EINVAL;
+	} else {
+		msm_vidc_trigger_s2(core, s2_trigger_val);
+		rc = count;
+	}
+exit:
+	return rc;
+}
+
+static const struct file_operations s2_fops = {
+	.open = simple_open,
+	.write = trigger_s2_write,
+};
+
+struct dentry *msm_vidc_debugfs_init_drv(void)
 {
 	struct dentry *dir = NULL;
 
@@ -440,6 +491,10 @@ struct dentry *msm_vidc_debugfs_init_core(void *core_in)
 	}
 	if (!debugfs_create_file("trigger_stability", 0200, dir, core, &stability_fops)) {
 		d_vpr_e("trigger_stability debugfs_create_file: fail\n");
+		goto failed_create_dir;
+	}
+	if (!debugfs_create_file("trigger_s2", 0200, dir, core, &s2_fops)) {
+		d_vpr_e("trigger_s2 debugfs_create_file: fail\n");
 		goto failed_create_dir;
 	}
 	if (!debugfs_create_file("stats_delay_ms", 0644, dir, core, &stats_delay_fops)) {
