@@ -1394,8 +1394,7 @@ int venus_hfi_session_set_persist_comv(struct msm_vidc_inst *inst)
 
 	inst->comv_bitstream_cb = false;
 	if ((!inst->capabilities->cap[SECURE_MODE].value) &&
-		(inst->domain == MSM_VIDC_DECODER) &&
-		(TZ_SUPPORT_COMV_BITSTREAM_CB(core))) {
+		(inst->domain == MSM_VIDC_DECODER)) {
 		u32 enable_persist_comv = true;
 
 		inst->comv_bitstream_cb = true;
@@ -1419,7 +1418,7 @@ int venus_hfi_session_set_persist_comv(struct msm_vidc_inst *inst)
 		rc = __cmdq_write(inst->core, inst->packet);
 		if (rc)
 			goto unlock;
-		}
+	}
 
 unlock:
 	core_unlock(core, __func__);

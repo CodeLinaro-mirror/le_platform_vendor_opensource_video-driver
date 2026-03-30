@@ -4956,7 +4956,6 @@ int msm_vidc_core_init(struct msm_vidc_core *core)
 		msm_vidc_change_core_sub_state(core, 0,
 			CORE_SUBSTATE_POWER_ENABLE, __func__);
 		call_venus_op(core, enable_intr, core);
-		call_venus_op(g_core, read_tz_ver, g_core);
 
 	}
 
@@ -5275,6 +5274,27 @@ void msm_vidc_ssr_handler(struct work_struct *work)
 		}
 		core_unlock(core, __func__);
 	}
+}
+
+int msm_vidc_trigger_s2(struct msm_vidc_core *core,
+		u64 trigger_s2_val)
+{
+	struct msm_vidc_inst *inst = NULL;
+	int count = 0;
+	struct msm_vidc_buffer buffer = {0};
+
+	buffer.device_addr = INVALID_BUFFER_DEV_ADDR;
+	buffer.type = MSM_VIDC_BUF_OUTPUT;
+
+	d_vpr_e("%s: trigger_s2 %llu\n", __func__, trigger_s2_val);
+
+	list_for_each_entry(inst, &core->instances, list) {
+		count += 1;
+		if (trigger_s2_val == count)
+			venus_hfi_queue_buffer(inst, &buffer, NULL);
+	}
+
+	return 0;
 }
 
 int msm_vidc_trigger_stability(struct msm_vidc_core *core,

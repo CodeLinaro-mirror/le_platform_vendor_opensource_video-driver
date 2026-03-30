@@ -1109,15 +1109,6 @@ static int __enable_intr_iris33_au(struct msm_vidc_core *vidc_core)
 }
 
 
-static int __read_tz_ver_iris33_au(struct msm_vidc_core *vidc_core)
-{
-	/* Read tz version */
-	d_vpr_h("%s(): read tz version\n", __func__);
-	return __read_register(vidc_core,
-			VCODEC_VPU_CPU_CS_SCIBCMDARG3_IRIS33_AU, &vidc_core->tz_ver);
-}
-
-
 static struct msm_vidc_venus_ops iris33_au_ops = {
 	.boot_firmware = __boot_firmware_iris33_au,
 	.raise_interrupt = __raise_interrupt_iris33_au,
@@ -1128,7 +1119,6 @@ static struct msm_vidc_venus_ops iris33_au_ops = {
 	.watchdog = __watchdog_iris33_au,
 	.noc_error_info = __noc_error_info_iris33_au,
 	.enable_intr = __enable_intr_iris33_au,
-	.read_tz_ver = __read_tz_ver_iris33_au,
 };
 
 static struct msm_vidc_session_ops msm_session_ops = {

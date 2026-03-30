@@ -37,7 +37,6 @@ struct msm_vidc_venus_ops {
 	int (*watchdog)(struct msm_vidc_core *core, u32 intr_status);
 	int (*noc_error_info)(struct msm_vidc_core *core);
 	int (*enable_intr)(struct msm_vidc_core *core);
-	int (*read_tz_ver)(struct msm_vidc_core *core);
 };
 
 struct msm_vidc_mem_addr {
@@ -103,7 +102,6 @@ struct msm_vidc_core {
 	u32                                    vmid;
 	u32                                    hyp_assign;
 	u32                                    device_core_mask;
-	u32                                    tz_ver;
 	bool                                   is_gvm_open;
 	struct task_struct                    *pvm_event_handler_thread;
 	struct msm_vidc_core_capability       *capabilities;
