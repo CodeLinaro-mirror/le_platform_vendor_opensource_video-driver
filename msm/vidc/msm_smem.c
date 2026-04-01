@@ -224,6 +224,9 @@ int msm_smem_map_dma_buf(struct msm_vidc_inst *inst, struct msm_smem *smem)
 	if (ion_flags & ION_FLAG_SECURE)
 		smem->flags |= SMEM_SECURE;
 
+	if (ion_flags & ION_FLAG_ION_LEND_BUF)
+		smem->flags |= SMEM_SECURE;
+
 	if ((smem->buffer_type & b_type) &&
 		!!(smem->flags & SMEM_SECURE) ^ !!(inst->flags & VIDC_SECURE)) {
 		s_vpr_e(inst->sid, "Failed to map %s buffer with %s session\n",
