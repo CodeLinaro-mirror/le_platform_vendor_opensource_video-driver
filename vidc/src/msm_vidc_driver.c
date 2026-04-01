@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/iommu.h>
@@ -150,7 +150,7 @@ void print_vidc_buffer(u32 tag, const char *tag_str, const char *str, struct msm
 		return;
 
 	dbuf = (struct dma_buf *)vbuf->dmabuf;
-	if (dbuf && dbuf->file) {
+	if (dbuf && vbuf->dbuf_get && dbuf->file) {
 		f_inode = file_inode(dbuf->file);
 		if (f_inode) {
 			inode_num = f_inode->i_ino;
@@ -2559,16 +2559,20 @@ void msm_vidc_stats_handler(struct work_struct *work)
 
 	inst = container_of(work, struct msm_vidc_inst, stats_work.work);
 	inst = get_inst_ref(g_core, inst);
-	if (!inst || !inst->packet) {
-		d_vpr_e("%s: invalid params\n", __func__);
+	if (!inst) {
+		d_vpr_e("%s: invalid inst\n", __func__);
 		return;
 	}
 
+	if (!inst->packet) {
+		d_vpr_e("%s: invalid params\n", __func__);
+		goto exit;
+	}
 	inst_lock(inst, __func__);
 	msm_vidc_print_stats(inst);
 	schedule_stats_work(inst);
 	inst_unlock(inst, __func__);
-
+exit:
 	put_inst(inst);
 }
 
@@ -4644,7 +4648,6 @@ static void msm_vidc_close_helper(struct kref *kref)
 	 * So acquire lock before calling vb2q_deinit.
 	 */
 	inst_lock(inst, __func__);
-	msm_vidc_vb2_queue_deinit(inst);
 	msm_vidc_v4l2_fh_deinit(inst);
 	inst_unlock(inst, __func__);
 	destroy_workqueue(inst->workq);
