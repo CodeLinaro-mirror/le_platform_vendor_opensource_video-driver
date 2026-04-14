@@ -7198,7 +7198,7 @@ exit:
 	 * it will be queued when rbr event arrived from firmware.
 	 */
 	if (rc == -EEXIST && !inst->batch.enable) {
-		print_vidc_buffer(VIDC_DBG, "qbuf upon rbr", inst, mbuf);
+		print_vidc_buffer(VIDC_LOW, "qbuf upon rbr", inst, mbuf);
 	} else if (rc) {
 		dprintk(VIDC_ERR, "%s: rc %d\n", __func__, rc);
 		msm_comm_unmap_vidc_buffer(inst, mbuf);
