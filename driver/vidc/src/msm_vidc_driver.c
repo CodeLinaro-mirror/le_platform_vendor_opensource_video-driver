@@ -4258,9 +4258,10 @@ int msm_vidc_session_open(struct msm_vidc_inst *inst)
 	if (core->is_hw_virt) {
 #ifdef MSM_VIDC_HW_VIRT
 		core_lock(core, __func__);
-		rc = virtio_video_msm_cmd_open_gvm_session(&inst->device_id, &inst->session_id);
+		__resume(core);
+		rc = virtio_video_msm_cmd_open_gvm_session(&inst->device_id,
+			&inst->session_id);
 		if (!rc) {
-			__resume(core);
 			call_venus_op(core, enable_intr, core);
 		}
 		core_unlock(core, __func__);
@@ -4953,8 +4954,6 @@ int msm_vidc_core_init(struct msm_vidc_core *core)
 		/* set up core state and substate */
 		msm_vidc_change_core_state(core, MSM_VIDC_CORE_INIT,
 			__func__);
-		msm_vidc_change_core_sub_state(core, 0,
-			CORE_SUBSTATE_POWER_ENABLE, __func__);
 		call_venus_op(core, enable_intr, core);
 
 	}

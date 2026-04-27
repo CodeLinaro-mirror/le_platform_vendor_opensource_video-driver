@@ -91,11 +91,6 @@ static struct color_format_info color_format_data_nordau[] = {
 		.pixfmt_name       = "NV12",
 	},
 	{
-		.v4l2_color_format = V4L2_PIX_FMT_NV21,
-		.vidc_color_format = MSM_VIDC_FMT_NV21,
-		.pixfmt_name       = "NV21",
-	},
-	{
 		.v4l2_color_format = V4L2_PIX_FMT_VIDC_NV12C,
 		.vidc_color_format = MSM_VIDC_FMT_NV12C,
 		.pixfmt_name       = "NV12C",
@@ -386,26 +381,26 @@ static struct msm_platform_inst_capability instance_cap_data_nordau[] = {
 	{PIX_FMTS, ENC|DEC, H264|MPEG2,
 		MSM_VIDC_FMT_NV12,
 		MSM_VIDC_FMT_NV12C,
-		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV21 | MSM_VIDC_FMT_NV12C,
+		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV12C,
 		MSM_VIDC_FMT_NV12C},
 
 	{PIX_FMTS, ENC|DEC, HEVC|VP9|AV1,
 		MSM_VIDC_FMT_NV12,
 		MSM_VIDC_FMT_TP10C,
-		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV21 | MSM_VIDC_FMT_NV12C |
+		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV12C |
 		MSM_VIDC_FMT_P010 | MSM_VIDC_FMT_TP10C,
 		MSM_VIDC_FMT_NV12C},
 
 	{PIX_FMTS, ENC, HEIC,
 		MSM_VIDC_FMT_NV12,
 		MSM_VIDC_FMT_P010,
-		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV21 | MSM_VIDC_FMT_P010,
+		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_P010,
 		MSM_VIDC_FMT_NV12},
 
 	{PIX_FMTS, DEC, HEIC,
 		MSM_VIDC_FMT_NV12,
 		MSM_VIDC_FMT_TP10C,
-		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV21 | MSM_VIDC_FMT_NV12C |
+		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV12C |
 		MSM_VIDC_FMT_P010 | MSM_VIDC_FMT_TP10C,
 		MSM_VIDC_FMT_NV12C},
 
@@ -442,7 +437,7 @@ static struct msm_platform_inst_capability instance_cap_data_nordau[] = {
 	{MBPF, DEC, HEIC, 64, 262144,  1, 262144 },
 
 	/* (1920 * 1080) / 256 */
-	{LOSSLESS_MBPF, ENC, H264|HEVC, 64, 8100, 1, 8100},
+	{LOSSLESS_MBPF, ENC, H264|HEVC, 64, 8160, 1, 8160},
 
 	/* Batch Mode Decode */
 	/* TODO: update with new values based on updated voltage corner */

@@ -166,8 +166,9 @@ u32 msm_vidc_internal_buffer_count(struct msm_vidc_inst *inst,
 	enum msm_vidc_buffer_type buffer_type)
 {
 	u32 count = 0;
+	bool is_interlaced = false;
 
-	if (!inst) {
+	if (!inst || !inst->capabilities) {
 		d_vpr_e("%s: invalid params\n", __func__);
 		return 0;
 	}
@@ -176,10 +177,13 @@ u32 msm_vidc_internal_buffer_count(struct msm_vidc_inst *inst,
 		return 1;
 
 	if (is_decode_session(inst)) {
-		/* mpeg2 decode only needs line and persist internal buffers */
+		if (inst->capabilities->cap[CODED_FRAMES].value == CODED_FRAMES_INTERLACE)
+			is_interlaced = true;
+		/* mpeg2 or interlace decode only needs line and persist internal buffers */
 		if ((buffer_type == MSM_VIDC_BUF_BIN ||
 			buffer_type == MSM_VIDC_BUF_PARTIAL_DATA) &&
-			(inst->codec != MSM_VIDC_MPEG2)) {
+			(inst->codec != MSM_VIDC_MPEG2) &&
+			!is_interlaced) {
 			count = 1;
 		}
 		else if (buffer_type == MSM_VIDC_BUF_LINE ||

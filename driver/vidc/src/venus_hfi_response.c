@@ -739,6 +739,51 @@ static int handle_non_read_only_buffer(struct msm_vidc_inst *inst,
 	return 0;
 }
 
+static int set_dec_fw_frame_rate(struct msm_vidc_inst *inst)
+{
+	struct msm_vidc_timestamp *ts = NULL;
+	struct msm_vidc_timestamp *prev = NULL;
+	u32 prev_fr = 0, curr_fr = 0;
+	u64 time_ns = 0;
+	int rc = 0;
+
+	if (!inst) {
+		d_vpr_e("%s: invalid params\n", __func__);
+		return -EINVAL;
+	}
+
+	list_for_each_entry(ts, &inst->timestamps.list, sort.list) {
+		if (prev) {
+			time_ns = ts->sort.val - prev->sort.val;
+			prev_fr = curr_fr;
+			curr_fr = time_ns ? DIV64_U64_ROUND_CLOSEST(NSEC_PER_SEC, time_ns) << 16 :
+					0;
+		}
+		prev = ts;
+	}
+
+	/* update frame rate after it remains for two consecutive frames */
+	if (curr_fr && curr_fr == prev_fr && inst->auto_framerate != curr_fr) {
+		i_vpr_h(inst, "%s: updated fps: %u -> %u\n", __func__,
+			prev_fr >> 16, curr_fr >> 16);
+		rc = venus_hfi_session_property(inst,
+				HFI_PROP_FRAME_RATE,
+				HFI_HOST_FLAGS_NONE,
+				HFI_PORT_RAW,
+				HFI_PAYLOAD_Q16,
+				&curr_fr,
+				sizeof(u32));
+		if (rc) {
+			i_vpr_e(inst, "%s: set dec frame rate failed\n",
+				__func__);
+		} else {
+			inst->auto_framerate = curr_fr;
+		}
+	}
+
+	return rc;
+}
+
 static int handle_psc_last_flag_buffer(struct msm_vidc_inst *inst,
 		struct hfi_buffer *buffer)
 {
@@ -1021,6 +1066,12 @@ static int handle_output_buffer(struct msm_vidc_inst *inst,
 
 	if (!is_image_session(inst) && is_decode_session(inst) && buf->data_size)
 		msm_vidc_update_timestamp_rate(inst, buf->timestamp);
+
+	if (core->is_hw_virt && is_decode_session(inst) && buf->data_size) {
+		rc = set_dec_fw_frame_rate(inst);
+		if (rc)
+			msm_vidc_change_state(inst, MSM_VIDC_ERROR, __func__);
+	}
 
 	/* update output buffer timestamp, if ts_reorder is enabled */
 	if (is_ts_reorder_allowed(inst) && buf->data_size)

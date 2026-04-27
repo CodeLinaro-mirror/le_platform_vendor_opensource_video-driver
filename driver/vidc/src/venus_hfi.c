@@ -630,12 +630,20 @@ int __resume(struct msm_vidc_core *core)
 	if (!core) {
 		d_vpr_e("%s: invalid params\n", __func__);
 		return -EINVAL;
-	} else if (is_core_sub_state(core, CORE_SUBSTATE_POWER_ENABLE)) {
-		goto exit;
 	} else if (!core_in_valid_state(core)) {
 		d_vpr_e("%s: core not in valid state\n", __func__);
 		return -EINVAL;
 	}
+
+	/*
+	 * For HW virtualization, reset PM timer during each resume
+	 * to ensure synchronization.
+	 */
+	if (core->is_hw_virt)
+		__schedule_power_collapse_work(core);
+
+	if (is_core_sub_state(core, CORE_SUBSTATE_POWER_ENABLE))
+		goto exit;
 
 	rc = __strict_check(core, __func__);
 	if (rc)
@@ -1395,9 +1403,14 @@ int venus_hfi_session_set_persist_comv(struct msm_vidc_inst *inst)
 	inst->comv_bitstream_cb = false;
 	if ((!inst->capabilities->cap[SECURE_MODE].value) &&
 		(inst->domain == MSM_VIDC_DECODER)) {
-		u32 enable_persist_comv = true;
+		u32 enable_persist_comv = false;
 
 		inst->comv_bitstream_cb = true;
+
+		if (inst->codec == MSM_VIDC_VP9 ||
+			inst->codec == MSM_VIDC_AV1) {
+			enable_persist_comv = true;
+		}
 
 		rc = hfi_create_header(inst->packet, inst->packet_size,
 				inst->session_id, core->header_id++);
@@ -1414,6 +1427,9 @@ int venus_hfi_session_set_persist_comv(struct msm_vidc_inst *inst)
 				sizeof(u32));
 		if (rc)
 			goto unlock;
+
+		d_vpr_h("%s: set persist comv flag to %d\n",
+			__func__, enable_persist_comv);
 
 		rc = __cmdq_write(inst->core, inst->packet);
 		if (rc)
