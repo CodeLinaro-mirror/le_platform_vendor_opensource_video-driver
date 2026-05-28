@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/types.h>
@@ -936,6 +936,26 @@ int msm_vidc_close(struct msm_vidc_inst *inst)
 	/* print internal buffer memory usage stats */
 	msm_vidc_print_memory_stats(inst);
 	msm_vidc_print_residency_stats(core);
+	/*
+	 * vb2_queue_deinit() must happen before session close so that
+	 * venus_hfi_stop() (called from stop_streaming vb2 callback)
+	 * can succeed with a valid inst->packet.
+	 *
+	 * UAF root cause: if msm_vidc_session_close() is called before
+	 * vb2_queue_deinit(), it sends HFI_CMD_CLOSE to firmware and frees
+	 * inst->packet. This causes venus_hfi_stop() to fail with -EINVAL
+	 * (inst->packet == NULL), triggering the error path which calls
+	 * msm_vidc_flush_buffers(). msm_vidc_flush_buffers() calls
+	 * print_vidc_buffer() on QUEUED/DEFERRED buffers, which accesses
+	 * buf->dmabuf->file. Since HFI_CMD_CLOSE was already sent, firmware
+	 * may have returned pending output buffers asynchronously via the
+	 * interrupt handler; handle_output_buffer() calls dma_buf_put() but
+	 * does not clear buf->dmabuf, leaving a dangling pointer if userspace
+	 * has already closed the fd. Accessing this freed dma_buf (SLUB-
+	 * poisoned to 0x6b6b6b6b6b6b6b6b) in print_vidc_buffer() causes the
+	 * kernel panic seen in the crash log.
+	 */
+	msm_vidc_vb2_queue_deinit(inst);
 	msm_vidc_session_close(inst);
 	msm_vidc_change_state(inst, MSM_VIDC_CLOSE, __func__);
 	inst->sub_state = MSM_VIDC_SUB_STATE_NONE;
