@@ -317,12 +317,12 @@ static int __power_collapse(struct msm_vidc_core *core, bool force)
 		goto exit;
 	}
 
-	if (!core_in_valid_state(core)) {
-		d_vpr_e("%s: Core not in init state\n", __func__);
-		return -EINVAL;
-	}
-
 	if (!core->is_hw_virt) {
+		if (!core_in_valid_state(core)) {
+			d_vpr_e("%s: Core not in init state\n", __func__);
+			return -EINVAL;
+		}
+
 		__flush_debug_queue(core, (!force ? core->packet : NULL), core->packet_size);
 
 		rc = call_venus_op(core, prepare_pc, core);
@@ -334,6 +334,12 @@ static int __power_collapse(struct msm_vidc_core *core, bool force)
 			d_vpr_e("Failed __suspend\n");
 	} else {
 #ifdef MSM_VIDC_HW_VIRT
+		/*
+		 * Core state check is skipped for hw_virtualization as pause must
+		 * be sent to the BE irrespective of core state. During SSR, the core
+		 * state may not be valid, but we still need to send pause after the
+		 * last session is closed.
+		 */
 		rc = virtio_video_msm_cmd_pause_gvm_session(core->capabilities[NUM_VPU].value, 0);
 		if (!rc) {
 			msm_vidc_change_core_sub_state(core,

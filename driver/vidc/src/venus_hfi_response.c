@@ -1416,6 +1416,7 @@ static int handle_session_buffer(struct msm_vidc_inst *inst,
 		{HFI_BUFFER_NON_COMV,       handle_release_internal_buffer    },
 		{HFI_BUFFER_LINE,           handle_release_internal_buffer    },
 		{HFI_BUFFER_PERSIST,        handle_release_internal_buffer    },
+		{HFI_BUFFER_PERSIST_COMV,   handle_release_internal_buffer    },
 		{HFI_BUFFER_PARTIAL_DATA,   handle_release_internal_buffer    },
 	};
 	static const struct msm_vidc_hfi_buffer_handle dec_output_hfi_handle[] = {
