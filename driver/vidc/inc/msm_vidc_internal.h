@@ -103,6 +103,7 @@ enum msm_vidc_metadata_bits {
 #define DCVS_WINDOW 16
 #define ENC_FPS_WINDOW 3
 #define DEC_FPS_WINDOW 10
+#define DEFAULT_MAX_ENC_FPS 60
 #define INPUT_TIMER_LIST_SIZE 30
 
 #define DEFAULT_COMPLEXITY 50

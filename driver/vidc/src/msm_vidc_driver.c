@@ -2432,8 +2432,6 @@ int msm_vidc_set_auto_framerate(struct msm_vidc_inst *inst, u64 timestamp)
 			prev_fr = curr_fr;
 			curr_fr = time_us ? DIV64_U64_ROUND_CLOSEST(USEC_PER_SEC, time_us) << 16 :
 					inst->auto_framerate;
-			if (curr_fr > inst->capabilities->cap[FRAME_RATE].max)
-				curr_fr = inst->capabilities->cap[FRAME_RATE].max;
 		}
 		prev = ts;
 		counter++;
@@ -2443,22 +2441,36 @@ int msm_vidc_set_auto_framerate(struct msm_vidc_inst *inst, u64 timestamp)
 		goto exit;
 
 	/* if framerate changed and stable for 2 frames, set to firmware */
-	if (curr_fr == prev_fr && curr_fr != inst->auto_framerate) {
-		i_vpr_l(inst, "%s: updated fps:  %u -> %u\n", __func__,
-				inst->auto_framerate >> 16, curr_fr >> 16);
-		rc = venus_hfi_session_property(inst,
-				HFI_PROP_FRAME_RATE,
-				HFI_HOST_FLAGS_NONE,
-				HFI_PORT_BITSTREAM,
-				HFI_PAYLOAD_Q16,
-				&curr_fr,
-				sizeof(u32));
-		if (rc) {
-			i_vpr_e(inst, "%s: set auto frame rate failed\n",
-				__func__);
-			goto exit;
+	/* this framerate should be calculated from input TS directly without clamp */
+	/* before set this framerate to firmware, need clamp */
+	if (curr_fr == prev_fr) {
+		/* if calculated fps is too large, we consider it's due to error TS */
+		/* if we set max fps to FW, the next new encoder creation request will */
+		/* be rejected as encoder max capability has reached.*/
+		/* so, we just set DEFAULT_MAX_ENC_FPS to FW, it could cover most of enc usage */
+		if (curr_fr > inst->capabilities->cap[FRAME_RATE].max)
+			curr_fr = min((u32)(DEFAULT_MAX_ENC_FPS << 16),
+					(u32)inst->capabilities->cap[FRAME_RATE].max);
+		if (curr_fr < inst->capabilities->cap[FRAME_RATE].min)
+			curr_fr = inst->capabilities->cap[FRAME_RATE].min;
+
+		if (curr_fr != inst->auto_framerate) {
+			i_vpr_l(inst, "%s: updated fps:  %u -> %u (unclamped %u)\n", __func__,
+					inst->auto_framerate >> 16, curr_fr >> 16, prev_fr >> 16);
+			rc = venus_hfi_session_property(inst,
+					HFI_PROP_FRAME_RATE,
+					HFI_HOST_FLAGS_NONE,
+					HFI_PORT_BITSTREAM,
+					HFI_PAYLOAD_Q16,
+					&curr_fr,
+					sizeof(u32));
+			if (rc) {
+				i_vpr_e(inst, "%s: set auto frame rate(%u) failed\n",
+					__func__, curr_fr >> 16);
+				goto exit;
+			}
+			inst->auto_framerate = curr_fr;
 		}
-		inst->auto_framerate = curr_fr;
 	}
 exit:
 	return rc;
