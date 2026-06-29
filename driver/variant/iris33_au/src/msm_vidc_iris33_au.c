@@ -956,38 +956,16 @@ int msm_vidc_decide_quality_mode_iris33_au(struct msm_vidc_inst *inst)
 	if (!is_encode_session(inst))
 		return 0;
 
-	/* image or lossless or all intra runs at quality mode */
-	if (is_image_session(inst) || inst->capabilities->cap[LOSSLESS].value ||
-		inst->capabilities->cap[ALL_INTRA].value) {
-		mode = MSM_VIDC_MAX_QUALITY_MODE;
-		goto decision_done;
-	}
-
-	/* for lesser complexity, make LP for all resolution */
-	if (inst->capabilities->cap[COMPLEXITY].value < DEFAULT_COMPLEXITY) {
-		mode = MSM_VIDC_POWER_SAVE_MODE;
-		goto decision_done;
-	}
-
 	mbpf = msm_vidc_get_mbs_per_frame(inst);
 	mbps = mbpf * msm_vidc_get_fps(inst);
 	core = inst->core;
-	max_hq_mbpf = core->capabilities[MAX_MBPF_HQ].value;;
-	max_hq_mbps = core->capabilities[MAX_MBPS_HQ].value;;
+	max_hq_mbpf = core->capabilities[MAX_MBPF_HQ].value;
+	max_hq_mbps = core->capabilities[MAX_MBPS_HQ].value;
 
-	if (!is_realtime_session(inst)) {
-		if (((inst->capabilities->cap[COMPLEXITY].flags & CAP_FLAG_CLIENT_SET) &&
-			(inst->capabilities->cap[COMPLEXITY].value >= DEFAULT_COMPLEXITY)) ||
-			mbpf <= max_hq_mbpf) {
-			mode = MSM_VIDC_MAX_QUALITY_MODE;
-			goto decision_done;
-		}
-	}
-
-	if (mbpf <= max_hq_mbpf && mbps <= max_hq_mbps)
+	if (inst->capabilities->cap[LOSSLESS].value ||
+	    (mbpf <= max_hq_mbpf && mbps <= max_hq_mbps))
 		mode = MSM_VIDC_MAX_QUALITY_MODE;
 
-decision_done:
 	msm_vidc_update_cap_value(inst, QUALITY_MODE, mode, __func__);
 
 	return 0;

@@ -18,7 +18,7 @@ ifeq ($(TARGET_VIDC_ENABLE),true)
 			ifneq ($(ENABLE_HYP),true)
 				BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/msm_video.ko
 			else
-				ifeq ($(TARGET_BOARD_PLATFORM),gen5)
+				ifneq ($(filter gen5 auto_gen,$(TARGET_BOARD_PLATFORM)),)
 					ifeq ($(FULL_VIRTUALIZATION_ENABLE),true)
 						BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/msm_video.ko
 					endif

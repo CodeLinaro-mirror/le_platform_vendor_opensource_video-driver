@@ -75,6 +75,7 @@ static const u32 msm_vdec_subscribe_for_psc_mpeg2[] = {
 	HFI_PROP_BUFFER_FW_MIN_OUTPUT_COUNT,
 	HFI_PROP_PROFILE,
 	HFI_PROP_LEVEL,
+	HFI_PROP_SIGNAL_COLOR_INFO,
 };
 
 static const u32 msm_vdec_input_subscribe_for_properties[] = {
@@ -1333,6 +1334,17 @@ static int msm_vdec_read_input_subcr_params(struct msm_vidc_inst *inst)
 				"%s: color description flag is not present\n",
 				__func__);
 		}
+	} else if (colour_description_present_flag) {
+		/* MPEG2 sequence_display_extension carries colour info directly
+		 * without video_signal_type_present_flag; apply when FW signals
+		 * colour_description_present_flag alone.
+		 */
+		inst->fmts[OUTPUT_PORT].fmt.pix_mp.colorspace =
+			v4l2_color_primaries_from_driver(inst, primaries, __func__);
+		inst->fmts[OUTPUT_PORT].fmt.pix_mp.xfer_func =
+			v4l2_transfer_char_from_driver(inst, transfer_char, __func__);
+		inst->fmts[OUTPUT_PORT].fmt.pix_mp.ycbcr_enc =
+			v4l2_matrix_coeff_from_driver(inst, matrix_coeff, __func__);
 	} else {
 		i_vpr_h(inst, "%s: video_signal type is not present\n",
 			__func__);

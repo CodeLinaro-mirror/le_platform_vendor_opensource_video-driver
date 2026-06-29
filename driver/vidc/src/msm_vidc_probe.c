@@ -553,6 +553,41 @@ static const struct component_master_ops msm_vidc_component_ops = {
 	.unbind         = msm_vidc_component_unbind,
 };
 
+#ifdef MSM_VIDC_HW_VIRT
+static int vidc_reboot_notify(
+		struct notifier_block *nfb, unsigned long action, void *data)
+{
+	struct msm_vidc_core *core = NULL;
+
+	d_vpr_h("%s(): %ld", __func__, action);
+	core = g_core;
+
+	switch (action) {
+	case SYS_DOWN:
+	case SYS_HALT:
+	case SYS_POWER_OFF:
+		msm_vidc_core_deinit(core, true);
+		core_lock(core, __func__);
+		if (core && core->is_hw_virt && core->is_gvm_open) {
+			/* close gvm */
+			virtio_video_msm_cmd_close_gvm();
+			core->is_gvm_open = false;
+			/* update core state and clear all substates */
+			msm_vidc_change_core_sub_state(core,
+				CORE_SUBSTATE_MAX - 1, 0, __func__);
+		}
+		core_unlock(core, __func__);
+		break;
+	}
+
+	return NOTIFY_DONE;
+}
+
+static struct notifier_block vidc_reboot_nb = {
+	.notifier_call = vidc_reboot_notify,
+};
+#endif
+
 static int msm_vidc_remove_video_device(struct platform_device *pdev)
 {
 	struct msm_vidc_core* core;
@@ -568,6 +603,10 @@ static int msm_vidc_remove_video_device(struct platform_device *pdev)
 	}
 
 	d_vpr_h("%s()\n", __func__);
+
+#ifdef MSM_VIDC_HW_VIRT
+	unregister_reboot_notifier(&vidc_reboot_nb);
+#endif
 
 	/* destroy component master and deallocate match data */
 	component_master_del(&pdev->dev, &msm_vidc_component_ops);
@@ -646,41 +685,6 @@ static int msm_vidc_remove(struct platform_device *pdev)
 {
         return __remove(pdev);
 }
-#endif
-
-#ifdef MSM_VIDC_HW_VIRT
-static int vidc_reboot_notify(
-		struct notifier_block *nfb, unsigned long action, void *data)
-{
-	struct msm_vidc_core *core = NULL;
-
-	d_vpr_h("%s(): %ld", __func__, action);
-	core = g_core;
-
-	switch (action) {
-	case SYS_DOWN:
-	case SYS_HALT:
-	case SYS_POWER_OFF:
-		msm_vidc_core_deinit(core, true);
-		core_lock(core, __func__);
-		if (core && core->is_hw_virt && core->is_gvm_open) {
-			/* close gvm */
-			virtio_video_msm_cmd_close_gvm();
-			core->is_gvm_open = false;
-			/* update core state and clear all substates */
-			msm_vidc_change_core_sub_state(core,
-				CORE_SUBSTATE_MAX - 1, 0, __func__);
-		}
-		core_unlock(core, __func__);
-		break;
-	}
-
-	return NOTIFY_DONE;
-}
-
-static struct notifier_block vidc_reboot_nb = {
-	.notifier_call = vidc_reboot_notify,
-};
 #endif
 
 static int msm_vidc_probe_video_device(struct platform_device *pdev)
