@@ -4985,10 +4985,9 @@ int msm_vidc_core_init(struct msm_vidc_core *core)
 #endif
 		}
 		core->is_gvm_open = true;
-		/* set up core state and substate */
+		/* set up core state */
 		msm_vidc_change_core_state(core, MSM_VIDC_CORE_INIT,
 			__func__);
-		call_venus_op(core, enable_intr, core);
 
 	}
 
