@@ -10,6 +10,10 @@ else
 export CONFIG_MSM_VIDC_V4L2=m
 endif
 
+ifeq ($(BOARD_PLATFORM), gen5)
+export CONFIG_MSM_VIDC_V4L2=m
+endif
+
 ifeq ($(CONFIG_ARCH_WAIPIO), y)
 include $(VIDEO_ROOT)/config/waipio_video.conf
 LINUXINCLUDE    += -include $(VIDEO_ROOT)/config/waipio_video.h \
