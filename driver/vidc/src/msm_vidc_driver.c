@@ -2464,6 +2464,49 @@ exit:
 	return rc;
 }
 
+int msm_vidc_set_dec_framerate(struct msm_vidc_inst *inst)
+{
+	struct msm_vidc_timestamp *ts = NULL;
+	struct msm_vidc_timestamp *prev = NULL;
+	u32 prev_fr = 0, curr_fr = 0;
+	u64 time_ns = 0;
+	int rc = 0;
+
+	if (!is_decode_session(inst))
+		return 0;
+
+	list_for_each_entry(ts, &inst->timestamps.list, sort.list) {
+		if (prev) {
+			time_ns = ts->sort.val - prev->sort.val;
+			prev_fr = curr_fr;
+			curr_fr = time_ns ? DIV64_U64_ROUND_CLOSEST(NSEC_PER_SEC, time_ns) << 16 :
+					0;
+		}
+		prev = ts;
+	}
+
+	/* update frame rate after it remains same for two consecutive frames */
+	if (curr_fr && curr_fr == prev_fr && inst->auto_framerate != curr_fr) {
+		rc = venus_hfi_session_property(inst,
+				HFI_PROP_FRAME_RATE,
+				HFI_HOST_FLAGS_NONE,
+				HFI_PORT_BITSTREAM,
+				HFI_PAYLOAD_Q16,
+				&curr_fr,
+				sizeof(u32));
+		if (rc) {
+			i_vpr_e(inst, "%s: set dec frame rate failed\n",
+				__func__);
+		} else {
+			i_vpr_h(inst, "%s: updated fps: %u -> %u\n", __func__,
+				inst->auto_framerate >> 16, curr_fr >> 16);
+			inst->auto_framerate = curr_fr;
+		}
+	}
+
+	return rc;
+}
+
 int msm_vidc_update_input_rate(struct msm_vidc_inst *inst, u64 time_us)
 {
 	struct msm_vidc_input_timer *input_timer;

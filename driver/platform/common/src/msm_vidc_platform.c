@@ -280,7 +280,8 @@ static int msm_vidc_deinit_platform_variant(struct msm_vidc_core *core, struct d
 	}
 #endif
 #if defined(CONFIG_MSM_VIDC_NORDAU)
-	if (of_device_is_compatible(dev->of_node, "qcom,sa8797-vidc")) {
+	if (of_device_is_compatible(dev->of_node, "qcom,sa8797-vidc") ||
+		of_device_is_compatible(dev->of_node, "qcom,sa8787-vidc")) {
 		rc = msm_vidc_deinit_platform_nordau(core, dev);
 		if (rc)
 			d_vpr_e("%s: failed with %d\n", __func__, rc);
@@ -345,7 +346,8 @@ static int msm_vidc_init_platform_variant(struct msm_vidc_core *core, struct dev
 	}
 #endif
 #if defined(CONFIG_MSM_VIDC_NORDAU)
-	if (of_device_is_compatible(dev->of_node, "qcom,sa8797-vidc")) {
+	if (of_device_is_compatible(dev->of_node, "qcom,sa8797-vidc") ||
+		of_device_is_compatible(dev->of_node, "qcom,sa8787-vidc")) {
 		rc = msm_vidc_init_platform_nordau(core, dev);
 		if (rc)
 			d_vpr_e("%s: failed with %d\n", __func__, rc);
@@ -432,7 +434,8 @@ static int msm_vidc_init_vpu(struct msm_vidc_core *core, struct device *dev)
 	}
 #endif
 #if defined(CONFIG_MSM_VIDC_IRIS33_AU)
-	if (of_device_is_compatible(dev->of_node, "qcom,sa8797-vidc")) {
+	if (of_device_is_compatible(dev->of_node, "qcom,sa8797-vidc") ||
+		of_device_is_compatible(dev->of_node, "qcom,sa8787-vidc")) {
 		rc = msm_vidc_init_iris33_au(core);
 		if (rc)
 			d_vpr_e("%s: failed with %d\n", __func__, rc);
@@ -4001,10 +4004,6 @@ int msm_vidc_set_stage(void *instance,
 	}
 
 	stage = inst->capabilities->cap[STAGE].value;
-#if defined(CONFIG_MSM_VIDC_NORDAU)
-	if (inst->codec == MSM_VIDC_HEIC)
-		stage = MSM_VIDC_STAGE_1;
-#endif
 
 	rc = msm_vidc_packetize_control(inst, cap_id, HFI_PAYLOAD_U32,
 		&stage, sizeof(u32), __func__);
