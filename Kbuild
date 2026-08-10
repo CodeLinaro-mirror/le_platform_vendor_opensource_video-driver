@@ -35,14 +35,14 @@ LINUXINCLUDE    += -include $(VIDEO_ROOT)/config/anorak_video.h \
 endif
 
 ifeq ($(CONFIG_ARCH_LEMANS), y)
-ifneq ($(BOARD_PLATFORM), gen5) #Lemans and not Nordy HGY
+ifeq ($(filter gen5 auto_gen,$(BOARD_PLATFORM)),) #Lemans and not Nordy HGY
 include $(VIDEO_ROOT)/config/lemans_video.conf
 LINUXINCLUDE    += -include $(VIDEO_ROOT)/config/lemans_video.h \
                    -I$(VIDEO_ROOT)/driver/platform/lemans/inc
 endif
 endif
 
-ifeq ($(BOARD_PLATFORM), gen5)
+ifneq ($(filter gen5 auto_gen,$(BOARD_PLATFORM)),)
 ifeq ($(ENABLE_HYP), true)
 $(warning "Hw virt enabled")
 KBUILD_CPPFLAGS += -DMSM_VIDC_HW_VIRT

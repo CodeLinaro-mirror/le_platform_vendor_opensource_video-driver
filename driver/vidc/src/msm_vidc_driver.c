@@ -2209,6 +2209,20 @@ int msm_vidc_get_control(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 			inst->buffers.input.extra_count;
 		i_vpr_h(inst, "g_min: input buffers %d\n", ctrl->val);
 		break;
+	case LEVEL:
+		if (is_encode_session(inst) && inst->capabilities->cap[LEVEL].adjust)
+			inst->capabilities->cap[LEVEL].adjust(inst, ctrl);
+		ctrl->val = inst->capabilities->cap[LEVEL].value;
+		i_vpr_h(inst, "get_control: level %d\n", ctrl->val);
+		break;
+	case PROFILE:
+		ctrl->val = inst->capabilities->cap[PROFILE].value;
+		i_vpr_h(inst, "get_control: profile %d\n", ctrl->val);
+		break;
+	case HEVC_TIER:
+		ctrl->val = inst->capabilities->cap[HEVC_TIER].value;
+		i_vpr_h(inst, "get_control: hevc_tier %d\n", ctrl->val);
+		break;
 	case FILM_GRAIN:
 		ctrl->val = inst->capabilities->cap[FILM_GRAIN].value;
 		i_vpr_h(inst, "%s: film grain present: %d\n",
@@ -2217,8 +2231,7 @@ int msm_vidc_get_control(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	case FENCE_FD:
 		rc = msm_vidc_get_fence_fd(inst, &ctrl->val);
 		if (!rc)
-			i_vpr_l(inst, "%s: fence fd: %d\n",
-				__func__, ctrl->val);
+			i_vpr_l(inst, "%s: fence fd: %d\n", __func__, ctrl->val);
 		break;
 	default:
 		i_vpr_e(inst, "invalid ctrl %s id %d\n",
@@ -2373,7 +2386,7 @@ int msm_vidc_process_readonly_buffers(struct msm_vidc_inst *inst,
 				ro_buf->attach, ro_buf->sg_table);
 			call_mem_op(core, dma_buf_detach, core,
 				ro_buf->dmabuf, ro_buf->attach);
-			ro_buf->dmabuf = NULL;
+			ro_buf->sg_table = NULL;
 			ro_buf->attach = NULL;
 		}
 		if (ro_buf->dbuf_get) {
@@ -2448,6 +2461,49 @@ int msm_vidc_set_auto_framerate(struct msm_vidc_inst *inst, u64 timestamp)
 		inst->auto_framerate = curr_fr;
 	}
 exit:
+	return rc;
+}
+
+int msm_vidc_set_dec_framerate(struct msm_vidc_inst *inst)
+{
+	struct msm_vidc_timestamp *ts = NULL;
+	struct msm_vidc_timestamp *prev = NULL;
+	u32 prev_fr = 0, curr_fr = 0;
+	u64 time_ns = 0;
+	int rc = 0;
+
+	if (!is_decode_session(inst))
+		return 0;
+
+	list_for_each_entry(ts, &inst->timestamps.list, sort.list) {
+		if (prev) {
+			time_ns = ts->sort.val - prev->sort.val;
+			prev_fr = curr_fr;
+			curr_fr = time_ns ? DIV64_U64_ROUND_CLOSEST(NSEC_PER_SEC, time_ns) << 16 :
+					0;
+		}
+		prev = ts;
+	}
+
+	/* update frame rate after it remains same for two consecutive frames */
+	if (curr_fr && curr_fr == prev_fr && inst->auto_framerate != curr_fr) {
+		rc = venus_hfi_session_property(inst,
+				HFI_PROP_FRAME_RATE,
+				HFI_HOST_FLAGS_NONE,
+				HFI_PORT_BITSTREAM,
+				HFI_PAYLOAD_Q16,
+				&curr_fr,
+				sizeof(u32));
+		if (rc) {
+			i_vpr_e(inst, "%s: set dec frame rate failed\n",
+				__func__);
+		} else {
+			i_vpr_h(inst, "%s: updated fps: %u -> %u\n", __func__,
+				inst->auto_framerate >> 16, curr_fr >> 16);
+			inst->auto_framerate = curr_fr;
+		}
+	}
+
 	return rc;
 }
 
@@ -4972,10 +5028,9 @@ int msm_vidc_core_init(struct msm_vidc_core *core)
 #endif
 		}
 		core->is_gvm_open = true;
-		/* set up core state and substate */
+		/* set up core state */
 		msm_vidc_change_core_state(core, MSM_VIDC_CORE_INIT,
 			__func__);
-		call_venus_op(core, enable_intr, core);
 
 	}
 
@@ -6554,7 +6609,8 @@ static int msm_vidc_check_max_sessions(struct msm_vidc_inst *inst)
 		return -ENOMEM;
 	}
 
-	if (num_1080p_sessions > core->capabilities[MAX_NUM_1080P_SESSIONS].value) {
+	if (num_1080p_sessions > core->capabilities[MAX_NUM_1080P_SESSIONS].value &&
+		num_4k_sessions == 0) {
 		i_vpr_e(inst, "%s: total 1080p sessions %d, exceeded max limit %d\n",
 			__func__, num_1080p_sessions,
 			core->capabilities[MAX_NUM_1080P_SESSIONS].value);

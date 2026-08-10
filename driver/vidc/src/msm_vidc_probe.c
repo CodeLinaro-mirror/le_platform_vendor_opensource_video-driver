@@ -43,6 +43,7 @@ static inline bool is_video_device(struct device *dev)
 		of_device_is_compatible(dev->of_node, "qcom,sm8550-vidc-v2") ||
 		of_device_is_compatible(dev->of_node, "qcom,sa8255-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,sa8797-vidc") ||
+		of_device_is_compatible(dev->of_node, "qcom,sa8787-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,sm8650-vidc"));
 }
 
@@ -123,6 +124,7 @@ static const struct of_device_id msm_vidc_dt_match[] = {
 	{.compatible = "qcom,sm8650-vidc"},
 	{.compatible = "qcom,sa8255-vidc"},
 	{.compatible = "qcom,sa8797-vidc"},
+	{.compatible = "qcom,sa8787-vidc"},
 	{.compatible = "qcom,vidc,cb-ns-pxl"},
 	{.compatible = "qcom,vidc,cb-ns"},
 	{.compatible = "qcom,vidc,cb-ns-bitstream"},
@@ -392,6 +394,10 @@ static int msm_vidc_setup_context_bank(struct msm_vidc_core *core,
 	/* populate dev & domain field */
 	cb->dev = dev;
 	cb->domain = iommu_get_domain_for_dev(cb->dev);
+	if (!cb->domain) {
+		d_vpr_e("%s: Failed to get iommu domain for %s\n", __func__, dev_name(dev));
+		return -EIO;
+	}
 	/* update context bank address and size only for nordau */
 #if defined(CONFIG_MSM_VIDC_NORDAU)
 	prop = of_get_property(dev->of_node, "qcom,iommu-geometry", &len);
@@ -553,6 +559,41 @@ static const struct component_master_ops msm_vidc_component_ops = {
 	.unbind         = msm_vidc_component_unbind,
 };
 
+#ifdef MSM_VIDC_HW_VIRT
+static int vidc_reboot_notify(
+		struct notifier_block *nfb, unsigned long action, void *data)
+{
+	struct msm_vidc_core *core = NULL;
+
+	d_vpr_h("%s(): %ld", __func__, action);
+	core = g_core;
+
+	switch (action) {
+	case SYS_DOWN:
+	case SYS_HALT:
+	case SYS_POWER_OFF:
+		msm_vidc_core_deinit(core, true);
+		core_lock(core, __func__);
+		if (core && core->is_hw_virt && core->is_gvm_open) {
+			/* close gvm */
+			virtio_video_msm_cmd_close_gvm();
+			core->is_gvm_open = false;
+			/* update core state and clear all substates */
+			msm_vidc_change_core_sub_state(core,
+				CORE_SUBSTATE_MAX - 1, 0, __func__);
+		}
+		core_unlock(core, __func__);
+		break;
+	}
+
+	return NOTIFY_DONE;
+}
+
+static struct notifier_block vidc_reboot_nb = {
+	.notifier_call = vidc_reboot_notify,
+};
+#endif
+
 static int msm_vidc_remove_video_device(struct platform_device *pdev)
 {
 	struct msm_vidc_core* core;
@@ -568,6 +609,10 @@ static int msm_vidc_remove_video_device(struct platform_device *pdev)
 	}
 
 	d_vpr_h("%s()\n", __func__);
+
+#ifdef MSM_VIDC_HW_VIRT
+	unregister_reboot_notifier(&vidc_reboot_nb);
+#endif
 
 	/* destroy component master and deallocate match data */
 	component_master_del(&pdev->dev, &msm_vidc_component_ops);
@@ -646,41 +691,6 @@ static int msm_vidc_remove(struct platform_device *pdev)
 {
         return __remove(pdev);
 }
-#endif
-
-#ifdef MSM_VIDC_HW_VIRT
-static int vidc_reboot_notify(
-		struct notifier_block *nfb, unsigned long action, void *data)
-{
-	struct msm_vidc_core *core = NULL;
-
-	d_vpr_h("%s(): %ld", __func__, action);
-	core = g_core;
-
-	switch (action) {
-	case SYS_DOWN:
-	case SYS_HALT:
-	case SYS_POWER_OFF:
-		msm_vidc_core_deinit(core, true);
-		core_lock(core, __func__);
-		if (core && core->is_hw_virt && core->is_gvm_open) {
-			/* close gvm */
-			virtio_video_msm_cmd_close_gvm();
-			core->is_gvm_open = false;
-			/* update core state and clear all substates */
-			msm_vidc_change_core_sub_state(core,
-				CORE_SUBSTATE_MAX - 1, 0, __func__);
-		}
-		core_unlock(core, __func__);
-		break;
-	}
-
-	return NOTIFY_DONE;
-}
-
-static struct notifier_block vidc_reboot_nb = {
-	.notifier_call = vidc_reboot_notify,
-};
 #endif
 
 static int msm_vidc_probe_video_device(struct platform_device *pdev)

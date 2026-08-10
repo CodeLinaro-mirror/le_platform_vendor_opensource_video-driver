@@ -852,12 +852,6 @@ int msm_vidc_decide_work_mode_iris33_au(struct msm_vidc_inst *inst)
 	work_mode = MSM_VIDC_STAGE_2;
 	inp_f = &inst->fmts[INPUT_PORT];
 
-	if (is_image_decode_session(inst))
-		work_mode = MSM_VIDC_STAGE_1;
-
-	if (is_image_session(inst))
-		goto exit;
-
 	if (is_decode_session(inst)) {
 		height = inp_f->fmt.pix_mp.height;
 		width = inp_f->fmt.pix_mp.width;
@@ -883,18 +877,14 @@ int msm_vidc_decide_work_mode_iris33_au(struct msm_vidc_inst *inst)
 		}
 		if (inst->capabilities->cap[LOSSLESS].value)
 			work_mode = MSM_VIDC_STAGE_2;
-
-		if (!inst->capabilities->cap[GOP_SIZE].value)
-			work_mode = MSM_VIDC_STAGE_2;
 	} else {
 		i_vpr_e(inst, "%s: invalid session type\n", __func__);
 		return -EINVAL;
 	}
 
-exit:
-	i_vpr_h(inst, "Configuring work mode = %u low latency = %d, gop size = %d\n",
+	i_vpr_h(inst, "Configuring work mode = %u low latency = %d, slice mode = %d\n",
 		work_mode, inst->capabilities->cap[LOWLATENCY_MODE].value,
-		inst->capabilities->cap[GOP_SIZE].value);
+		inst->capabilities->cap[SLICE_MODE].value);
 	msm_vidc_update_cap_value(inst, STAGE, work_mode, __func__);
 
 	return 0;
@@ -956,38 +946,16 @@ int msm_vidc_decide_quality_mode_iris33_au(struct msm_vidc_inst *inst)
 	if (!is_encode_session(inst))
 		return 0;
 
-	/* image or lossless or all intra runs at quality mode */
-	if (is_image_session(inst) || inst->capabilities->cap[LOSSLESS].value ||
-		inst->capabilities->cap[ALL_INTRA].value) {
-		mode = MSM_VIDC_MAX_QUALITY_MODE;
-		goto decision_done;
-	}
-
-	/* for lesser complexity, make LP for all resolution */
-	if (inst->capabilities->cap[COMPLEXITY].value < DEFAULT_COMPLEXITY) {
-		mode = MSM_VIDC_POWER_SAVE_MODE;
-		goto decision_done;
-	}
-
 	mbpf = msm_vidc_get_mbs_per_frame(inst);
 	mbps = mbpf * msm_vidc_get_fps(inst);
 	core = inst->core;
-	max_hq_mbpf = core->capabilities[MAX_MBPF_HQ].value;;
-	max_hq_mbps = core->capabilities[MAX_MBPS_HQ].value;;
+	max_hq_mbpf = core->capabilities[MAX_MBPF_HQ].value;
+	max_hq_mbps = core->capabilities[MAX_MBPS_HQ].value;
 
-	if (!is_realtime_session(inst)) {
-		if (((inst->capabilities->cap[COMPLEXITY].flags & CAP_FLAG_CLIENT_SET) &&
-			(inst->capabilities->cap[COMPLEXITY].value >= DEFAULT_COMPLEXITY)) ||
-			mbpf <= max_hq_mbpf) {
-			mode = MSM_VIDC_MAX_QUALITY_MODE;
-			goto decision_done;
-		}
-	}
-
-	if (mbpf <= max_hq_mbpf && mbps <= max_hq_mbps)
+	if (inst->capabilities->cap[LOSSLESS].value ||
+	    (mbpf <= max_hq_mbpf && mbps <= max_hq_mbps))
 		mode = MSM_VIDC_MAX_QUALITY_MODE;
 
-decision_done:
 	msm_vidc_update_cap_value(inst, QUALITY_MODE, mode, __func__);
 
 	return 0;

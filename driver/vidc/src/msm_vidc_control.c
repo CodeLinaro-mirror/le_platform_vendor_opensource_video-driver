@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
-/* Copyright (c) 2022. Qualcomm Innovation Center, Inc. All rights reserved. */
 
 #include "msm_vidc_debug.h"
 #include "msm_vidc_internal.h"
@@ -663,8 +663,10 @@ int msm_vidc_ctrl_init(struct msm_vidc_inst *inst)
 			goto error;
 		}
 
-		if (capability->cap[idx].flags & CAP_FLAG_VOLATILE)
+		if (capability->cap[idx].flags & CAP_FLAG_VOLATILE) {
 			ctrl->flags |= V4L2_CTRL_FLAG_VOLATILE;
+			ctrl->has_volatiles = 1;
+		}
 
 		ctrl->flags |= V4L2_CTRL_FLAG_EXECUTE_ON_WRITE;
 		inst->ctrls[ctrl_idx] = ctrl;
