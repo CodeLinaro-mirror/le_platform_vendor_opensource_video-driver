@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include "msm_media_info.h"
@@ -200,7 +200,6 @@ u32 msm_vidc_internal_buffer_count(struct msm_vidc_inst *inst,
 u32 msm_vidc_decoder_input_size(struct msm_vidc_inst *inst)
 {
 	struct msm_vidc_core *core;
-	struct msm_vidc_inst *i;
 	u32 count = 0;
 
 	u32 frame_size, num_mbs;
@@ -245,8 +244,14 @@ u32 msm_vidc_decoder_input_size(struct msm_vidc_inst *inst)
 
 	core = inst->core;
 
-	list_for_each_entry(i, &core->instances, list)
-		count++;
+	/*
+	 * Use the lock-free num_sessions counter instead of iterating
+	 * core->instances without holding core_lock. Iterating the list
+	 * without the lock is unsafe because concurrent add/remove of
+	 * sessions can corrupt list.next pointers, causing a NULL pointer
+	 * dereference.
+	 */
+	count = READ_ONCE(core->num_sessions);
 
 	/* For image session, use the actual resolution to calc buffer size */
 	if (is_image_session(inst) || count > 16) {

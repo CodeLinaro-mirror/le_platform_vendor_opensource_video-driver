@@ -969,6 +969,8 @@ struct msm_vidc_dma_buf_info  {
 	struct vb2_vmarea_handler handler;
 	struct  msm_vidc_buffer   *buf;
 	struct  device            *dev;
+	struct sg_table           *sg_table;
+	bool                      sg_table_alloc;
 };
 
 struct msm_vidc_buffer {
@@ -987,6 +989,8 @@ struct msm_vidc_buffer {
 	enum msm_vidc_buffer_attributes    attr;
 	void                              *dmabuf;
 	struct sg_table                   *sg_table;
+	/* sg_table_alloc indicates whether sg_table allocated in video driver */
+	bool                               sg_table_alloc;
 	struct dma_buf_attachment         *attach;
 	struct vb2_vmarea_handler          handler;
 	refcount_t                         refcount;

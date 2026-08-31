@@ -2259,9 +2259,9 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_qcm6
         NULL},
 };
 
-/* Default UBWC config for LPDDR5 */
+/* Default UBWC config for LPDDR4 */
 static struct msm_vidc_ubwc_config_data ubwc_config_qcm6490[] = {
-    UBWC_CONFIG(8, 32, 15, 0, 1, 1, 1),
+	UBWC_CONFIG(8, 32, 14, 0, 1, 1, 1),
 };
 
 static struct msm_vidc_efuse_data efuse_data_qcm6490[] = {
