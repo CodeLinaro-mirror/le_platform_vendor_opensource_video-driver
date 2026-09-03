@@ -601,6 +601,7 @@ void msm_vidc_buf_queue(struct vb2_buffer *vb2)
 {
 	int rc = 0;
 	struct msm_vidc_inst *inst;
+	struct msm_vidc_core *core;
 	u64 timestamp_us = 0;
 	u64 ktime_ns = ktime_get_ns();
 
@@ -615,6 +616,7 @@ void msm_vidc_buf_queue(struct vb2_buffer *vb2)
 		d_vpr_e("%s: invalid instance\n", __func__);
 		return;
 	}
+	core = inst->core;
 
 	/*
 	 * As part of every qbuf initalise request to true.
@@ -673,6 +675,10 @@ void msm_vidc_buf_queue(struct vb2_buffer *vb2)
 		timestamp_us = div_u64(vb2->timestamp, 1000);
 		msm_vidc_set_auto_framerate(inst, timestamp_us);
 	}
+
+	if (core->is_hw_virt && is_decode_session(inst))
+		msm_vidc_set_dec_framerate(inst);
+
 	inst->last_qbuf_time_ns = ktime_ns;
 
 	if (is_decode_session(inst) && vb2->type == INPUT_MPLANE) {
