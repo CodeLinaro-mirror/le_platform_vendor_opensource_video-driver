@@ -2386,7 +2386,7 @@ int msm_vidc_process_readonly_buffers(struct msm_vidc_inst *inst,
 				ro_buf->attach, ro_buf->sg_table);
 			call_mem_op(core, dma_buf_detach, core,
 				ro_buf->dmabuf, ro_buf->attach);
-			ro_buf->dmabuf = NULL;
+			ro_buf->sg_table = NULL;
 			ro_buf->attach = NULL;
 		}
 		if (ro_buf->dbuf_get) {
@@ -4248,7 +4248,7 @@ int msm_vidc_remove_session(struct msm_vidc_inst *inst)
 
 	core_lock(core, __func__);
 	list_for_each_entry_safe(i, temp, &core->instances, list) {
-		if (i->session_id == inst->session_id) {
+		if (i == inst) {
 			list_move_tail(&i->list, &core->dangling_instances);
 			i_vpr_h(inst, "%s: removed session %#x\n",
 				__func__, i->session_id);
@@ -5028,10 +5028,9 @@ int msm_vidc_core_init(struct msm_vidc_core *core)
 #endif
 		}
 		core->is_gvm_open = true;
-		/* set up core state and substate */
+		/* set up core state */
 		msm_vidc_change_core_state(core, MSM_VIDC_CORE_INIT,
 			__func__);
-		call_venus_op(core, enable_intr, core);
 
 	}
 
