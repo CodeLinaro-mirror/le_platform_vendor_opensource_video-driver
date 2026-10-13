@@ -2386,7 +2386,7 @@ int msm_vidc_process_readonly_buffers(struct msm_vidc_inst *inst,
 				ro_buf->attach, ro_buf->sg_table);
 			call_mem_op(core, dma_buf_detach, core,
 				ro_buf->dmabuf, ro_buf->attach);
-			ro_buf->dmabuf = NULL;
+			ro_buf->sg_table = NULL;
 			ro_buf->attach = NULL;
 		}
 		if (ro_buf->dbuf_get) {
@@ -2432,8 +2432,6 @@ int msm_vidc_set_auto_framerate(struct msm_vidc_inst *inst, u64 timestamp)
 			prev_fr = curr_fr;
 			curr_fr = time_us ? DIV64_U64_ROUND_CLOSEST(USEC_PER_SEC, time_us) << 16 :
 					inst->auto_framerate;
-			if (curr_fr > inst->capabilities->cap[FRAME_RATE].max)
-				curr_fr = inst->capabilities->cap[FRAME_RATE].max;
 		}
 		prev = ts;
 		counter++;
@@ -2443,9 +2441,64 @@ int msm_vidc_set_auto_framerate(struct msm_vidc_inst *inst, u64 timestamp)
 		goto exit;
 
 	/* if framerate changed and stable for 2 frames, set to firmware */
-	if (curr_fr == prev_fr && curr_fr != inst->auto_framerate) {
-		i_vpr_l(inst, "%s: updated fps:  %u -> %u\n", __func__,
-				inst->auto_framerate >> 16, curr_fr >> 16);
+	/* this framerate should be calculated from input TS directly without clamp */
+	/* before set this framerate to firmware, need clamp */
+	if (curr_fr == prev_fr) {
+		/* if calculated fps is too large, we consider it's due to error TS */
+		/* if we set max fps to FW, the next new encoder creation request will */
+		/* be rejected as encoder max capability has reached.*/
+		/* so, we just set DEFAULT_MAX_ENC_FPS to FW, it could cover most of enc usage */
+		if (curr_fr > inst->capabilities->cap[FRAME_RATE].max)
+			curr_fr = min((u32)(DEFAULT_MAX_ENC_FPS << 16),
+					(u32)inst->capabilities->cap[FRAME_RATE].max);
+		if (curr_fr < inst->capabilities->cap[FRAME_RATE].min)
+			curr_fr = inst->capabilities->cap[FRAME_RATE].min;
+
+		if (curr_fr != inst->auto_framerate) {
+			i_vpr_l(inst, "%s: updated fps:  %u -> %u (unclamped %u)\n", __func__,
+					inst->auto_framerate >> 16, curr_fr >> 16, prev_fr >> 16);
+			rc = venus_hfi_session_property(inst,
+					HFI_PROP_FRAME_RATE,
+					HFI_HOST_FLAGS_NONE,
+					HFI_PORT_BITSTREAM,
+					HFI_PAYLOAD_Q16,
+					&curr_fr,
+					sizeof(u32));
+			if (rc) {
+				i_vpr_e(inst, "%s: set auto frame rate(%u) failed\n",
+					__func__, curr_fr >> 16);
+				goto exit;
+			}
+			inst->auto_framerate = curr_fr;
+		}
+	}
+exit:
+	return rc;
+}
+
+int msm_vidc_set_dec_framerate(struct msm_vidc_inst *inst)
+{
+	struct msm_vidc_timestamp *ts = NULL;
+	struct msm_vidc_timestamp *prev = NULL;
+	u32 prev_fr = 0, curr_fr = 0;
+	u64 time_ns = 0;
+	int rc = 0;
+
+	if (!is_decode_session(inst))
+		return 0;
+
+	list_for_each_entry(ts, &inst->timestamps.list, sort.list) {
+		if (prev) {
+			time_ns = ts->sort.val - prev->sort.val;
+			prev_fr = curr_fr;
+			curr_fr = time_ns ? DIV64_U64_ROUND_CLOSEST(NSEC_PER_SEC, time_ns) << 16 :
+					0;
+		}
+		prev = ts;
+	}
+
+	/* update frame rate after it remains same for two consecutive frames */
+	if (curr_fr && curr_fr == prev_fr && inst->auto_framerate != curr_fr) {
 		rc = venus_hfi_session_property(inst,
 				HFI_PROP_FRAME_RATE,
 				HFI_HOST_FLAGS_NONE,
@@ -2454,13 +2507,15 @@ int msm_vidc_set_auto_framerate(struct msm_vidc_inst *inst, u64 timestamp)
 				&curr_fr,
 				sizeof(u32));
 		if (rc) {
-			i_vpr_e(inst, "%s: set auto frame rate failed\n",
+			i_vpr_e(inst, "%s: set dec frame rate failed\n",
 				__func__);
-			goto exit;
+		} else {
+			i_vpr_h(inst, "%s: updated fps: %u -> %u\n", __func__,
+				inst->auto_framerate >> 16, curr_fr >> 16);
+			inst->auto_framerate = curr_fr;
 		}
-		inst->auto_framerate = curr_fr;
 	}
-exit:
+
 	return rc;
 }
 
@@ -4205,7 +4260,7 @@ int msm_vidc_remove_session(struct msm_vidc_inst *inst)
 
 	core_lock(core, __func__);
 	list_for_each_entry_safe(i, temp, &core->instances, list) {
-		if (i->session_id == inst->session_id) {
+		if (i == inst) {
 			list_move_tail(&i->list, &core->dangling_instances);
 			i_vpr_h(inst, "%s: removed session %#x\n",
 				__func__, i->session_id);
@@ -4985,10 +5040,9 @@ int msm_vidc_core_init(struct msm_vidc_core *core)
 #endif
 		}
 		core->is_gvm_open = true;
-		/* set up core state and substate */
+		/* set up core state */
 		msm_vidc_change_core_state(core, MSM_VIDC_CORE_INIT,
 			__func__);
-		call_venus_op(core, enable_intr, core);
 
 	}
 

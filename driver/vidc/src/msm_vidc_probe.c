@@ -43,6 +43,7 @@ static inline bool is_video_device(struct device *dev)
 		of_device_is_compatible(dev->of_node, "qcom,sm8550-vidc-v2") ||
 		of_device_is_compatible(dev->of_node, "qcom,sa8255-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,sa8797-vidc") ||
+		of_device_is_compatible(dev->of_node, "qcom,sa8787-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,sm8650-vidc"));
 }
 
@@ -123,6 +124,7 @@ static const struct of_device_id msm_vidc_dt_match[] = {
 	{.compatible = "qcom,sm8650-vidc"},
 	{.compatible = "qcom,sa8255-vidc"},
 	{.compatible = "qcom,sa8797-vidc"},
+	{.compatible = "qcom,sa8787-vidc"},
 	{.compatible = "qcom,vidc,cb-ns-pxl"},
 	{.compatible = "qcom,vidc,cb-ns"},
 	{.compatible = "qcom,vidc,cb-ns-bitstream"},
@@ -392,6 +394,10 @@ static int msm_vidc_setup_context_bank(struct msm_vidc_core *core,
 	/* populate dev & domain field */
 	cb->dev = dev;
 	cb->domain = iommu_get_domain_for_dev(cb->dev);
+	if (!cb->domain) {
+		d_vpr_e("%s: Failed to get iommu domain for %s\n", __func__, dev_name(dev));
+		return -EIO;
+	}
 	/* update context bank address and size only for nordau */
 #if defined(CONFIG_MSM_VIDC_NORDAU)
 	prop = of_get_property(dev->of_node, "qcom,iommu-geometry", &len);

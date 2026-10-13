@@ -18,7 +18,7 @@
 #include "msm_vidc_platform.h"
 #include "venus_hfi.h"
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,16,0))
+#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
 	MODULE_IMPORT_NS(DMA_BUF);
 #endif
 
@@ -381,7 +381,12 @@ static int msm_vidc_dma_buf_unmap_attachment(struct msm_vidc_core *core,
 		return -EINVAL;
 	}
 
+#if (KERNEL_VERSION(6, 1, 54) < LINUX_VERSION_CODE)
+	/* dma_buf_unmap_attachment_unlocked was introduced in 6.1.55 */
+	dma_buf_unmap_attachment_unlocked(attach, table, DMA_BIDIRECTIONAL);
+#else
 	dma_buf_unmap_attachment(attach, table, DMA_BIDIRECTIONAL);
+#endif
 
 	return rc;
 }
@@ -397,7 +402,8 @@ static struct sg_table *msm_vidc_dma_buf_map_attachment(
 		return NULL;
 	}
 
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(6,2,0))
+#if (KERNEL_VERSION(6, 1, 54) < LINUX_VERSION_CODE)
+	/* dma_buf_map_attachment_unlocked got introduced in kernel 6.1.55 */
 	table = dma_buf_map_attachment_unlocked(attach, DMA_BIDIRECTIONAL);
 #else
 	table = dma_buf_map_attachment(attach, DMA_BIDIRECTIONAL);

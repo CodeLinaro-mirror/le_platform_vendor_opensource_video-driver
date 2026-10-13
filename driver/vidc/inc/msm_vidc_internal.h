@@ -103,6 +103,7 @@ enum msm_vidc_metadata_bits {
 #define DCVS_WINDOW 16
 #define ENC_FPS_WINDOW 3
 #define DEC_FPS_WINDOW 10
+#define DEFAULT_MAX_ENC_FPS 60
 #define INPUT_TIMER_LIST_SIZE 30
 
 #define DEFAULT_COMPLEXITY 50
@@ -851,13 +852,9 @@ struct msm_vidc_alloc {
 	u8                          secure:1;
 	u8                          map_kernel:1;
 	struct dma_buf             *dmabuf;
-	/*
-	 * Kalama uses Kernel Version 5.15.x,
-	 * Pineapple uses Kernel version 5.18.x
-	 */
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,16,0))
+#if (KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE)
 	struct iosys_map            dmabuf_map;
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,0))
+#elif (KERNEL_VERSION(5, 11, 0) <= LINUX_VERSION_CODE)
 	struct dma_buf_map          dmabuf_map;
 #endif
 	void                       *kvaddr;

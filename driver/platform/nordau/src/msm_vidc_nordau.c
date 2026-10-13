@@ -1585,7 +1585,7 @@ static struct msm_platform_inst_capability instance_cap_data_nordau[] = {
 		0,
 		HFI_PROP_LUMA_CHROMA_BIT_DEPTH},
 
-	{CODEC_CONFIG, DEC, H264|HEVC|HEIC|AV1, 0, 1, 1, 0,
+	{CODEC_CONFIG, DEC, H264|HEVC|HEIC|AV1|MPEG2, 0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_CODEC_CONFIG, 0,
 		CAP_FLAG_DYNAMIC_ALLOWED},
 

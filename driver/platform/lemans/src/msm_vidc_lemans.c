@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <dt-bindings/clock/qcom,gcc-lemans.h>
@@ -88,11 +88,6 @@ static struct color_format_info color_format_data_lemans[] = {
 		.v4l2_color_format = V4L2_PIX_FMT_NV12,
 		.vidc_color_format = MSM_VIDC_FMT_NV12,
 		.pixfmt_name       = "NV12",
-	},
-	{
-		.v4l2_color_format = V4L2_PIX_FMT_NV21,
-		.vidc_color_format = MSM_VIDC_FMT_NV21,
-		.pixfmt_name       = "NV21",
 	},
 	{
 		.v4l2_color_format = V4L2_PIX_FMT_VIDC_NV12C,
@@ -386,26 +381,26 @@ static struct msm_platform_inst_capability instance_cap_data_lemans[] = {
 	{PIX_FMTS, ENC|DEC, H264|MPEG2,
 		MSM_VIDC_FMT_NV12,
 		MSM_VIDC_FMT_NV12C,
-		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV21 | MSM_VIDC_FMT_NV12C,
+		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV12C,
 		MSM_VIDC_FMT_NV12C},
 
 	{PIX_FMTS, ENC|DEC, HEVC|VP9|AV1,
 		MSM_VIDC_FMT_NV12,
 		MSM_VIDC_FMT_TP10C,
-		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV21 | MSM_VIDC_FMT_NV12C |
+		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV12C |
 		MSM_VIDC_FMT_P010 | MSM_VIDC_FMT_TP10C,
 		MSM_VIDC_FMT_NV12C},
 
 	{PIX_FMTS, ENC, HEIC,
 		MSM_VIDC_FMT_NV12,
 		MSM_VIDC_FMT_P010,
-		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV21 | MSM_VIDC_FMT_P010,
+		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_P010,
 		MSM_VIDC_FMT_NV12},
 
 	{PIX_FMTS, DEC, HEIC,
 		MSM_VIDC_FMT_NV12,
 		MSM_VIDC_FMT_TP10C,
-		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV21 | MSM_VIDC_FMT_NV12C |
+		MSM_VIDC_FMT_NV12 | MSM_VIDC_FMT_NV12C |
 		MSM_VIDC_FMT_P010 | MSM_VIDC_FMT_TP10C,
 		MSM_VIDC_FMT_NV12C},
 

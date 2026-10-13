@@ -531,7 +531,9 @@ int venus_hfi_queue_init(struct msm_vidc_core *core)
 	map.dmabuf = alloc.dmabuf;
 	rc = call_mem_op(core, memory_map, core, &map);
 	if (rc) {
-		d_vpr_e("%s: alloc failed\n", __func__);
+		d_vpr_e("%s: map failed\n", __func__);
+		call_mem_op(core, memory_free, core, &core->iface_q_table.alloc);
+		core->iface_q_table.align_virtual_addr = NULL;
 		goto fail_alloc_queue;
 	}
 	core->iface_q_table.align_device_addr = map.device_addr;

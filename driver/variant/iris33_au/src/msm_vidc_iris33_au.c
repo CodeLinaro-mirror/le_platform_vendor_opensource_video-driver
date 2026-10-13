@@ -852,12 +852,6 @@ int msm_vidc_decide_work_mode_iris33_au(struct msm_vidc_inst *inst)
 	work_mode = MSM_VIDC_STAGE_2;
 	inp_f = &inst->fmts[INPUT_PORT];
 
-	if (is_image_decode_session(inst))
-		work_mode = MSM_VIDC_STAGE_1;
-
-	if (is_image_session(inst))
-		goto exit;
-
 	if (is_decode_session(inst)) {
 		height = inp_f->fmt.pix_mp.height;
 		width = inp_f->fmt.pix_mp.width;
@@ -883,18 +877,14 @@ int msm_vidc_decide_work_mode_iris33_au(struct msm_vidc_inst *inst)
 		}
 		if (inst->capabilities->cap[LOSSLESS].value)
 			work_mode = MSM_VIDC_STAGE_2;
-
-		if (!inst->capabilities->cap[GOP_SIZE].value)
-			work_mode = MSM_VIDC_STAGE_2;
 	} else {
 		i_vpr_e(inst, "%s: invalid session type\n", __func__);
 		return -EINVAL;
 	}
 
-exit:
-	i_vpr_h(inst, "Configuring work mode = %u low latency = %d, gop size = %d\n",
+	i_vpr_h(inst, "Configuring work mode = %u low latency = %d, slice mode = %d\n",
 		work_mode, inst->capabilities->cap[LOWLATENCY_MODE].value,
-		inst->capabilities->cap[GOP_SIZE].value);
+		inst->capabilities->cap[SLICE_MODE].value);
 	msm_vidc_update_cap_value(inst, STAGE, work_mode, __func__);
 
 	return 0;
